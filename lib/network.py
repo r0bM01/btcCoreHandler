@@ -38,7 +38,7 @@ class Client:
 
 class Settings:
     def __init__(self, host = False, port = False):
-        self.host = str(host) if host else "192.168.1.238"
+        self.host = str(host) if host else socket.gethostbyname(socket.gethostname()) #"192.168.1.238"
         self.port = int(port) if port else 4600
 
         self.externalIP = False
