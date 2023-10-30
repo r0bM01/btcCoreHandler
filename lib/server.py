@@ -1,9 +1,15 @@
 import json, time, subprocess
 import lib.network
 import lib.commands
+import lib.storage
 
 
 def main():
+
+    #init procedure
+    storage = lib.storage.Data()
+
+
     ENV = lib.network.Settings()
     server = lib.network.Server(ENV)
     server.openSocket()
