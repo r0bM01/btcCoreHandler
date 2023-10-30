@@ -3,6 +3,11 @@ import socket, threading, select
 
 from requests import get
 
+class dataExchange:
+    @staticmethod
+    def send(key, data, recipientSock):
+        #data must be already encoded in json
+
 class Client:
     def __init__(self):
         self.remoteHost = "192.168.1.238"
@@ -48,17 +53,6 @@ class Settings:
         self.maxSockets = 1
         self.handCode = "268b6d4f8dc014fe24c389c32d54bb95"
 
-class Peer:
-    def __init__(self, ip_address):
-        self.ip_address = ip_address
-        self.auth_level = 0
-
-class Manager:
-    def __init__(self):
-        self.connected = []
-
-    def addNew(self, peer):
-        self.connected.append(peer)
 
 class Server:
     def __init__(self, settings):
