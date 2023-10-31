@@ -3,12 +3,21 @@ import socket, threading, select
 
 from requests import get
 
-class dataExchange:
-    @staticmethod
-    def send(key, data, recipientSock):
+class Proto:
+    def sender(self, data):
         #data must be already encoded in json
+        data = data.encode()
+        dataLenght = hex(len(data))[2:].zfill(8)
+        self.remoteSock.send(bytes.fromhex(dataLenght))
+        self.remoteSock.send(data)
+    
+    def receiver(self):
+        dataLenght = int(self.remoteSock.recv(4).hex(), 16)
+        data = self.remoteSock(dataLenght).decode()
+        return data
 
-class Client:
+
+class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
         self.remotePort = 4600
@@ -23,23 +32,10 @@ class Client:
         except OSError:
             self.remoteSock = False
 
-
     def disconnectServer(self):
         self.remoteSock.close()
         self.remoteSock = False
 
-    def sendMessage(self, cmd):
-        print(cmd)
-        commandLenght = hex(len(cmd.encode("utf-8")))[2:]
-        commandLenght = commandLenght.zfill(8)
-        print(commandLenght)
-        self.remoteSock.send(bytes.fromhex(commandLenght))
-        self.remoteSock.send(cmd.encode("utf-8"))
-
-    def receiveReply(self):
-        replyLenght = int(self.remoteSock.recv(4).hex(), 16)
-        reply = self.remoteSock.recv(replyLenght).decode("utf-8")
-        return reply
 
 class Settings:
     def __init__(self, host = False, port = False):
@@ -51,16 +47,15 @@ class Settings:
         self.socketTimeout = 3
         self.backlog = 5
         self.maxSockets = 1
-        self.handCode = "268b6d4f8dc014fe24c389c32d54bb95"
 
 
-class Server:
+class Server(Proto):
     def __init__(self, settings):
         self.settings = settings
 
         self.socket = False
 
-        self.manager = Manager()
+        self.remoteSock = False
 
     def openSocket(self):
         try:
@@ -70,33 +65,11 @@ class Server:
             self.socket = False
             print("server socket problem")
 
-    def getNewPeer(self):
+    def receiveClient(self):
         try:
-            peer, addr = self.socket.accept()
-            flag = True
+            self.remoteSock, addr = self.socket.accept()
         except OSError:
-            flag = False
-        return peer if flag else flag
-
-    def receiveCommand(self, peer):
-        commandLenght = int(peer.recv(4).hex(), 16) #receive 4 bytes indicating lenght for next message
-        command = peer.recv(commandLenght).decode('utf-8')
-        return command
-
-    def sendReply(self, peer, data):
-        #data = data.encode("utf-8")
-        dataLenght = hex(len(data))[2:]
-        dataLenght = dataLenght.zfill(8)
-        peer.send(bytes.fromhex(dataLenght))
-        peer.send(data)
+            self.remoteSock = False
+        
 
 
-    #not implemented yet
-    def peerAuthentication(self, peer):
-        return True
-
-    """
-    def getExternalIP(self):
-        externalIP = get('https://api.ipify.org').text
-        return externalIP
-    """

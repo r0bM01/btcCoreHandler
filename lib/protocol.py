@@ -1,10 +1,11 @@
 
-import subprocess, json
+import subprocess, json, time
 
 
 class Commands:
     authCall = {'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
     authControl = {'uptime', 'start', 'stop'}
+    authHandler = {'updateall', 'closeconn'}
 
     @staticmethod
     def check(command):
@@ -14,6 +15,8 @@ class Commands:
 
 class DaemonData:
     def __init__(self):
+        self.PID = None
+
         self.startDate = None
         self.uptime = None
 
@@ -24,30 +27,70 @@ class DaemonData:
         self.netIN = None
         self.netOUT = None
 
-    def update(self, **kwargs):
-        pass
+    def update(self, jsonData):
+        for key, value in jsonData.items():
+            if key == 'uptime':
+                self.uptime = int(value)
+                self.startTime = int(time.time() - self.uptime)
+            elif key == 'chain':
+                self.chain = str(value)
+            elif key == 'blocks':
+                self.blocks == int(value)
+            elif key == 'headers':
+                self.header = int(value)
+            elif key == 'connections_in':
+                self.netIN = int(value)
+            elif key == 'connections_out':
+                self.netOUT = int(value)
 
+    def getAllData(self):
+        message = {}
+        message['startData'] = self.startDate
+        message['uptime'] = self.uptime
+        message['chain'] = self.chain
+        message['blocks'] = self.blocks
+        message['header'] = self.headers
+        message['netIn'] = self.netIN
+        message['netOut'] = self.netOut
+        return json.dumps(message)
 
 class RPC:
     def __init__(self):
         self.base = "bitcoin-cli"
     
-    def caller(self, command, output = True):
-        call = subprocess.run([self.base, command], capture_output = output)
-        if output: return call.stdout.decode()
+    def runCall(self, command):
+        if command in Commands.authCall:
+            result = self.sendCall(command)
+        elif command in Commands.authControl:
+            result = self.sendControl(command)
+        return result
+
+    def checkDaemon(self):
+        PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
+        if PID != "": PID = int(PID)
+        else: PID = False
+        return PID
+    
+    def caller(self, command):
+        call = subprocess.run([self.base, command], capture_output = True)
+        return call.stdout.decode()
          
     def sendCall(self, command):
-        if command in Commands.authCall: 
-            call = self.caller(command)
-            result = json.loads(call)
-        elif command == 'uptime':
+        call = self.caller(command)
+        return call
+        
+    def sendControl(self, command):
+        if command == 'uptime':
             call = self.caller(command)
             call = {"uptime": call}
-            result = json.loads(call)
         elif command == 'stop':
-            self.caller(command, output = False)
+            subprocess.run([self.base, "stop"])
+            call = {"stop": bool(self.checkDaemon())}
         elif command == 'start':
-            subprocess(["bitcoind"])
+            subprocess.run(["bitcoind"])
+            call = {"start": bool(self.checkDaemon())}
+        result = json.dumps(call)
+        return result
 
     
 
