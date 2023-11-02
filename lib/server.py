@@ -33,78 +33,100 @@ class DUpdater():
         self.bitcoinData.update(uptime)
 
         blockchainInfo = self.rpcCaller.sendCall("getblockchaininfo")
-        blockchainInfo = json.loads(blockchainInfo)
-        self.bitcoinData.update(blockchainInfo)
-
+        self.bitcoinData.blockchainInfo = json.loads(blockchainInfo)
+        
         networkInfo = self.rpcCaller.sendCall("getnetworkinfo")
-        networkInfo = json.loads(networkInfo)
-        self.bitcoinData.update(networkInfo)
+        self.bitcoinData.networkInfo = json.loads(networkInfo)
 
         mempoolInfo = self.rpcCaller.sendCall("getmempoolinfo")
-        mempoolInfo = json.loads(mempoolInfo)
-        self.bitcoinData.update(mempoolInfo)
-
+        self.bitcoinData.mempoolInfo = json.loads(mempoolInfo)
+        
         miningInfo = self.rpcCaller.sendCall("getmininginfo")
-        miningInfo = json.loads(miningInfo)
-        self.bitcoinData.update(miningInfo)
+        self.bitcoinData.miningInfo = json.loads(miningInfo)
+        
+class Server:
+    def __init__(self):
+        #init procedure
+        #self.storage = lib.storage.Data()
+        self.rpcCaller = lib.protocol.RPC()
+        self.bitcoinData = lib.protocol.DaemonData()
+
+        self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+        self.autoUpdater = DUpdater(rpcCaller, bitcoinData)
+        #init server settings
+        self.netSettings = lib.network.Settings(host = self.rpcCaller.getLocalIP())
+        self.network = lib.network.Server(netSettings)
+        
+        self.isServing = False
+        self.isOnline = False
+    
+    def check_network(self):
+        self.network.openSocket()
+        self.isOnline = bool(self.network.socket)
+
+    def start_serving(self):
+        self.isServing = True
+        while self.isServing:
+            self.network.receiveClient()
+            print(self.network.remoteSock)
+            while bool(self.network.remoteSock):
+                request = self.network.receiver()
+                if lib.protocol.Commands.check(request):
+                    if request == "closeconn":
+                        self.network.sender({"message": "connection closed"})
+                        self.network.remoteSock.close()
+                        self.network.remoteSock = False
+                    else:
+                        reply = self.handle_request(request)
+                else:
+                    reply = json.dumps({"error": "request not valid"})
+                self.network.sender(reply)
+
+    def handle_request(self, request):
+        if not bool(self.bitcoinData.PID) and request == "start":
+            #starts the daemon if not running
+            reply = self.rpcCaller.sendCall(request)
+            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+            if bool(self.bitcoinData.PID): self.autoUpdater.start()
+
+        elif not bool(self.bitcoinData.PID) and request != "start":
+            reply = json.dumps({"error": "bitcoin daemon not running"})
+
+        elif bool(self.bitcoinData.PID) and request == "start":
+            reply = json.dumps({"error": "bitcoin daemon already running"})
+
+        elif bool(self.bitcoinData.PID) and request == "stop":
+            reply = self.rpcCaller.sendCall(request)
+            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+            self.autoUpdater.stop()
+
+        elif bool(self.bitcoinData.PID) and request == "updateall":
+            reply = self.bitcoinData.getAllData()
+
+        else:
+            reply = self.rpcCaller.sendCall(request)
+        
+        return reply
+        
+        
+
+
+
 
 
 def main():
-    #init procedure
-    storage = lib.storage.Data()
-    netSettings = lib.network.Settings()
-    bitcoinData = lib.protocol.DaemonData()
-    rpcCaller = lib.protocol.RPC()
-    autoUpdater = DUpdater(rpcCaller, bitcoinData)
-    #init server settings
-    server = lib.network.Server(netSettings)
-    #check bitcoind running
-    bitcoinData.PID = rpcCaller.checkDaemon()
-    print(bitcoinData.PID)
-    #if bitcoind is running, server will start the auto updater to gather info
-    #if not started yet, will wait for remote bitcoind start
-    if bitcoinData.PID: 
-        autoUpdater.start()
-    
-    server.openSocket()
-    print(server.socket)
 
-    if server.socket:
-        print(time.ctime(time.time()))
-        print("Server started")
+    SERVER = Server()
+
+    SERVER.check_network()
+
+    if SERVER.isOnline:
         try:
-            while True:
-                server.receiveClient()
-                print(server.remoteSock)
-                if server.remoteSock:
-                    print("Client connected ", server.remoteSock)
-                    setRunning = True
-                    while setRunning:
-                        #block until command is sent
-                        request = server.receiver()
-                        requestValidity = lib.protocol.Commands.check(request)
-                        print("Received command: ", request)
-                        if requestValidity:
-                            if bitcoinData.PID:
-                                reply = rpcCaller.runCall(request)
-                            elif not bitcoinData.PID and request == 'start':
-                                reply = rpcCaller.runCall(request)
-                                opt = json.loads(reply)
-                                if opt['start']:
-                                    autoUpdater.start()
-                            elif not bitcoinData.PID and request != 'start':
-                                result = {'message': 'bitcoin daemon not running'}
-                                reply = json.dumps(result)
-                            server.sender(reply)
-                        elif request == 'updateall':
-                            reply = bitcoinData.getAllData()
-                            server.sender(reply)                            
-                        else:
-                            setRunning = False
-                            server.remoteSock.close()
-                            
+            SERVER.start_serving()
         except KeyboardInterrupt:
             print("Server stopped")
+    else:
+        print("Server socket not working")
 
 
 

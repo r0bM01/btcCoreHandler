@@ -12,7 +12,6 @@ class Commands:
         return command in Commands.authCall or command in Commands.authControl
     
 
-
 class DaemonData:
     def __init__(self):
         self.PID = None
@@ -20,12 +19,10 @@ class DaemonData:
         self.startDate = None
         self.uptime = None
 
-        self.chain = None
-        self.blocks = None
-        self.headers = None
-
-        self.netIN = None
-        self.netOUT = None
+        self.blockchainInfo = None
+        self.networkInfo = None
+        self.mempoolInfo = None
+        self.miningInfo = None
 
     def update(self, jsonData):
         print("data received: ")
@@ -49,11 +46,10 @@ class DaemonData:
         message = {}
         message['startData'] = self.startDate
         message['uptime'] = self.uptime
-        message['chain'] = self.chain
-        message['blocks'] = self.blocks
-        message['header'] = self.headers
-        message['netIn'] = self.netIN
-        message['netOut'] = self.netOUT
+        message['blockchainInfo'] = self.blockchainInfo
+        message['networkInfo'] = self.networkInfo
+        message['mempoolInfo'] = self.mempoolInfo
+        message['miningInfo'] = self.miningInfo
         return json.dumps(message)
 
 class RPC:
@@ -62,7 +58,7 @@ class RPC:
     
     def runCall(self, command):
         if command in Commands.authCall:
-            result = self.sendCall(command)
+            result = self.caller(command)
         elif command in Commands.authControl:
             result = self.sendControl(command)
         return result
@@ -73,14 +69,14 @@ class RPC:
         if PID != "": PID = int(PID)
         else: PID = False
         return PID
+
+    def getLocalIP(self):
+        IP = subprocess.run(["hostname", "I"], capture_output = True).stdout.decode()
+        return str(IP)
     
     def caller(self, command):
         call = subprocess.run([self.base, command], capture_output = True)
         return call.stdout.decode()
-         
-    def sendCall(self, command):
-        call = self.caller(command)
-        return call
         
     def sendControl(self, command):
         if command == 'uptime':

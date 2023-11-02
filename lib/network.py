@@ -15,13 +15,14 @@ class Proto:
         self.remoteSock.send(data)
     
     def receiver(self):
-        dataLenght = self.remoteSock.recv(4).decode()
-        if dataLenght != "":
-            dataLenght = int(dataLenght, 16)
+        dataLenght = self.remoteSock.recv(4)
+        if dataLenght != b"":
+            dataLenght = int(dataLenght.hex(), 16)
             data = self.remoteSock.recv(dataLenght).decode()
             return data
         else:
             self.remoteSock.close()
+            self.remoteSock = False
 
 
 class Client(Proto):
