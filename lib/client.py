@@ -15,8 +15,8 @@ def main():
             command = input("cmd >> ")
             print()
 
-            remoteConn.sendCommand(command)
-            result = json.loads(remoteConn.receiveReply())
+            remoteConn.sender(command)
+            result = json.loads(remoteConn.receiver())
             for key, value in result.items():
                 print(f"{key}: {value}")
 

@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
     def handleConnection(self):
         if self.CLIENT.remoteSock:
             #self.CLIENT.remoteHost = self.lnHost.text()
-            self.CLIENT.sendMessage("closeconn")
+            self.CLIENT.sender("closeconn")
             self.CLIENT.disconnectServer()
             self.connector.lnHost.setReadOnly(False)
             self.connector.lnHost.setEnabled(True)
@@ -182,9 +182,9 @@ class MainWindow(QMainWindow):
 
     def sendCommand(self):
         command = self.commander.lnCommand.text()
-        self.CLIENT.sendMessage(command)
+        self.CLIENT.sender(command)
         self.rLabel.append(f"Sent command: {command}")
-        result = json.loads(self.CLIENT.receiveReply())
+        result = json.loads(self.CLIENT.receiver())
         self.rLabel.append("Reply from server: ")
         for key, value in result.items():
             self.rLabel.append(f"{str(key)}: {str(value)}")

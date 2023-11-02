@@ -28,6 +28,8 @@ class DaemonData:
         self.netOUT = None
 
     def update(self, jsonData):
+        print("data received: ")
+        [print(f"{key} : {value}") for key, value in jsonData.items()]
         for key, value in jsonData.items():
             if key == 'uptime':
                 self.uptime = int(value)
@@ -51,7 +53,7 @@ class DaemonData:
         message['blocks'] = self.blocks
         message['header'] = self.headers
         message['netIn'] = self.netIN
-        message['netOut'] = self.netOut
+        message['netOut'] = self.netOUT
         return json.dumps(message)
 
 class RPC:
@@ -67,6 +69,7 @@ class RPC:
 
     def checkDaemon(self):
         PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
+        print(PID)
         if PID != "": PID = int(PID)
         else: PID = False
         return PID

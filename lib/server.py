@@ -3,24 +3,26 @@ import lib.network
 import lib.storage
 import lib.protocol
 
-class DUpdater(threading):
+class DUpdater():
     def __init__(self, rpcCaller, bitcoinData):
         self.isRunning = False
         self.restTime = 60 * 2 #seconds
         self.rpcCaller = rpcCaller
         self.bitcoinData = bitcoinData
-        self.thread = Thread(target = self.start)
+        self.thread = threading.Thread(target = self.updater_loop)
 
     def start(self):
         if not self.isRunning:
-            self.thread.run()
+            self.thread.start()
 
     def stop(self):
         if self.isRunning:
             self.isRunning = False
-    
+            self.thread.join()
+
     def updater_loop(self):
         self.isRunning = True
+        print("autoupdater loop started")
         while self.isRunning:
             self.sendUpdateCall() #update all bitcoin data field
             time.sleep(self.restTime) #rest for minutes
@@ -53,18 +55,19 @@ def main():
     netSettings = lib.network.Settings()
     bitcoinData = lib.protocol.DaemonData()
     rpcCaller = lib.protocol.RPC()
-    autoUpdater = DUpdater()
+    autoUpdater = DUpdater(rpcCaller, bitcoinData)
     #init server settings
     server = lib.network.Server(netSettings)
     #check bitcoind running
     bitcoinData.PID = rpcCaller.checkDaemon()
-
+    print(bitcoinData.PID)
     #if bitcoind is running, server will start the auto updater to gather info
     #if not started yet, will wait for remote bitcoind start
     if bitcoinData.PID: 
         autoUpdater.start()
     
     server.openSocket()
+    print(server.socket)
 
     if server.socket:
         print(time.ctime(time.time()))
@@ -72,13 +75,14 @@ def main():
         try:
             while True:
                 server.receiveClient()
+                print(server.remoteSock)
                 if server.remoteSock:
-                    print("Client connected ")
+                    print("Client connected ", server.remoteSock)
                     setRunning = True
                     while setRunning:
                         #block until command is sent
                         request = server.receiver()
-                        requestValidity = lib.protocol.commands.Commands.check(command)
+                        requestValidity = lib.protocol.Commands.check(request)
                         print("Received command: ", request)
                         if requestValidity:
                             if bitcoinData.PID:

@@ -4,6 +4,9 @@ import socket, threading, select
 from requests import get
 
 class Proto:
+    def __init__(self):
+        self.remoteSock = False
+
     def sender(self, data):
         #data must be already encoded in json
         data = data.encode()
@@ -12,17 +15,19 @@ class Proto:
         self.remoteSock.send(data)
     
     def receiver(self):
-        dataLenght = int(self.remoteSock.recv(4).hex(), 16)
-        data = self.remoteSock(dataLenght).decode()
-        return data
+        dataLenght = self.remoteSock.recv(4).decode()
+        if dataLenght != "":
+            dataLenght = int(dataLenght, 16)
+            data = self.remoteSock.recv(dataLenght).decode()
+            return data
+        else:
+            self.remoteSock.close()
 
 
 class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
         self.remotePort = 4600
-
-        self.remoteSock = False
 
     def connectToServer(self):
         try:
@@ -39,12 +44,12 @@ class Client(Proto):
 
 class Settings:
     def __init__(self, host = False, port = False):
-        self.host = str(host) if host else socket.gethostbyname(socket.gethostname()) #"192.168.1.238"
+        self.host = str(host) if host else "192.168.1.238" #socket.gethostbyname(socket.gethostname()) #"192.168.1.238"
         self.port = int(port) if port else 4600
 
         self.externalIP = False
 
-        self.socketTimeout = 3
+        self.socketTimeout = 30
         self.backlog = 5
         self.maxSockets = 1
 
@@ -52,10 +57,7 @@ class Settings:
 class Server(Proto):
     def __init__(self, settings):
         self.settings = settings
-
         self.socket = False
-
-        self.remoteSock = False
 
     def openSocket(self):
         try:
