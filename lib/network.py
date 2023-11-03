@@ -23,6 +23,7 @@ class Proto:
         else:
             self.remoteSock.close()
             self.remoteSock = False
+            return {"error": "data not received. Socket closed"}
 
 
 class Client(Proto):

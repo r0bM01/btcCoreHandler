@@ -22,7 +22,7 @@ class DUpdater():
 
     def updater_loop(self):
         self.isRunning = True
-        print("autoupdater loop started")
+        lib.storage.Logger.add("autoupdater loop started")
         while self.isRunning:
             self.sendUpdateCall() #update all bitcoin data field
             time.sleep(self.restTime) #rest for minutes
@@ -47,12 +47,15 @@ class DUpdater():
 class Server:
     def __init__(self):
         #init procedure
-        #self.storage = lib.storage.Data()
+        self.storage = lib.storage.Data()
+        self.storage.init_logs()
+        lib.storage.Logger.FILE = self.storage.fileLogs
+
         self.rpcCaller = lib.protocol.RPC()
         self.bitcoinData = lib.protocol.DaemonData()
 
         self.bitcoinData.PID = self.rpcCaller.checkDaemon()
-        self.autoUpdater = DUpdater(rpcCaller, bitcoinData)
+        self.autoUpdater = DUpdater(self.rpcCaller, self.bitcoinData)
         #init server settings
         self.netSettings = lib.network.Settings(host = self.rpcCaller.getLocalIP())
         self.network = lib.network.Server(netSettings)
@@ -63,14 +66,17 @@ class Server:
     def check_network(self):
         self.network.openSocket()
         self.isOnline = bool(self.network.socket)
+        lib.storage.Logger.add("socket online: ", bool(self.network.socket))
 
     def start_serving(self):
         self.isServing = True
         while self.isServing:
+            lib.storage.Logger.add("serving loop entered")
             self.network.receiveClient()
-            print(self.network.remoteSock)
+            lib.storage.Logger.add("connected by", self.network.remoteSock)
             while bool(self.network.remoteSock):
                 request = self.network.receiver()
+                lib.storage.Logger.add("request: ", request)
                 if lib.protocol.Commands.check(request):
                     if request == "closeconn":
                         self.network.sender({"message": "connection closed"})
@@ -81,6 +87,7 @@ class Server:
                 else:
                     reply = json.dumps({"error": "request not valid"})
                 self.network.sender(reply)
+                lib.storage.Logger.add("reply sent: ", reply)
 
     def handle_request(self, request):
         if not bool(self.bitcoinData.PID) and request == "start":
@@ -108,15 +115,11 @@ class Server:
         
         return reply
         
-        
-
-
-
-
 
 def main():
 
     SERVER = Server()
+    lib.storage.Logger.add("server init")
 
     SERVER.check_network()
 
@@ -124,9 +127,9 @@ def main():
         try:
             SERVER.start_serving()
         except KeyboardInterrupt:
-            print("Server stopped")
+            lib.storage.Logger.add("Server stopped")
     else:
-        print("Server socket not working")
+        lib.storage.Logger.add("Server socket not working")
 
 
 

@@ -1,6 +1,6 @@
 
 import subprocess, json, time
-
+from lib.storage import Logger
 
 class Commands:
     authCall = {'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
