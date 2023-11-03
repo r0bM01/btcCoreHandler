@@ -1,4 +1,5 @@
 import lib.network
+import lib.crypto
 import json
 
 
@@ -13,7 +14,8 @@ def main():
 
         while True:
             command = input("cmd >> ")
-            print()
+            command = lib.crypto.getHashedCommand(command, "fega")
+            print(command)
 
             remoteConn.sender(command)
             result = json.loads(remoteConn.receiver())

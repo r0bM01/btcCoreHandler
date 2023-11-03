@@ -51,6 +51,8 @@ class Server:
         self.storage.init_files()
         lib.storage.Logger.FILE = self.storage.fileLogs
 
+        self.calls = lib.protocol.Commands.encodeCalls("fega")
+
         self.rpcCaller = lib.protocol.RPC()
         self.bitcoinData = lib.protocol.DaemonData()
 
@@ -70,12 +72,13 @@ class Server:
 
     def start_serving(self):
         self.isServing = True
+        lib.storage.Logger.add("serving loop entered")
         while self.isServing:
-            lib.storage.Logger.add("serving loop entered")
             self.network.receiveClient()
             lib.storage.Logger.add("connected by", self.network.remoteSock)
             while bool(self.network.remoteSock):
-                request = self.network.receiver()
+                encodedCall = self.network.receiver()
+                request = self.calls[encodedCall]
                 lib.storage.Logger.add("request: ", request)
                 if lib.protocol.Commands.check(request):
                     if request == "closeconn":
@@ -88,6 +91,7 @@ class Server:
                     reply = json.dumps({"error": "request not valid"})
                 self.network.sender(reply)
                 lib.storage.Logger.add("reply sent: ", reply)
+        lib.storage.Logger.add("serving loop exit")
 
     def handle_request(self, request):
         if not bool(self.bitcoinData.PID) and request == "start":

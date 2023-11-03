@@ -1,15 +1,18 @@
 
 import subprocess, json, time
+import lib.crypto
 from lib.storage import Logger
 
 class Commands:
-    authCall = {'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
-    authControl = {'uptime', 'start', 'stop'}
-    authHandler = {'updateall', 'closeconn'}
+    calls = {'uptime', 'start', 'stop', 'updateall', 'closeconn', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
+
+    @staticmethod
+    def encodeCalls(hexCertificate):
+        return {lib.crypto.getHashedCommand(call, hexCertificate) : call for call in Commands.calls}
 
     @staticmethod
     def check(command):
-        return command in Commands.authCall or command in Commands.authControl
+        return command in Commands.calls
     
 
 class DaemonData:
