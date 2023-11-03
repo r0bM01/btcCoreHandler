@@ -4,16 +4,22 @@ import os, pathlib, time
 import lib.settings
 import lib.crypto
 
+def getTime():
+    return int(time.time())
+
 class Data:
     def __init__(self):
         self.fileCert = lib.settings.BASE_DIR.joinpath("cert.rob")
-        self.fileLogs = lib.settings.BASE_DIR.joinpath(f"debug_{time.time()}.log")
+        self.fileLogs = lib.settings.BASE_DIR.joinpath(f"debug_{getTime()}.log")
 
         self.certificate = False
     
-    def init_logs(self):
-        with open(self.fileLogs, "w") as F:
-            F.write()
+    def init_files(self):
+        if not os.path.exists(lib.settings.BASE_DIR): os.mkdir(lib.settings.BASE_DIR)
+        F = open(self.fileCert, "wb")
+        F.close()
+        F = open(self.fileLogs, "w")
+        F.close()
     
     def create_certificate(self):
         with open(self.fileCert, "wb") as F:
@@ -41,8 +47,8 @@ class Logger:
     @staticmethod
     def add(message, *args):
         arguments = str([a for a in args])
-        log = str(f"{time.time()} - {message} : {arguments}")
+        log = str(f"{getTime()} - {message}: {arguments}")
         Logger.SESSION.append(log)
-        with open(FILE, "w") as F:
+        with open(Logger.FILE, "a") as F:
             F.write(log + "\n")
         print(log)

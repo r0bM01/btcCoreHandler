@@ -48,7 +48,7 @@ class Server:
     def __init__(self):
         #init procedure
         self.storage = lib.storage.Data()
-        self.storage.init_logs()
+        self.storage.init_files()
         lib.storage.Logger.FILE = self.storage.fileLogs
 
         self.rpcCaller = lib.protocol.RPC()
@@ -92,7 +92,7 @@ class Server:
     def handle_request(self, request):
         if not bool(self.bitcoinData.PID) and request == "start":
             #starts the daemon if not running
-            reply = self.rpcCaller.sendCall(request)
+            reply = self.rpcCaller.runCall(request)
             self.bitcoinData.PID = self.rpcCaller.checkDaemon()
             if bool(self.bitcoinData.PID): self.autoUpdater.start()
 
@@ -103,7 +103,7 @@ class Server:
             reply = json.dumps({"error": "bitcoin daemon already running"})
 
         elif bool(self.bitcoinData.PID) and request == "stop":
-            reply = self.rpcCaller.sendCall(request)
+            reply = self.rpcCaller.runCall(request)
             self.bitcoinData.PID = self.rpcCaller.checkDaemon()
             self.autoUpdater.stop()
 
@@ -111,7 +111,7 @@ class Server:
             reply = self.bitcoinData.getAllData()
 
         else:
-            reply = self.rpcCaller.sendCall(request)
+            reply = self.rpcCaller.runCall(request)
         
         return reply
         
