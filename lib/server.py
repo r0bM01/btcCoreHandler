@@ -51,7 +51,7 @@ class Server:
         self.storage.init_files()
         lib.storage.Logger.FILE = self.storage.fileLogs
 
-        self.calls = lib.protocol.Commands.encodeCalls("fega")
+        self.calls = lib.protocol.Commands.encodeCalls("fefa")
 
         self.rpcCaller = lib.protocol.RPC()
         self.bitcoinData = lib.protocol.DaemonData()

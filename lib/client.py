@@ -14,7 +14,7 @@ def main():
 
         while True:
             command = input("cmd >> ")
-            command = lib.crypto.getHashedCommand(command, "fega")
+            command = lib.crypto.getHashedCommand(command, "fefa")
             print(command)
 
             remoteConn.sender(command)

@@ -59,13 +59,6 @@ class RPC:
     def __init__(self):
         self.base = "bitcoin-cli"
     
-    def runCall(self, command):
-        if command in Commands.authCall:
-            result = self.caller(command)
-        elif command in Commands.authControl:
-            result = self.sendControl(command)
-        return result
-
     def checkDaemon(self):
         PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
         print(PID)
@@ -81,7 +74,7 @@ class RPC:
         call = subprocess.run([self.base, command], capture_output = True)
         return call.stdout.decode()
         
-    def sendControl(self, command):
+    def runCall(self, command):
         if command == 'uptime':
             call = self.caller(command)
             call = {"uptime": call}
@@ -91,6 +84,8 @@ class RPC:
         elif command == 'start':
             subprocess.run(["bitcoind"])
             call = {"start": bool(self.checkDaemon())}
+        else:
+            call = self.caller(command)
         result = json.dumps(call)
         return result
 
