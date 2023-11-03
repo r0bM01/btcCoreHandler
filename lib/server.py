@@ -58,7 +58,7 @@ class Server:
         self.autoUpdater = DUpdater(self.rpcCaller, self.bitcoinData)
         #init server settings
         self.netSettings = lib.network.Settings(host = self.rpcCaller.getLocalIP())
-        self.network = lib.network.Server(netSettings)
+        self.network = lib.network.Server(self.netSettings)
         
         self.isServing = False
         self.isOnline = False
