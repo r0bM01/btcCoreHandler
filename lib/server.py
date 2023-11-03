@@ -70,6 +70,7 @@ class Server:
         self.isOnline = bool(self.network.socket)
         lib.storage.Logger.add("socket online: ", bool(self.network.socket))
 
+
     def start_serving(self):
         self.isServing = True
         lib.storage.Logger.add("serving loop entered")
@@ -77,10 +78,15 @@ class Server:
             self.network.receiveClient()
             lib.storage.Logger.add("connected by", self.network.remoteSock)
             while bool(self.network.remoteSock):
-                encodedCall = self.network.receiver()
-                request = self.calls[encodedCall]
-                lib.storage.Logger.add("request: ", request)
-                if lib.protocol.Commands.check(request):
+
+                encodedCall = self.check_request(self.network.receiver())
+                lib.storage.Logger.add("call: ", encodedCall)
+
+                if encodedCall in self.calls:
+
+                    request = self.calls[encodedCall]
+                    lib.storage.Logger.add("request: ", request)
+
                     if request == "closeconn":
                         self.network.sender({"message": "connection closed"})
                         self.network.remoteSock.close()
@@ -89,6 +95,7 @@ class Server:
                         reply = self.handle_request(request)
                 else:
                     reply = json.dumps({"error": "request not valid"})
+                    
                 self.network.sender(reply)
                 lib.storage.Logger.add("reply sent: ", reply)
         lib.storage.Logger.add("serving loop exit")
