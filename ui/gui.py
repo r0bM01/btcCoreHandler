@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         print("diocane")
 
     def handleConnection(self):
-        if self.CLIENT.remoteSock:
+        if self.CLIENT.isConnected:
             #self.CLIENT.remoteHost = self.lnHost.text()
             self.CLIENT.sender("closeconn")
             self.CLIENT.disconnectServer()

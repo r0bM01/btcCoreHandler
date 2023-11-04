@@ -14,14 +14,17 @@ def main():
 
         while True:
             command = input("cmd >> ")
-            command = lib.crypto.getHashedCommand(command, "fefa")
+            hashed = lib.crypto.getHashedCommand(command, "fefa")
             print(command)
 
-            remoteConn.sender(command)
+            remoteConn.sender(hashed)
+            if command == "closeconn": 
+                break
             result = json.loads(remoteConn.receiver())
+    
             for key, value in result.items():
                 print(f"{key}: {value}")
 
     except KeyboardInterrupt:
-        remoteConn.sendCommand("closeconn")
+        remoteConn.sender("closeconn")
         print("closing")

@@ -4,7 +4,7 @@ import lib.crypto
 from lib.storage import Logger
 
 class Commands:
-    calls = {'uptime', 'start', 'stop', 'updateall', 'closeconn', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
+    calls = {'uptime', 'start', 'stop', 'closeconn', 'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
 
     @staticmethod
     def encodeCalls(hexCertificate):
@@ -47,13 +47,16 @@ class DaemonData:
 
     def getAllData(self):
         message = {}
-        message['startData'] = self.startDate
-        message['uptime'] = self.uptime
-        message['blockchainInfo'] = self.blockchainInfo
-        message['networkInfo'] = self.networkInfo
-        message['mempoolInfo'] = self.mempoolInfo
-        message['miningInfo'] = self.miningInfo
-        return json.dumps(message)
+        #message['startData'] = self.startDate
+        #message['uptime'] = self.uptime['uptime']
+        message['chain'] = self.blockchainInfo['chain']
+        message['headers'] = self.blockchainInfo['headers']
+        message['version'] = self.networkInfo['version']
+        message['agent'] = self.networkInfo['subversion']
+        message['connections'] = self.networkInfo['connections']
+        message['transactions'] = self.mempoolInfo['size']
+        reply = json.dumps(message)
+        return reply
 
 class RPC:
     def __init__(self):
@@ -77,17 +80,16 @@ class RPC:
     def runCall(self, command):
         if command == 'uptime':
             call = self.caller(command)
-            call = {"uptime": call}
+            call = json.dumps({"uptime": call})
         elif command == 'stop':
             subprocess.run([self.base, "stop"])
-            call = {"stop": bool(self.checkDaemon())}
+            call = json.dumps({"stop": bool(self.checkDaemon())})
         elif command == 'start':
             subprocess.run(["bitcoind"])
-            call = {"start": bool(self.checkDaemon())}
+            call = json.dumps({"start": bool(self.checkDaemon())})
         else:
             call = self.caller(command)
-        result = json.dumps(call)
-        return result
+        return call
 
     
 

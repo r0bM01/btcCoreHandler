@@ -19,6 +19,7 @@ class DUpdater():
         if self.isRunning:
             self.isRunning = False
             self.thread.join()
+            lib.storage.Logger.add("autoupdater loop stopped")
 
     def updater_loop(self):
         self.isRunning = True
@@ -28,20 +29,19 @@ class DUpdater():
             time.sleep(self.restTime) #rest for minutes
     
     def sendUpdateCall(self):
-        uptime = self.rpcCaller.sendControl("uptime")
-        uptime = json.loads(uptime)
-        self.bitcoinData.update(uptime)
+        uptime = self.rpcCaller.runCall("uptime")
+        self.bitcoinData.uptime = uptime
 
-        blockchainInfo = self.rpcCaller.sendCall("getblockchaininfo")
+        blockchainInfo = self.rpcCaller.runCall("getblockchaininfo")
         self.bitcoinData.blockchainInfo = json.loads(blockchainInfo)
         
-        networkInfo = self.rpcCaller.sendCall("getnetworkinfo")
+        networkInfo = self.rpcCaller.runCall("getnetworkinfo")
         self.bitcoinData.networkInfo = json.loads(networkInfo)
 
-        mempoolInfo = self.rpcCaller.sendCall("getmempoolinfo")
+        mempoolInfo = self.rpcCaller.runCall("getmempoolinfo")
         self.bitcoinData.mempoolInfo = json.loads(mempoolInfo)
         
-        miningInfo = self.rpcCaller.sendCall("getmininginfo")
+        miningInfo = self.rpcCaller.runCall("getmininginfo")
         self.bitcoinData.miningInfo = json.loads(miningInfo)
         
 class Server:
@@ -79,7 +79,7 @@ class Server:
             lib.storage.Logger.add("connected by", self.network.remoteSock)
             while bool(self.network.remoteSock):
 
-                encodedCall = self.check_request(self.network.receiver())
+                encodedCall = self.network.receiver()
                 lib.storage.Logger.add("call: ", encodedCall)
 
                 if encodedCall in self.calls:
@@ -88,16 +88,19 @@ class Server:
                     lib.storage.Logger.add("request: ", request)
 
                     if request == "closeconn":
-                        self.network.sender({"message": "connection closed"})
+                        lib.storage.Logger.add("connection closed")
                         self.network.remoteSock.close()
                         self.network.remoteSock = False
+                        reply = False
                     else:
                         reply = self.handle_request(request)
                 else:
                     reply = json.dumps({"error": "request not valid"})
-                    
-                self.network.sender(reply)
-                lib.storage.Logger.add("reply sent: ", reply)
+                
+                if bool(reply):
+                    lib.storage.Logger.add("reply sent: ", reply)
+                    self.network.sender(reply)
+                
         lib.storage.Logger.add("serving loop exit")
 
     def handle_request(self, request):
@@ -118,7 +121,7 @@ class Server:
             self.bitcoinData.PID = self.rpcCaller.checkDaemon()
             self.autoUpdater.stop()
 
-        elif bool(self.bitcoinData.PID) and request == "updateall":
+        elif bool(self.bitcoinData.PID) and request == "getallinfo":
             reply = self.bitcoinData.getAllData()
 
         else:
@@ -136,8 +139,11 @@ def main():
 
     if SERVER.isOnline:
         try:
+            SERVER.autoUpdater.start()
             SERVER.start_serving()
         except KeyboardInterrupt:
+            SERVER.autoUpdater.stop()
+            SERVER.isServing = False
             lib.storage.Logger.add("Server stopped")
     else:
         lib.storage.Logger.add("Server socket not working")

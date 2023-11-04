@@ -30,18 +30,21 @@ class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
         self.remotePort = 4600
+        self.isConnected = False
 
     def connectToServer(self):
         try:
             self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort))
             self.remoteSock.settimeout(10)
-
+            self.isConnected = True
         except OSError:
+            self.isConnected = False
             self.remoteSock = False
 
     def disconnectServer(self):
         self.remoteSock.close()
         self.remoteSock = False
+        self.isConnected = False
 
 
 class Settings:
