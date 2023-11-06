@@ -7,8 +7,8 @@ class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
 
     @staticmethod
-    def encodeCalls(hexCertificate):
-        return {lib.crypto.getHashedCommand(call, hexCertificate) : call for call in Commands.calls}
+    def encodeCalls(hexCertificate, handshakeCode):
+        return {lib.crypto.getHashedCommand(call, hexCertificate, handshakeCode) : call for call in Commands.calls}
 
     @staticmethod
     def check(command):

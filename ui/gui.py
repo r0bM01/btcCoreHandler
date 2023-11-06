@@ -3,7 +3,7 @@
 import sys, time, random, json
 from PySide2.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout,
-                            QAction, QHBoxLayout, QGroupBox, QTextEdit )
+                            QAction, QHBoxLayout, QGroupBox, QTextEdit, QFrame )
 from PySide2.QtCore import Qt
 import lib.network
 
@@ -14,8 +14,10 @@ class ConnectForm(QWidget):
 
         self.lbHost = QLabel()
         self.lbHost.setText("Host: ")
+        self.lbHost.setFrameStyle(QFrame.StyledPanel | QFrame.Plain)
         self.lnHost = QLineEdit()
         self.lnHost.setText("192.168.1.238")
+        
 
         self.btClear = QPushButton()
         self.btClear.setText("Clear")

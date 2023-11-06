@@ -6,7 +6,7 @@ import lib.protocol
 class DUpdater():
     def __init__(self, rpcCaller, bitcoinData):
         self.isRunning = False
-        self.restTime = 60 * 2 #seconds
+        self.restTime = 30 #seconds
         self.rpcCaller = rpcCaller
         self.bitcoinData = bitcoinData
         self.thread = threading.Thread(target = self.updater_loop)
@@ -51,12 +51,14 @@ class Server:
         self.storage.init_files()
         lib.storage.Logger.FILE = self.storage.fileLogs
 
-        self.calls = lib.protocol.Commands.encodeCalls("fefa")
+        self.calls = None #lib.protocol.Commands.encodeCalls("fefa")
 
         self.rpcCaller = lib.protocol.RPC()
         self.bitcoinData = lib.protocol.DaemonData()
 
         self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+        lib.storage.Logger.add("bitcoind running", bool(self.bitcoinData.PID))
+
         self.autoUpdater = DUpdater(self.rpcCaller, self.bitcoinData)
         #init server settings
         self.netSettings = lib.network.Settings(host = self.rpcCaller.getLocalIP())
@@ -69,14 +71,21 @@ class Server:
         self.network.openSocket()
         self.isOnline = bool(self.network.socket)
         lib.storage.Logger.add("socket online: ", bool(self.network.socket))
-
+        lib.storage.Logger.add("bind to IP", self.network.settings.host)
 
     def start_serving(self):
         self.isServing = True
         lib.storage.Logger.add("serving loop entered")
         while self.isServing:
-            self.network.receiveClient()
-            lib.storage.Logger.add("connected by", self.network.remoteSock)
+            handshakeCode = lib.crypto.getRandomBytes(16)
+            lib.storage.Logger.add("handshake code generated", handshakeCode.hex())
+
+            self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex())
+
+            self.network.receiveClient(handshakeCode.hex())
+            if bool(self.network.remoteSock): lib.storage.Logger.add("connected by", self.network.remoteSock)
+            else: lib.storage.Logger.add("no incoming connection detected")
+
             while bool(self.network.remoteSock):
 
                 encodedCall = self.network.receiver()

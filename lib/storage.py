@@ -46,8 +46,11 @@ class Logger:
 
     @staticmethod
     def add(message, *args):
-        arguments = str([a for a in args])
-        log = str(f"{getTime()} - {message}: {arguments}")
+        
+        log = str(f"{time.ctime(getTime())} - {message}")
+        if args:
+            arguments = str([a for a in args])
+            log += str(f": {arguments}")
         Logger.SESSION.append(log)
         with open(Logger.FILE, "a") as F:
             F.write(log + "\n")
