@@ -30,13 +30,14 @@ class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
         self.remotePort = 4600
+        self.timeout = 4
         self.isConnected = False
         self.handshakeCode = False
 
     def connectToServer(self):
         try:
-            self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort))
-            self.remoteSock.settimeout(10)
+            self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
+            #self.remoteSock.settimeout(10)
             self.handshakeCode = self.receiver()
             self.isConnected = True
         except (OSError, TimeoutError):
@@ -58,6 +59,7 @@ class Settings:
         self.externalIP = False
 
         self.socketTimeout = 30
+        self.remoteSockTimeout = 30
         self.backlog = 1
         self.maxSockets = 1
 
@@ -77,6 +79,7 @@ class Server(Proto):
 
     def receiveClient(self, handshakeCode):
         try:
+            self.remoteSock.settimeout(self.remoteSockTimeout)
             self.remoteSock, addr = self.socket.accept()
             self.sender(handshakeCode)
         except OSError:

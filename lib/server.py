@@ -9,7 +9,7 @@ class DUpdater():
         self.restTime = 30 #seconds
         self.rpcCaller = rpcCaller
         self.bitcoinData = bitcoinData
-        self.thread = threading.Thread(target = self.updater_loop)
+        self.thread = threading.Thread(target = self.updater_loop, daemon = True)
 
     def start(self):
         if not self.isRunning:
@@ -30,7 +30,7 @@ class DUpdater():
     
     def sendUpdateCall(self):
         uptime = self.rpcCaller.runCall("uptime")
-        self.bitcoinData.uptime = uptime
+        self.bitcoinData.uptime = json.loads(uptime)
 
         blockchainInfo = self.rpcCaller.runCall("getblockchaininfo")
         self.bitcoinData.blockchainInfo = json.loads(blockchainInfo)
@@ -70,7 +70,7 @@ class Server:
     def check_network(self):
         self.network.openSocket()
         self.isOnline = bool(self.network.socket)
-        lib.storage.Logger.add("socket online: ", bool(self.network.socket))
+        lib.storage.Logger.add("socket online", bool(self.network.socket))
         lib.storage.Logger.add("bind to IP", self.network.settings.host)
 
     def start_serving(self):
@@ -95,21 +95,19 @@ class Server:
 
                     request = self.calls[encodedCall]
                     lib.storage.Logger.add("request: ", request)
-
-                    if request == "closeconn":
-                        lib.storage.Logger.add("connection closed")
-                        self.network.remoteSock.close()
-                        self.network.remoteSock = False
-                        reply = False
-                    else:
-                        reply = self.handle_request(request)
+                    if request != "closeconn": reply = self.handle_request(request)
+                    else: reply = False
+                        
                 else:
                     reply = json.dumps({"error": "request not valid"})
-                
-                if bool(reply):
-                    lib.storage.Logger.add("reply sent: ", reply)
+                ######################################################
+                if bool(reply) and bool(self.network.remoteSock):
+                    lib.storage.Logger.add("reply sent", reply)
                     self.network.sender(reply)
-                
+                else:
+                    lib.storage.Logger.add("remote socket active", self.network.remoteSock)
+                    lib.storage.Logger.add("connection closed")
+
         lib.storage.Logger.add("serving loop exit")
 
     def handle_request(self, request):
@@ -142,7 +140,6 @@ class Server:
 def main():
 
     SERVER = Server()
-    lib.storage.Logger.add("server init")
 
     SERVER.check_network()
 

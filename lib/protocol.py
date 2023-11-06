@@ -4,7 +4,8 @@ import lib.crypto
 from lib.storage import Logger
 
 class Commands:
-    calls = {'uptime', 'start', 'stop', 'closeconn', 'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
+    calls = {'uptime', 'start', 'stop', 'closeconn', 
+             'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
 
     @staticmethod
     def encodeCalls(hexCertificate, handshakeCode):
@@ -19,36 +20,16 @@ class DaemonData:
     def __init__(self):
         self.PID = None
 
-        self.startDate = None
         self.uptime = None
-
         self.blockchainInfo = None
         self.networkInfo = None
         self.mempoolInfo = None
         self.miningInfo = None
 
-    def update(self, jsonData):
-        print("data received: ")
-        [print(f"{key} : {value}") for key, value in jsonData.items()]
-        for key, value in jsonData.items():
-            if key == 'uptime':
-                self.uptime = int(value)
-                self.startTime = int(time.time() - self.uptime)
-            elif key == 'chain':
-                self.chain = str(value)
-            elif key == 'blocks':
-                self.blocks == int(value)
-            elif key == 'headers':
-                self.header = int(value)
-            elif key == 'connections_in':
-                self.netIN = int(value)
-            elif key == 'connections_out':
-                self.netOUT = int(value)
-
     def getAllData(self):
         message = {}
         #message['startData'] = self.startDate
-        #message['uptime'] = self.uptime['uptime']
+        message['uptime'] = self.uptime['uptime']
         message['chain'] = self.blockchainInfo['chain']
         message['headers'] = self.blockchainInfo['headers']
         message['version'] = self.networkInfo['version']
