@@ -4,25 +4,27 @@
 
 
 import sys, time, random, json
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout,
-                            QAction, QHBoxLayout, QGroupBox, QTextEdit )
+                            QHBoxLayout, QGroupBox, QTextEdit )
 
 #import lib.network
 
 
 ALL_CSS = """
-            QPushButton {
-                border-radius: 4px;
-                background-color: #bdc3c7;
-                font-weight: 500;
-                width: 40px;
-                height: 40px;
-            }
-            QPushButto:hover {
-                background-color: #a9b0b6;
-            }
+QPushButton {
+    /*border-radius: 4px;*/
+    /*border: 1px solid white;*/
+    /*background-color: #3396ff;*/
+    font: bold 18px;
+    height: 50px;
+}
+/*
+QPushButton:hover {
+    background-color: #33acff;
+}*/
+
 """
 
 class LeftMenu(QWidget):
@@ -60,6 +62,7 @@ class LeftMenu(QWidget):
         self.layout.addStretch(1)
         self.layout.addWidget(self.labelVersion)
         #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")
+        self.setProperty("class", ["left-menu"])
 
 
 class Status(QWidget):
@@ -72,6 +75,8 @@ class Status(QWidget):
 
         self.layout.addWidget(self.GROUP)
 
+        self.setProperty("class", ["status"])
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -83,8 +88,8 @@ class MainWindow(QMainWindow):
         self.left_Menu = LeftMenu()
         self.status_Page = Status()
 
-        self.mainLayout.addLayout(self.left_Menu.layout)
-        self.mainLayout.addLayout(self.status_Page.layout)
+        self.mainLayout.addLayout(self.left_Menu.layout, 1)
+        self.mainLayout.addLayout(self.status_Page.layout, 3)
 
 
         container = QWidget()
