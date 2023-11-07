@@ -102,8 +102,9 @@ class Server:
                     reply = json.dumps({"error": "request not valid"})
                 ######################################################
                 if bool(reply) and bool(self.network.remoteSock):
-                    lib.storage.Logger.add("reply sent", reply)
-                    self.network.sender(reply)
+                    lib.storage.Logger.add("reply content", reply)
+                    replySent = self.network.sender(reply) #returns True or False
+                    lib.storage.Logger.add("reply sent", replySent)
                 else:
                     lib.storage.Logger.add("remote socket active", self.network.remoteSock)
                     lib.storage.Logger.add("connection closed")

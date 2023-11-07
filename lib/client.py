@@ -30,7 +30,6 @@ class AllNetworkInfo:
         self.peerInfo = False
     
 
-
 class Client:
     def __init__(self):
 
@@ -65,26 +64,31 @@ class Client:
                 self.getAllNetworkInfo()
                 time.sleep(5)
 
-
     def getAllInfo(self):
         if self.network.isConnected:
             self.network.sender(self.calls['getallinfo'])
-            result = json.loads(self.network.receiver())
-            if "error" not in result: 
-                self.statusPage.update(result)
+            reply = self.network.receiver()
+            if bool(reply):
+                result = json.loads(reply)
+                if "error" not in result: 
+                    self.statusPage.update(result)
     
     def getAllNetworkInfo(self):
         if self.network.isConnected:
             self.network.sender(self.calls['getnetworkinfo'])
-            net = json.loads(self.network.receiver())
-            print(net)
-            if "error" not in net: self.networkPage.netInfo = net
-            """
+            reply = self.network.receiver()
+            if bool(reply):
+                net = json.loads(reply)
+                print(net)
+                if "error" not in net: 
+                    self.networkPage.netInfo = net
+                    """
             self.network.sender(self.calls['getpeerinfo'])
             peers = json.loads(self.network.receiver())
             print(peers)
-            if "error" not in peers: self.networkPage.peerInfo = peers
-            """
+            if "error" not in peers: 
+                self.networkPage.peerInfo = peers
+                    """
 
 
 

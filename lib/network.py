@@ -6,24 +6,47 @@ from requests import get
 class Proto:
     def __init__(self):
         self.remoteSock = False
+    #################################################
+    def sockSend(self, msg):
+        try:
+            msgSent = self.remoteSock.send(msg)
+        except (OSError, TimeoutError):
+            msgSent = 0
+        return True if msgSent == len(msg) else False
+    
+    def sockRecv(self, size):
+        try:
+            msg = self.remoteSock.recv(int(size))
+        except (OSError, TimeoutError):
+            msg = 0
+        return msg if msg == int(size) else False
+    #################################################
 
     def sender(self, data):
         #data must be already encoded in json
         data = data.encode()
         dataLenght = hex(len(data))[2:].zfill(8)
-        self.remoteSock.send(bytes.fromhex(dataLenght))
-        self.remoteSock.send(data)
-    
-    def receiver(self):
-        dataLenght = self.remoteSock.recv(4)
-        if dataLenght != b"":
-            dataLenght = int(dataLenght.hex(), 16)
-            data = self.remoteSock.recv(dataLenght).decode()
-            return data
+        dataLenght = bytes.fromhex(dataLenght)
+        if self.sockSend(dataLenght) and self.sockSend(data):
+            return True
         else:
             self.remoteSock.close()
             self.remoteSock = False
             return False
+    
+    def receiver(self):
+        data = False
+        dataLenght = self.sockRecv(4)
+        if dataLenght:
+            dataLenght = int(dataLenght.hex(), 16)
+            data = self.sockRecv(dataLenght)
+        if dataLenght and data:
+            return data.decode()
+        else:
+            self.remoteSock.close()
+            self.remoteSock = False
+            return False
+
 
 
 class Client(Proto):

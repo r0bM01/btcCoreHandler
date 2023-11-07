@@ -5,7 +5,8 @@ from lib.storage import Logger
 
 class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 
-             'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo'}
+             'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 
+             'getmempoolinfo', 'getmininginfo', 'getpeerinfo'}
 
     @staticmethod
     def encodeCalls(hexCertificate, handshakeCode):
@@ -61,7 +62,7 @@ class RPC:
     def runCall(self, command):
         if command == 'uptime':
             call = self.caller(command)
-            call = json.dumps({"uptime": call})
+            call = json.dumps({"uptime": int(call)})
         elif command == 'stop':
             subprocess.run([self.base, "stop"])
             call = json.dumps({"stop": bool(self.checkDaemon())})
