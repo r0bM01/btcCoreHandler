@@ -2,7 +2,7 @@
 
 
 
-
+import lib.client
 import sys, time, random, json
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -71,7 +71,14 @@ class Status(QWidget):
 
         self.layout = QVBoxLayout()
 
-        self.GROUP = QGroupBox("STATUS PORCO")
+        self.GROUP = QGroupBox("SERVER DEBUG")
+
+        debugLayout = QVBoxLayout()
+        self.debugResult = QTextEdit()
+        self.debugResult.setReadOnly(True)
+        debugLayout.addWidget(self.debugResult)
+
+        self.GROUP.setLayout(debugLayout)
 
         self.layout.addWidget(self.GROUP)
 
@@ -95,9 +102,16 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
+
+        self.left_Menu.STATUS.clicked.connect(self.start_updater)
         
+        self.CLIENT = lib.client.Client()
+        self.CLIENT.initConnection()
+        self.status_Page.debugResult.append(f"client connected: {self.CLIENT.network.isConnected}")
+        self.CLIENT.initHashedCalls()
 
-
+    def start_updater(self):
+        self.CLIENT.autoUpdater.start()
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)

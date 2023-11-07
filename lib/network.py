@@ -79,8 +79,8 @@ class Server(Proto):
 
     def receiveClient(self, handshakeCode):
         try:
-            self.remoteSock.settimeout(self.remoteSockTimeout)
             self.remoteSock, addr = self.socket.accept()
+            self.remoteSock.settimeout(self.settings.remoteSockTimeout)
             self.sender(handshakeCode)
         except OSError:
             self.remoteSock = False

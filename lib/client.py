@@ -1,6 +1,6 @@
 import lib.network
 import lib.crypto
-import json
+import json, threading, time
 
 from lib.protocol import Commands
 
@@ -39,12 +39,15 @@ class Client:
 
         self.calls = False
 
+        self.autoUpdater = threading.Thread(target = self.loop_update, daemon = True)
+        self.updaterIsRunning = False
+
         self.statusPage = AllInfo()
         self.networkPage = AllNetworkInfo()
     
     def initHashedCalls(self):
         if self.network.isConnected:
-            self.calls = {call : lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode.hex()) for call in Commands.calls}
+            self.calls = {call : lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in Commands.calls}
         else:
             self.calls = False
 
@@ -52,6 +55,16 @@ class Client:
         self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()
+    
+    def loop_update(self):
+        if self.network.isConnected:
+            self.updaterIsRunning = True
+            while self.updaterIsRunning:
+                self.getAllInfo()
+                time.sleep(2)
+                self.getAllNetworkInfo()
+                time.sleep(5)
+
 
     def getAllInfo(self):
         if self.network.isConnected:
@@ -64,12 +77,14 @@ class Client:
         if self.network.isConnected:
             self.network.sender(self.calls['getnetworkinfo'])
             net = json.loads(self.network.receiver())
+            print(net)
             if "error" not in net: self.networkPage.netInfo = net
-
+            """
             self.network.sender(self.calls['getpeerinfo'])
             peers = json.loads(self.network.receiver())
+            print(peers)
             if "error" not in peers: self.networkPage.peerInfo = peers
-
+            """
 
 
 
