@@ -47,8 +47,6 @@ class Proto:
             self.remoteSock = False
             return False
 
-
-
 class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
@@ -62,7 +60,7 @@ class Client(Proto):
             self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
             #self.remoteSock.settimeout(10)
             self.handshakeCode = self.receiver()
-            self.isConnected = True
+            self.isConnected = True if bool(self.handshakeCode) else False
         except (OSError, TimeoutError):
             self.isConnected = False
             self.remoteSock = False
@@ -98,7 +96,7 @@ class Server(Proto):
             self.socket.settimeout(self.settings.socketTimeout)
         except OSError:
             self.socket = False
-            print("server socket problem")
+
 
     def receiveClient(self, handshakeCode):
         try:
