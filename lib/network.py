@@ -19,7 +19,7 @@ class Proto:
             msg = self.remoteSock.recv(int(size))
         except (OSError, TimeoutError):
             msg = 0
-        return msg if msg == int(size) else False
+        return msg if len(msg) == int(size) else False
     #################################################
 
     def sender(self, data):
@@ -102,6 +102,7 @@ class Server(Proto):
         try:
             self.remoteSock, addr = self.socket.accept()
             self.remoteSock.settimeout(self.settings.remoteSockTimeout)
+            print("hs code: ", handshakeCode)
             self.sender(handshakeCode)
         except OSError:
             self.remoteSock = False
