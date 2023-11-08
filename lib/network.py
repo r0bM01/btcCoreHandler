@@ -18,7 +18,7 @@ class Proto:
         try:
             msg = self.remoteSock.recv(int(size))
         except (OSError, TimeoutError):
-            msg = 0
+            msg = b""
         return msg if len(msg) == int(size) else False
     #################################################
 
@@ -92,7 +92,8 @@ class Server(Proto):
 
     def openSocket(self):
         try:
-            self.socket = socket.create_server((self.settings.host, self.settings.port), backlog = self.settings.backlog, reuse_port = True)
+            self.socket = socket.create_server((self.settings.host, self.settings.port), family = socket.AF_INET,
+                                               backlog = self.settings.backlog, reuse_port = True)
             self.socket.settimeout(self.settings.socketTimeout)
         except OSError:
             self.socket = False
@@ -102,7 +103,6 @@ class Server(Proto):
         try:
             self.remoteSock, addr = self.socket.accept()
             self.remoteSock.settimeout(self.settings.remoteSockTimeout)
-            print("hs code: ", handshakeCode)
             self.sender(handshakeCode)
         except OSError:
             self.remoteSock = False

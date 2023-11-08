@@ -70,7 +70,7 @@ class Server:
     def check_network(self):
         self.network.openSocket()
         self.isOnline = bool(self.network.socket)
-        lib.storage.Logger.add("socket online", bool(self.network.socket))
+        lib.storage.Logger.add("socket online", self.isOnline)
         lib.storage.Logger.add("bind to IP", self.network.settings.host)
 
     def start_serving(self):
