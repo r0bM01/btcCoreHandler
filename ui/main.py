@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
         self.mainLayout.addLayout(self.left_Menu.layout, 1)
         self.mainLayout.addLayout(self.status_Page.layout, 3)
 
+        
 
         container = QWidget()
         container.setLayout(self.mainLayout)
@@ -111,7 +112,12 @@ class MainWindow(QMainWindow):
         self.CLIENT.initHashedCalls()
 
     def start_updater(self):
-        self.CLIENT.autoUpdater.start()
+        if not self.CLIENT.updaterIsRunning:
+            self.CLIENT.autoUpdater.start()
+            self.status_Page.debugResult.append("loop started")
+        else:
+            self.CLIENT.updaterIsRunning = False
+            self.status_Page.debugResult.append("loop stopped")
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)

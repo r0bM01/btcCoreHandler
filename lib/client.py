@@ -79,7 +79,6 @@ class Client:
             reply = self.network.receiver()
             if bool(reply):
                 net = json.loads(reply)
-                print(net)
                 if "error" not in net: 
                     self.networkPage.netInfo = net
                     """
