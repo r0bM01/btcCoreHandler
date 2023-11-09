@@ -27,6 +27,8 @@ class DaemonData:
         self.mempoolInfo = None
         self.miningInfo = None
 
+        self.peersInfo = None
+
     def getAllData(self):
         message = {}
         #message['startData'] = self.startDate

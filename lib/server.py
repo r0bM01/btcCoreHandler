@@ -43,6 +43,8 @@ class DUpdater():
         
         miningInfo = self.rpcCaller.runCall("getmininginfo")
         self.bitcoinData.miningInfo = json.loads(miningInfo)
+
+        
         
 class Server:
     def __init__(self):
