@@ -70,6 +70,27 @@ class LeftMenu(QWidget):
         self.setProperty("class", ["left-menu"])
 
 
+class Advanced(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.lbCommand = QLabel()
+        self.lbCommand.setText("Command: ")
+        self.lnCommand = QLineEdit()
+
+        self.btClear = QPushButton()
+        self.btClear.setText("Clear")
+        self.btCommand = QPushButton()
+        self.btCommand.setText("Send")
+
+        self.btLayout = QHBoxLayout()
+        self.btLayout.addWidget(self.btClear)
+        self.btLayout.addWidget(self.btCommand)
+
+        self.layout = QFormLayout()
+        self.layout.addRow(self.lbCommand, self.lnCommand)
+        self.layout.addRow(self.btLayout)
+
+
 class Status(QWidget):
     def __init__(self):
         super().__init__()
@@ -101,15 +122,15 @@ class MainWindow(QMainWindow):
         self.status_Page = Status()
 
         self.mainLayout.addLayout(self.left_Menu.layout, 1)
-        self.mainLayout.addLayout(self.status_Page.layout, 3)
+        self.mainLayout.addLayout(self.status_Page.GROUP.layout, 3)
 
         
-
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
         self.left_Menu.STATUS.clicked.connect(self.start_updater)
+        self.left_Menu.ADVANCED.clicked.connect(self.openAdvanced)
         
         self.CLIENT = lib.client.Client()
         self.CLIENT.initConnection()
@@ -123,6 +144,11 @@ class MainWindow(QMainWindow):
         else:
             self.CLIENT.updaterIsRunning = False
             self.status_Page.debugResult.append("loop stopped")
+    
+    def openAdvanced(self):
+        self.status_Page.setVisible(False)
+        #self.test = Advanced()
+        #self.mainLayout.addLayout(self.test.layout, 3)
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)
