@@ -4,7 +4,8 @@
 
 import lib.client
 import sys, time, random, json
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt 
+from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout,
                             QHBoxLayout, QGroupBox, QTextEdit )
@@ -18,7 +19,7 @@ QPushButton {
     /*border: 1px solid white;*/
     /*background-color: #3396ff;*/
     font: bold 18px;
-    height: 50px;
+    height: 40px;
 }
 /*
 QPushButton:hover {
@@ -36,7 +37,9 @@ class LeftMenu(QWidget):
         self.layout = QVBoxLayout()
 
         self.labelTitle = QLabel()
-        self.labelTitle.setText("btcCoreHandler")
+        img = QPixmap("ui/assets/bitcoin_64.png")
+        self.labelTitle.setPixmap(img)
+        
         self.labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
 
         self.STATUS = QPushButton()
@@ -47,6 +50,7 @@ class LeftMenu(QWidget):
 
         self.ADVANCED = QPushButton()
         self.ADVANCED.setText("Advanced")
+        self.ADVANCED.setIcon(QIcon("ui/assets/advanced_32.png"))
 
         self.OPTIONS = QPushButton()
         self.OPTIONS.setText("Options")
@@ -55,6 +59,7 @@ class LeftMenu(QWidget):
         self.labelVersion.setText("0.0.1 Alpha")
 
         self.layout.addWidget(self.labelTitle)
+        self.layout.addStretch(1)
         self.layout.addWidget(self.STATUS)
         self.layout.addWidget(self.NETWORK)
         self.layout.addWidget(self.ADVANCED)
