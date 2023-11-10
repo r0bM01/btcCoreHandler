@@ -32,28 +32,16 @@ class LeftMenu(QWidget):
     def __init__(self):
         super().__init__()
 
-        
-
         self.layout = QVBoxLayout()
 
         self.labelTitle = QLabel()
-        img = QPixmap("ui/assets/bitcoin_64.png")
-        self.labelTitle.setPixmap(img)
-        
+        self.labelTitle.setPixmap(QPixmap("ui/assets/bitcoin_64.png"))
         self.labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
 
-        self.STATUS = QPushButton()
-        self.STATUS.setText("Status")
-
-        self.NETWORK = QPushButton()
-        self.NETWORK.setText("Network")
-
-        self.ADVANCED = QPushButton()
-        self.ADVANCED.setText("Advanced")
-        self.ADVANCED.setIcon(QIcon("ui/assets/advanced_32.png"))
-
-        self.OPTIONS = QPushButton()
-        self.OPTIONS.setText("Options")
+        self.STATUS = QPushButton("Status")
+        self.NETWORK = QPushButton("Network")
+        self.ADVANCED = QPushButton("Advanced")
+        self.OPTIONS = QPushButton("Options")
 
         self.labelVersion = QLabel()
         self.labelVersion.setText("0.0.1 Alpha")
@@ -95,18 +83,15 @@ class Status(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.layout = QVBoxLayout()
+        self.layout = QGroupBox("SERVER DEBUG")
 
-        self.GROUP = QGroupBox("SERVER DEBUG")
-
-        debugLayout = QVBoxLayout()
+        self.debugLayout = QVBoxLayout()
         self.debugResult = QTextEdit()
         self.debugResult.setReadOnly(True)
-        debugLayout.addWidget(self.debugResult)
+        self.debugLayout.addWidget(self.debugResult)
 
-        self.GROUP.setLayout(debugLayout)
+        self.layout.setLayout(self.debugLayout)
 
-        self.layout.addWidget(self.GROUP)
 
         self.setProperty("class", ["status"])
 
@@ -118,19 +103,27 @@ class MainWindow(QMainWindow):
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
 
-        self.left_Menu = LeftMenu()
-        self.status_Page = Status()
+        self.STATUS = Status()
+        self.STATUS.setVisible(True)
 
-        self.mainLayout.addLayout(self.left_Menu.layout, 1)
-        self.mainLayout.addLayout(self.status_Page.GROUP.layout, 3)
+        self.ADVANCED = Advanced()
+        self.STATUS.setVisible(False)
 
+
+        self.leftMenu = LeftMenu()
+        self.leftMenu.setFixedWidht(100)
+        self.centralPage = QWidget()
+        self.centralPage.addWidget(self.STATUS)
+        self.centralPage.addWidget(self.ADVANCED)
+
+        self.mainLayout.addWidget(self.leftMenu)
+        self.mainLayout.addWidget(self.centralPage)
         
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
-        self.left_Menu.STATUS.clicked.connect(self.start_updater)
-        self.left_Menu.ADVANCED.clicked.connect(self.openAdvanced)
+        
         
         self.CLIENT = lib.client.Client()
         self.CLIENT.initConnection()
@@ -146,9 +139,8 @@ class MainWindow(QMainWindow):
             self.status_Page.debugResult.append("loop stopped")
     
     def openAdvanced(self):
-        self.status_Page.setVisible(False)
-        #self.test = Advanced()
-        #self.mainLayout.addLayout(self.test.layout, 3)
+        self.STATUS.setVisible(False)
+        self.ADVANCED.setVisible(True)
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)

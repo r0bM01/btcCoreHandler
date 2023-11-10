@@ -44,6 +44,9 @@ class DUpdater():
         miningInfo = self.rpcCaller.runCall("getmininginfo")
         self.bitcoinData.miningInfo = json.loads(miningInfo)
 
+        peersInfo = self.rpcCaller.runCall("getpeerinfo")
+        peersInfo = json.loads(peersInfo)
+        self.bitcoinData.peersInfo = [p for p in peersInfo.items()]
         
         
 class Server:
@@ -133,6 +136,9 @@ class Server:
 
         elif bool(self.bitcoinData.PID) and request == "getallinfo":
             reply = self.bitcoinData.getAllData()
+
+        elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
+            reply = self.bitcoinData.getPeerInfo()
 
         else:
             reply = self.rpcCaller.runCall(request)

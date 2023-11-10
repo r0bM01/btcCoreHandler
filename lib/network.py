@@ -27,7 +27,16 @@ class Proto:
         data = data.encode()
         dataLenght = hex(len(data))[2:].zfill(8)
         dataLenght = bytes.fromhex(dataLenght)
-        if self.sockSend(dataLenght) and self.sockSend(data):
+        dataSent = False
+        if self.sockSend(dataLenght):
+            if len(data) > 1024:
+                chunks = [data[buf:buf+1024] for buf in range(0, len(data), 1024)]
+                for c in chunks:
+                    dataSent = self.sockSend(c)
+                    if not dataSent: break
+            else:
+                dataSent = self.sockSend(data)
+        if dataSent:
             return True
         else:
             self.remoteSock.close()
@@ -39,7 +48,16 @@ class Proto:
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
-            data = self.sockRecv(dataLenght)
+            if dataLenght > 1024:
+                for c in range(0, dataLenght, 1024):
+                    dataTmp = self.sockRecv(1024)
+                    if dataTmp: 
+                        data += dataTmp
+                    else: 
+                        data = False 
+                        break
+            else:
+                data = self.sockRecv(dataLenght)
         if dataLenght and data:
             return data.decode()
         else:

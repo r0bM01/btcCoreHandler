@@ -41,6 +41,16 @@ class DaemonData:
         message['transactions'] = self.mempoolInfo['size']
         reply = json.dumps(message)
         return reply
+    
+    def getPeerInfo(self):
+        reply = json.dumps(self.peersInfo)
+        return reply
+
+    def getSinglePeerInfo(self, peerID):
+        for p in self.peersInfo:
+            if str(peerID) == p['id']: message = p
+        reply = json.dumps(message)
+        return reply
 
 class RPC:
     def __init__(self):
