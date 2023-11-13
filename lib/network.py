@@ -1,4 +1,4 @@
-import socket, threading, select
+import socket, threading, select, time, struct
 
 
 from requests import get
@@ -6,10 +6,11 @@ from requests import get
 class Proto:
     def __init__(self):
         self.remoteSock = False
+
     #################################################
     def sockSend(self, msg):
         try:
-            msgSent = self.remoteSock.send(msg)
+            msgSent = self.remoteSock.send(msg, socket.MSG_WAITALL)
         except (OSError, TimeoutError):
             msgSent = 0
         return True if msgSent == len(msg) else False
@@ -21,6 +22,43 @@ class Proto:
             msg = b""
         return msg if len(msg) == int(size) else False
     #################################################
+    def highSend(self, data):
+        self.remoteSock.settimeout(1)
+        chunks = [data[c:c+1024] for c in range(0, len(data), 1024)]
+        for c in chunks:
+            if self.sockSend(c) and bool(self.sockRecv(1)):
+                #time.sleep(0.1)
+                flag = True
+            else:
+                flag = False
+                break
+        return flag
+        
+    def highRecv(self, size):
+        self.remoteSock.settimeout(2)
+        bytesRecv = 0
+        dataArray = []
+        while bytesRecv < size:
+            if size - bytesRecv > 1024:
+                chunk = self.sockRecv(1024)
+            else: 
+                chunk = self.sockRecv(size - bytesRecv)
+            if bool(chunk):
+                self.sockSend(b"1")
+                dataArray.append(chunk)
+                flag = True
+            else:
+                #self.remoteSock.send(b"0")
+                flag = False
+                break
+            bytesRecv += len(chunk)
+        if flag:
+            data = bytes()
+            for d in dataArray:
+                data += d
+            return data
+        else:
+            return False
 
     def sender(self, data):
         #data must be already encoded in json
@@ -30,10 +68,7 @@ class Proto:
         dataSent = False
         if self.sockSend(dataLenght):
             if len(data) > 1024:
-                chunks = [data[buf:buf+1024] for buf in range(0, len(data), 1024)]
-                for c in chunks:
-                    dataSent = self.sockSend(c)
-                    if not dataSent: break
+                dataSent = self.highSend(data)
             else:
                 dataSent = self.sockSend(data)
         if dataSent:
@@ -44,18 +79,13 @@ class Proto:
             return False
     
     def receiver(self):
-        data = False
+        self.remoteSock.settimeout(30)
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
+            print("message lenght", dataLenght)
             if dataLenght > 1024:
-                for c in range(0, dataLenght, 1024):
-                    dataTmp = self.sockRecv(1024)
-                    if dataTmp: 
-                        data += dataTmp
-                    else: 
-                        data = False 
-                        break
+                data = self.highRecv(dataLenght)
             else:
                 data = self.sockRecv(dataLenght)
         if dataLenght and data:

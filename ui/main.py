@@ -14,7 +14,7 @@ from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QSta
 
 
 ALL_CSS = """
-QPushButton {
+.left-menu {
     /*border-radius: 4px;*/
     /*border: 1px solid white;*/
     /*background-color: #3396ff;*/
@@ -28,119 +28,158 @@ QPushButton:hover {
 
 """
 
-class LeftMenu(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.layout = QVBoxLayout()
-
-        self.labelTitle = QLabel()
-        self.labelTitle.setPixmap(QPixmap("ui/assets/bitcoin_64.png"))
-        self.labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
-
-        self.STATUS = QPushButton("Status")
-        self.NETWORK = QPushButton("Network")
-        self.ADVANCED = QPushButton("Advanced")
-        self.OPTIONS = QPushButton("Options")
-
-        self.labelVersion = QLabel()
-        self.labelVersion.setText("0.0.1 Alpha")
-
-        self.layout.addWidget(self.labelTitle)
-        self.layout.addStretch(1)
-        self.layout.addWidget(self.STATUS)
-        self.layout.addWidget(self.NETWORK)
-        self.layout.addWidget(self.ADVANCED)
-        self.layout.addWidget(self.OPTIONS)
-        self.layout.addStretch(1)
-        self.layout.addWidget(self.labelVersion)
-        #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")
-        self.setProperty("class", ["left-menu"])
-
-
-class Advanced(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.lbCommand = QLabel()
-        self.lbCommand.setText("Command: ")
-        self.lnCommand = QLineEdit()
-
-        self.btClear = QPushButton()
-        self.btClear.setText("Clear")
-        self.btCommand = QPushButton()
-        self.btCommand.setText("Send")
-
-        self.btLayout = QHBoxLayout()
-        self.btLayout.addWidget(self.btClear)
-        self.btLayout.addWidget(self.btCommand)
-
-        self.layout = QFormLayout()
-        self.layout.addRow(self.lbCommand, self.lnCommand)
-        self.layout.addRow(self.btLayout)
-
-
-class Status(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.layout = QGroupBox("SERVER DEBUG")
-
-        self.debugLayout = QVBoxLayout()
-        self.debugResult = QTextEdit()
-        self.debugResult.setReadOnly(True)
-        self.debugLayout.addWidget(self.debugResult)
-
-        self.layout.setLayout(self.debugLayout)
-
-
-        self.setProperty("class", ["status"])
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.setWindowTitle("Bitcoin Core Handler")
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
 
-        self.STATUS = Status()
-        self.STATUS.setVisible(True)
-
-        self.ADVANCED = Advanced()
-        self.STATUS.setVisible(False)
+        self.init_left_menu()
+        self.init_status()
+        self.init_advanced()
 
 
-        self.leftMenu = LeftMenu()
-        self.leftMenu.setFixedWidht(100)
-        self.centralPage = QWidget()
-        self.centralPage.addWidget(self.STATUS)
-        self.centralPage.addWidget(self.ADVANCED)
-
-        self.mainLayout.addWidget(self.leftMenu)
-        self.mainLayout.addWidget(self.centralPage)
+        self.mainLayout.addWidget(self.MENU)
+        self.mainLayout.addWidget(self.STATUS)
+        self.mainLayout.addWidget(self.ADVANCED)
+        
         
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
         
-        
         self.CLIENT = lib.client.Client()
-        self.CLIENT.initConnection()
-        self.status_Page.debugResult.append(f"client connected: {self.CLIENT.network.isConnected}")
-        self.CLIENT.initHashedCalls()
 
-    def start_updater(self):
-        if not self.CLIENT.updaterIsRunning:
-            self.CLIENT.autoUpdater.start()
-            self.status_Page.debugResult.append("loop started")
-        else:
-            self.CLIENT.updaterIsRunning = False
-            self.status_Page.debugResult.append("loop stopped")
+        
+
+
+    def init_left_menu(self):
+        self.MENU = QWidget()
+
+        MENUlayout = QVBoxLayout()
+        labelTitle = QLabel()
+        labelTitle.setPixmap(QPixmap("ui/assets/bitcoin_64.png"))
+        labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
+
+        self.btSTATUS = QPushButton("Status")
+        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("status"))
+        self.btNETWORK = QPushButton("Network")
+        self.btADVANCED = QPushButton("Advanced")
+        self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("advanced"))
+        self.btOPTIONS = QPushButton("Options")
+
+        labelVersion = QLabel()
+        labelVersion.setText("0.0.1 Alpha")
+
+        MENUlayout.addWidget(labelTitle)
+        MENUlayout.addWidget(self.btSTATUS)
+        MENUlayout.addWidget(self.btNETWORK)
+        MENUlayout.addWidget(self.btADVANCED)
+        MENUlayout.addWidget(self.btOPTIONS)
+        MENUlayout.addStretch(1)
+        MENUlayout.addWidget(labelVersion)
+        #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")
+        
+
+        self.MENU.setLayout(MENUlayout)
+        self.MENU.setStyleSheet("QPushButton { font: bold 18px; height: 40px; }")
+        self.MENU.setFixedWidth(200)
+
+    def init_status(self):
+        self.STATUS = QWidget()
+
+        STATUSlayout = QVBoxLayout()
+       
+        groupConn = QGroupBox("Node Connection")
+        groupConnLayout = QHBoxLayout()
+        groupConnLabel = QLabel("node IP:")
+        self.groupConnLEdit = QLineEdit("192.168.1.238")
+        self.groupConnButton = QPushButton("Connect")
+        self.groupConnButton.setFixedWidth(80)
+        self.groupConnButton.clicked.connect(self.handle_connection)
+        groupConnLayout.addWidget(groupConnLabel)
+        groupConnLayout.addWidget(self.groupConnLEdit)
+        groupConnLayout.addWidget(self.groupConnButton)
+        groupConn.setLayout(groupConnLayout)
+
+        groupChain = QGroupBox("Chain")
+        groupChainLayout = QFormLayout()
+        chainLabel = QLabel("Chain: ")
+        self.chainResult = QLineEdit()
+        self.chainResult.isReadOnly(True)
+        
+
+        groupNetwork = QGroupBox("Network")
+        groupNetworkLayout = QGroup
+
+        mainStatus = QFormLayout()
+        mainStatus.addRow(groupChain, groupNetwork)
+
+        STATUSlayout.addWidget(groupConn)
+        STATUSlayout.addLayout(mainStatus)
+
+        self.STATUS.setLayout(STATUSlayout)
+
+    def init_advanced(self):
+        self.ADVANCED = QWidget()
+
+        ADVANCEDlayout = QVBoxLayout()
+
+        commandForm = QHBoxLayout()
+        #commandLabel = QLabel("command: ")
+        commandLabel = QLabel("command:")
+        self.commandLine = QLineEdit()
+        self.commandButton = QPushButton()
+        self.commandButton.setIcon(QPixmap("ui/assets/play_32.png"))
+        self.commandButton.setFixedWidth(35)
+        self.commandButton.clicked.connect(self.send_advanced_command)
+        
+        commandForm.addWidget(commandLabel)
+        commandForm.addWidget(self.commandLine)
+        commandForm.addWidget(self.commandButton)
+        
+
+        self.debugLog = QTextEdit()
+        self.debugLog.setReadOnly(True)
+
+        ADVANCEDlayout.addLayout(commandForm)
+        ADVANCEDlayout.addWidget(self.debugLog)
+
+        self.ADVANCED.setLayout(ADVANCEDlayout)
+        self.ADVANCED.setVisible(False)
+        #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
     
-    def openAdvanced(self):
-        self.STATUS.setVisible(False)
-        self.ADVANCED.setVisible(True)
+    def menu_buttons(self, button):
+        if button == "advanced":
+            self.STATUS.setVisible(False)
+            self.ADVANCED.setVisible(True)
+        elif button == "status":
+            self.STATUS.setVisible(True)
+            self.ADVANCED.setVisible(False)
+    
+    def handle_connection(self):
+        if self.CLIENT.network.isConnected:
+            self.CLIENT.network.disconnectServer()
+        else:
+            self.CLIENT.initConnection()            
+            if not self.CLIENT.updaterIsRunning:
+                self.CLIENT.autoUpdater.start()
+        
+        if self.CLIENT.network.isConnected:
+            self.groupConnLEdit.setEnabled(False)
+            self.groupConnButton.setText("Disconnect")
+        else:
+            self.groupConnLEdit.setEnabled(True)
+
+    def send_advanced_command(self):
+        command = self.commandLine.text()
+        self.CLIENT.network.sender(self.CLIENT.calls[command])
+        result = self.CLIENT.network.receiver()
+        self.debugLog.append(result)
+
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)

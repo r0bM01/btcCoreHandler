@@ -46,7 +46,7 @@ class DUpdater():
 
         peersInfo = self.rpcCaller.runCall("getpeerinfo")
         peersInfo = json.loads(peersInfo)
-        self.bitcoinData.peersInfo = [p for p in peersInfo.items()]
+        self.bitcoinData.peersInfo = [p for p in peersInfo]
         
         
 class Server:
@@ -77,6 +77,7 @@ class Server:
         self.isOnline = bool(self.network.socket)
         lib.storage.Logger.add("socket online", self.isOnline)
         lib.storage.Logger.add("bind to IP", self.network.settings.host)
+        
 
     def start_serving(self):
         self.isServing = True
@@ -107,7 +108,7 @@ class Server:
                     reply = json.dumps({"error": "request not valid"})
                 ######################################################
                 if bool(reply) and bool(self.network.remoteSock):
-                    lib.storage.Logger.add("reply content", reply)
+                    lib.storage.Logger.add("reply content", len(reply.encode()))
                     replySent = self.network.sender(reply) #returns True or False
                     lib.storage.Logger.add("reply sent", replySent)
                 else:

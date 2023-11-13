@@ -111,8 +111,12 @@ def main():
                 break
             result = json.loads(remoteConn.receiver())
     
-            for key, value in result.items():
-                print(f"{key}: {value}")
+            if command == 'getpeerinfo':
+                for p in result:
+                    print(p['addr'])
+            else:
+                for key, value in result.items():
+                    print(f"{key}: {value}")
 
     except KeyboardInterrupt:
         remoteConn.sender("closeconn")
