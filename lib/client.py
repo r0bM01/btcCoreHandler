@@ -38,8 +38,6 @@ class Client:
 
         self.calls = False
 
-        self.autoUpdater = threading.Thread(target = self.loop_update, daemon = True)
-        self.updaterIsRunning = False
 
         self.statusPage = AllInfo()
         self.networkPage = AllNetworkInfo()
@@ -54,24 +52,18 @@ class Client:
         self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()
-    
-    def loop_update(self):
-        if self.network.isConnected:
-            self.updaterIsRunning = True
-            while self.updaterIsRunning:
-                self.getAllInfo()
-                time.sleep(2)
-                self.getAllNetworkInfo()
-                time.sleep(5)
 
     def getAllInfo(self):
         if self.network.isConnected:
             self.network.sender(self.calls['getallinfo'])
             reply = self.network.receiver()
-            if bool(reply):
+            if bool(reply) and "error" not in result:
                 result = json.loads(reply)
-                if "error" not in result: 
-                    self.statusPage.update(result)
+            else:
+                result = False
+        else:
+            result = False
+        return result
     
     def getAllNetworkInfo(self):
         if self.network.isConnected:

@@ -34,11 +34,24 @@ class DaemonData:
         #message['startData'] = self.startDate
         message['uptime'] = self.uptime['uptime']
         message['chain'] = self.blockchainInfo['chain']
-        message['headers'] = self.blockchainInfo['headers']
+        message['blocks'] = self.blockchainInfo['blocks']
+        message['size_on_disk'] = self.blockchainInfo['size_on_disk']
+
         message['version'] = self.networkInfo['version']
         message['agent'] = self.networkInfo['subversion']
+        message['localrelay'] = self.networkInfo['localrelay']
         message['connections'] = self.networkInfo['connections']
+
         message['transactions'] = self.mempoolInfo['size']
+        message['bytes'] = self.mempoolInfo['bytes']
+        message['minrelaytxfee'] = self.mempoolInfo['minrelaytxfee']
+        message['fullrbf'] = self.mempoolInfo['fullrbf']
+
+        message['currentblockweight'] = self.miningInfo['currentblockweight']
+        message['currentblocktx'] = self.miningInfo['currentblocktx']
+        message['difficulty'] = self.miningInfo['difficulty']
+        message['networkhashps'] = self.miningInfo['networkhashps']
+
         reply = json.dumps(message)
         return reply
     

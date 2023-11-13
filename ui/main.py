@@ -3,7 +3,7 @@
 
 
 import lib.client
-import sys, time, random, json
+import sys, time, random, json, threading
 from PySide6.QtCore import Qt 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -51,9 +51,38 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
         
+        self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
         self.CLIENT = lib.client.Client()
 
-        
+    
+    def refreshController(self):
+        while self.CLIENT.network.isConnected:
+            self.refreshStatusData()
+            time.sleep(15)
+
+    def refreshStatusData(self):
+        statusData = self.CLIENT.getAllInfo()
+        if statusData:
+            self.uptimeResult.setText(statusData['uptime'])
+            self.chainResult.setText(statusData['chain'])
+            self.blocksResult.setText(statusData['blocks'])
+            self.sizeResult.setText(statusData['size_on_disk'])
+
+            self.versionResult.setText(statusData['version'])
+            self.agentResult.setText(statusData['agent'])
+            self.relayResult.setText(statusData['localrelay'])
+            self.connectionsResult.setText(statusData['connections'])
+
+            self.transactionsResult.setText(statusData['transactions'])
+            self.bytesResult.setText(statusData['bytes'])
+            self.relayfeeResult.setText(statusData['minrelaytxfee'])
+            self.fullrbfResult.setText(statusData['fullrbf'])
+
+            self.weightResult.setText(statusData['currentblockweight'])
+            self.blocktxResult.setText(statusData['currentblocktx'])
+            self.difficultyResult.setText(statusData['difficulty'])
+            self.hashpsResult.setText(statusData['networkhashps'])
+
 
 
     def init_left_menu(self):
@@ -241,14 +270,14 @@ class MainWindow(QMainWindow):
     def handle_connection(self):
         if self.CLIENT.network.isConnected:
             self.CLIENT.network.disconnectServer()
+            self.refreshThread.join()
         else:
-            self.CLIENT.initConnection()            
-            if not self.CLIENT.updaterIsRunning:
-                self.CLIENT.autoUpdater.start()
+            self.CLIENT.initConnection()           
         
         if self.CLIENT.network.isConnected:
             self.groupConnLEdit.setEnabled(False)
             self.groupConnButton.setText("Disconnect")
+            self.refreshThread.start()
         else:
             self.groupConnLEdit.setEnabled(True)
 
