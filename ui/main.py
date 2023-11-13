@@ -121,7 +121,6 @@ class MainWindow(QMainWindow):
         groupChainLayout.addRow(sizeLabel, self.sizeResult)
         groupChain.setLayout(groupChainLayout)
 
-
         groupNetwork = QGroupBox("Network")
         groupNetworkLayout = QFormLayout()
         versionLabel = QLabel("Version: ")
@@ -138,11 +137,49 @@ class MainWindow(QMainWindow):
         groupNetworkLayout.addRow(connectionsLabel, self.connectionsResult)
         groupNetwork.setLayout(groupNetworkLayout)
 
+        groupMempool = QGroupBox("Mempool")
+        groupMempoolLayout = QFormLayout()
+        transactionsLabel = QLabel("Transactions: ")
+        self.transactionsResult = QLabel(" - ")
+        bytesLabel = QLabel("Size: ")
+        self.bytesResult = QLabel(" - ")
+        relayfeeLabel = QLabel("Relay fee: ")
+        self.relayfeeResult = QLabel(" - ")
+        fullrbfLabel = QLabel("Full RBF: ")
+        self.fullrbfResult = QLabel(" - ")
+        groupMempoolLayout.addRow(transactionsLabel, self.transactionsResult)
+        groupMempoolLayout.addRow(bytesLabel, self.bytesResult)
+        groupMempoolLayout.addRow(relayfeeLabel, self.relayfeeResult)
+        groupMempoolLayout.addRow(fullrbfLabel, self.fullrbfResult)
+        groupMempool.setLayout(groupMempoolLayout)
+
+        groupMining = QGroupBox("Mining")
+        groupMiningLayout = QFormLayout()
+        weightLabel = QLabel("Weight: ")
+        self.weightResult = QLabel(" - ")
+        blocktxLabel = QLabel("Block Txs: ")
+        self.blocktxResult = QLabel(" - ")
+        difficultyLabel = QLabel("Difficulty: ")
+        self.difficultyResult = QLabel(" - ")
+        hashpsLabel = QLabel("Hash P/S: ")
+        self.hashpsResult = QLabel(" - ")
+        groupMiningLayout.addRow(weightLabel, self.weightResult)
+        groupMiningLayout.addRow(blocktxLabel, self.blocktxResult)
+        groupMiningLayout.addRow(difficultyLabel, self.difficultyResult)
+        groupMiningLayout.addRow(hashpsLabel, self.hashpsResult)
+        groupMining.setLayout(groupMiningLayout)
+
+
         allStatus = QWidget()
         allStatusLayout = QGridLayout()
         allStatusLayout.addWidget(groupChain, 0, 0)
         allStatusLayout.addWidget(groupNetwork, 0, 1)
+<<<<<<< HEAD
+        allStatusLayout.addWidget(groupMempool, 1, 0)
+        allStatusLayout.addWidget(groupMining, 1, 1)
+=======
         allStatus.setLayout(allStatusLayout)
+>>>>>>> 701c50c71021c117f5d56e4138feea1bff72cb6f
 
         STATUSlayout.addWidget(groupConn)
         STATUSlayout.addWidget(allStatus)
