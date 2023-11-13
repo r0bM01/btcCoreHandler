@@ -142,9 +142,11 @@ class MainWindow(QMainWindow):
         allStatusLayout = QGridLayout()
         allStatusLayout.addWidget(groupChain, 0, 0)
         allStatusLayout.addWidget(groupNetwork, 0, 1)
+        allStatus.setLayout(allStatusLayout)
 
         STATUSlayout.addWidget(groupConn)
         STATUSlayout.addWidget(allStatus)
+        STATUSlayout.addStretch()
 
         self.STATUS.setLayout(STATUSlayout)
 
