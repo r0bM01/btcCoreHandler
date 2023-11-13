@@ -58,30 +58,31 @@ class MainWindow(QMainWindow):
     def refreshController(self):
         while self.CLIENT.network.isConnected:
             self.refreshStatusData()
-            time.sleep(15)
+            time.sleep(5)
 
     def refreshStatusData(self):
         statusData = self.CLIENT.getAllInfo()
+
         if statusData:
-            self.uptimeResult.setText(statusData['uptime'])
-            self.chainResult.setText(statusData['chain'])
-            self.blocksResult.setText(statusData['blocks'])
-            self.sizeResult.setText(statusData['size_on_disk'])
+            self.uptimeResult.setText(str(statusData['uptime']))
+            self.chainResult.setText(str(statusData['chain']))
+            self.blocksResult.setText(str(statusData['blocks']))
+            self.sizeResult.setText(str(statusData['size_on_disk']))
 
-            self.versionResult.setText(statusData['version'])
-            self.agentResult.setText(statusData['agent'])
-            self.relayResult.setText(statusData['localrelay'])
-            self.connectionsResult.setText(statusData['connections'])
+            self.versionResult.setText(str(statusData['version']))
+            self.agentResult.setText(str(statusData['agent']))
+            self.relayResult.setText(str(statusData['localrelay']))
+            self.connectionsResult.setText(str(statusData['connections']))
 
-            self.transactionsResult.setText(statusData['transactions'])
-            self.bytesResult.setText(statusData['bytes'])
-            self.relayfeeResult.setText(statusData['minrelaytxfee'])
-            self.fullrbfResult.setText(statusData['fullrbf'])
+            self.transactionsResult.setText(str(statusData['transactions']))
+            self.bytesResult.setText(str(statusData['bytes']))
+            self.relayfeeResult.setText(str(statusData['minrelaytxfee']))
+            self.fullrbfResult.setText(str(statusData['fullrbf']))
 
-            self.weightResult.setText(statusData['currentblockweight'])
-            self.blocktxResult.setText(statusData['currentblocktx'])
-            self.difficultyResult.setText(statusData['difficulty'])
-            self.hashpsResult.setText(statusData['networkhashps'])
+            #self.weightResult.setText(statusData['currentblockweight'])
+            #self.blocktxResult.setText(statusData['currentblocktx'])
+            self.difficultyResult.setText(str(statusData['difficulty']))
+            self.hashpsResult.setText(str(statusData['networkhashps']))
 
 
 
@@ -102,7 +103,7 @@ class MainWindow(QMainWindow):
 
         labelVersion = QLabel()
         labelVersion.setText("0.0.1 Alpha")
-        labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
+        #labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
 
         MENUlayout.addWidget(labelTitle)
         MENUlayout.addWidget(self.btSTATUS)

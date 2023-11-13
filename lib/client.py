@@ -57,7 +57,8 @@ class Client:
         if self.network.isConnected:
             self.network.sender(self.calls['getallinfo'])
             reply = self.network.receiver()
-            if bool(reply) and "error" not in result:
+            print(reply)
+            if bool(reply):
                 result = json.loads(reply)
             else:
                 result = False

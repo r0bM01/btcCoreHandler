@@ -47,8 +47,8 @@ class DaemonData:
         message['minrelaytxfee'] = self.mempoolInfo['minrelaytxfee']
         message['fullrbf'] = self.mempoolInfo['fullrbf']
 
-        message['currentblockweight'] = self.miningInfo['currentblockweight']
-        message['currentblocktx'] = self.miningInfo['currentblocktx']
+        #message['currentblockweight'] = self.miningInfo['blocks']
+        #message['currentblocktx'] = self.miningInfo['currentblocktx']
         message['difficulty'] = self.miningInfo['difficulty']
         message['networkhashps'] = self.miningInfo['networkhashps']
 
