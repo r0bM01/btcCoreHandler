@@ -57,32 +57,39 @@ class MainWindow(QMainWindow):
     
     def refreshController(self):
         while self.CLIENT.network.isConnected:
-            self.refreshStatusData()
+            self.refreshselfStatusInfo()
             time.sleep(5)
 
-    def refreshStatusData(self):
-        statusData = self.CLIENT.getAllInfo()
+    def refreshStatusInfo(self):
+        self.CLIENT.getAllInfo()
 
-        if statusData:
-            self.uptimeResult.setText(str(statusData['uptime']))
-            self.chainResult.setText(str(statusData['chain']))
-            self.blocksResult.setText(str(statusData['blocks']))
-            self.sizeResult.setText(str(statusData['size_on_disk']))
+        if self.CLIENT.allInfo:
+            uptimeSecs = int(self.CLIENT.allInfo['uptime'])
+            d = uptimeSecs // 86400
+            h = (uptimeSecs % 86400) // 3600
+            m = ( (uptimeSecs % 86400) % 3600 ) // 60
+            s = ( (uptimeSecs % 86400) % 3600) % 60 
+            uptime = str(f"{d}Days {h}h{m}m{s}s")
 
-            self.versionResult.setText(str(statusData['version']))
-            self.agentResult.setText(str(statusData['agent']))
-            self.relayResult.setText(str(statusData['localrelay']))
-            self.connectionsResult.setText(str(statusData['connections']))
+            self.uptimeResult.setText(uptime)
+            self.chainResult.setText(str(self.CLIENT.allInfo['chain']))
+            self.blocksResult.setText(str(self.CLIENT.allInfo['blocks']))
+            self.sizeResult.setText(str(self.CLIENT.allInfo['size_on_disk']))
 
-            self.transactionsResult.setText(str(statusData['transactions']))
-            self.bytesResult.setText(str(statusData['bytes']))
-            self.relayfeeResult.setText(str(statusData['minrelaytxfee']))
-            self.fullrbfResult.setText(str(statusData['fullrbf']))
+            self.versionResult.setText(str(self.CLIENT.allInfo['version']))
+            self.agentResult.setText(str(self.CLIENT.allInfo['agent']))
+            self.relayResult.setText(str(self.CLIENT.allInfo['localrelay']))
+            self.connectionsResult.setText(str(self.CLIENT.allInfo['connections']))
 
-            #self.weightResult.setText(statusData['currentblockweight'])
-            #self.blocktxResult.setText(statusData['currentblocktx'])
-            self.difficultyResult.setText(str(statusData['difficulty']))
-            self.hashpsResult.setText(str(statusData['networkhashps']))
+            self.transactionsResult.setText(str(self.CLIENT.allInfo['transactions']))
+            self.bytesResult.setText(str(self.CLIENT.allInfo['bytes']))
+            self.relayfeeResult.setText(str(self.CLIENT.allInfo['minrelaytxfee']))
+            self.fullrbfResult.setText(str(self.CLIENT.allInfo['fullrbf']))
+
+            #self.weightResult.setText(self.CLIENT.allInfo['currentblockweight'])
+            #self.blocktxResult.setText(self.CLIENT.allInfo['currentblocktx'])
+            self.difficultyResult.setText(str(self.CLIENT.allInfo['difficulty']))
+            self.hashpsResult.setText(str(self.CLIENT.allInfo['networkhashps']))
 
 
 

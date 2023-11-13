@@ -4,32 +4,6 @@ import json, threading, time
 
 from lib.protocol import Commands
 
-class AllInfo:
-    def __init__(self):
-        #Status Informations
-        self.btcUptime = False
-        self.btcChain = False
-        self.btcHeaders = False
-        self.btcVersion = False
-        self.btcAgent = False
-        self.btcConnections = False
-        self.btcTransactions = False
-    
-    def update(self, allInfoDict):
-        self.btcUptime = allInfoDict['uptime']
-        self.btcChain = allInfoDict['chain']
-        self.btcHeaders = allInfoDict['headers']
-        self.btcVersion = allInfoDict['version']
-        self.btcAgent = allInfoDict['agent']
-        self.btcConnections = allInfoDict['connections']
-        self.btcTransactions = allInfoDict['transactions']
-
-class AllNetworkInfo:
-    def __init__(self):
-        self.netInfo = False
-        self.peerInfo = False
-    
-
 class Client:
     def __init__(self):
 
@@ -37,10 +11,7 @@ class Client:
         self.certificate = "fefa"
 
         self.calls = False
-
-
-        self.statusPage = AllInfo()
-        self.networkPage = AllNetworkInfo()
+        self.allInfo = False
     
     def initHashedCalls(self):
         if self.network.isConnected:
@@ -54,17 +25,10 @@ class Client:
             self.initHashedCalls()
 
     def getAllInfo(self):
-        if self.network.isConnected:
-            self.network.sender(self.calls['getallinfo'])
+        if self.network.isConnected and self.network.sender(self.calls['getallinfo']):
             reply = self.network.receiver()
-            print(reply)
-            if bool(reply):
-                result = json.loads(reply)
-            else:
-                result = False
-        else:
-            result = False
-        return result
+            self.allInfo = json.loads(reply) if bool(reply) else False
+        
     
     def getAllNetworkInfo(self):
         if self.network.isConnected:
