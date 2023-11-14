@@ -108,7 +108,7 @@ class Client(Proto):
             self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
             #self.remoteSock.settimeout(10)
             self.handshakeCode = self.receiver()
-            self.isConnected = True if bool(self.handshakeCode) else False
+            self.isConnected = True if len(self.handshakeCode) == 32 else False
         except (OSError, TimeoutError):
             self.isConnected = False
             self.remoteSock = False
