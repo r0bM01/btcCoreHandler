@@ -61,6 +61,8 @@ class MainWindow(QMainWindow):
         while True:
             if self.CLIENT.network.isConnected:
                 self.refreshStatusInfo()
+            else:
+                self.setStatusDefault()
             time.sleep(5)
 
     def refreshStatusInfo(self):
@@ -72,7 +74,10 @@ class MainWindow(QMainWindow):
             h = (uptimeSecs % 86400) // 3600
             m = ( (uptimeSecs % 86400) % 3600 ) // 60
             s = ( (uptimeSecs % 86400) % 3600) % 60 
-            self.CLIENT.statusInfo['uptime'] = str(f"{d} Days {h}h{m}m{s}s")
+            self.CLIENT.statusInfo['uptime'] = str(f"{d} Days {h}h {m}m {s}s")
+
+            verPerc = int(self.CLIENT.statusInfo['verificationprogress'] * 100)
+            self.CLIENT.statusInfo['verificationprogress'] = str(f"{verPerc}%")
 
             #adds the data to the status result
             for key, value in self.statusResult.items():
@@ -131,7 +136,7 @@ class MainWindow(QMainWindow):
         groupConnLayout.addWidget(self.groupConnButton)
         groupConn.setLayout(groupConnLayout)
 
-        groupNodeStatus = QGroupBox("Node Status")
+        self.groupNodeStatus = QGroupBox("Node Status")
         groupNodeStatusLayout = QFormLayout()
         statusLabel['uptime'] = QLabel("Uptime:")
         statusLabel['chain'] = QLabel("Chain:")
@@ -160,16 +165,17 @@ class MainWindow(QMainWindow):
         [self.statusResult[key].setAlignment(Qt.AlignCenter) for key, value in self.statusResult.items()]
         #sets all result labels with default text " - "
         self.setStatusDefault()
+        self.groupNodeStatus.setEnabled(False)
 
         #creates the formlayout
         for key, value in statusLabel.items():
             groupNodeStatusLayout.addRow(statusLabel[key], self.statusResult[key])
 
-        groupNodeStatus.setLayout(groupNodeStatusLayout)
+        self.groupNodeStatus.setLayout(groupNodeStatusLayout)
         
 
         STATUSlayout.addWidget(groupConn)
-        STATUSlayout.addWidget(groupNodeStatus)
+        STATUSlayout.addWidget(self.groupNodeStatus)
         STATUSlayout.addStretch()
 
         
@@ -220,16 +226,21 @@ class MainWindow(QMainWindow):
     def handle_connection(self):
         if self.CLIENT.network.isConnected:
             self.CLIENT.network.disconnectServer()
+            self.setStatusDefault()
+            self.groupNodeStatus.setEnabled(False)
         else:
             self.CLIENT.initConnection()           
         
         if self.CLIENT.network.isConnected:
             self.groupConnLEdit.setEnabled(False)
             self.groupConnButton.setText("Disconnect")
+
+            self.groupNodeStatus.setEnabled(True)
             
         else:
             self.groupConnButton.setText("Connect")
             self.groupConnLEdit.setEnabled(True)
+            self.groupNodeStatus.setEnabled(False)
 
     def send_advanced_command(self):
         command = self.commandLine.text()
