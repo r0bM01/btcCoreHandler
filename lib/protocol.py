@@ -5,7 +5,7 @@ from lib.storage import Logger
 
 class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 
-             'getallinfo', 'getblockchaininfo', 'getnetworkinfo', 
+             'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
              'getmempoolinfo', 'getmininginfo', 'getpeerinfo'}
 
     @staticmethod
@@ -29,7 +29,7 @@ class DaemonData:
 
         self.peersInfo = None
 
-    def getAllData(self):
+    def getStatusInfo(self):
         message = {}
         #message['startData'] = self.startDate
         message['uptime'] = self.uptime['uptime']

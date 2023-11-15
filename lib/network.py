@@ -135,7 +135,7 @@ class Settings:
         self.externalIP = False
 
         self.socketTimeout = 30
-        self.remoteSockTimeout = 3
+        self.remoteSockTimeout = 15
         self.backlog = 1
         self.maxSockets = 1
 

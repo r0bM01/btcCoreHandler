@@ -11,7 +11,7 @@ class Client:
         self.certificate = "fefa"
 
         self.calls = False
-        self.allInfo = False
+        self.statusInfo = False
     
     def initHashedCalls(self):
         if self.network.isConnected:
@@ -24,10 +24,10 @@ class Client:
         if self.network.isConnected:
             self.initHashedCalls()
 
-    def getAllInfo(self):
-        if self.network.isConnected and self.network.sender(self.calls['getallinfo']):
+    def getStatusInfo(self):
+        if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
             reply = self.network.receiver()
-            self.allInfo = json.loads(reply) if bool(reply) else False
+            self.statusInfo = json.loads(reply) if bool(reply) else False
         
     
     def getAllNetworkInfo(self):

@@ -135,8 +135,8 @@ class Server:
             self.bitcoinData.PID = self.rpcCaller.checkDaemon()
             self.autoUpdater.stop()
 
-        elif bool(self.bitcoinData.PID) and request == "getallinfo":
-            reply = self.bitcoinData.getAllData()
+        elif bool(self.bitcoinData.PID) and request == "getstatusinfo":
+            reply = self.bitcoinData.getStatusInfo()
 
         elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
             reply = self.bitcoinData.getPeerInfo()

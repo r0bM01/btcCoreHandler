@@ -64,10 +64,10 @@ class MainWindow(QMainWindow):
             time.sleep(5)
 
     def refreshStatusInfo(self):
-        self.CLIENT.getAllInfo()
+        self.CLIENT.getStatusInfo()
 
-        if self.CLIENT.allInfo:
-            uptimeSecs = int(self.CLIENT.allInfo['uptime'])
+        if self.CLIENT.statusInfo:
+            uptimeSecs = int(self.CLIENT.statusInfo['uptime'])
             d = uptimeSecs // 86400
             h = (uptimeSecs % 86400) // 3600
             m = ( (uptimeSecs % 86400) % 3600 ) // 60
@@ -75,24 +75,24 @@ class MainWindow(QMainWindow):
             uptime = str(f"{d}Days {h}h{m}m{s}s")
 
             self.uptimeResult.setText(uptime)
-            self.chainResult.setText(str(self.CLIENT.allInfo['chain']))
-            self.blocksResult.setText(str(self.CLIENT.allInfo['blocks']))
-            self.sizeResult.setText(str(self.CLIENT.allInfo['size_on_disk']))
+            self.chainResult.setText(str(self.CLIENT.statusInfo['chain']))
+            self.blocksResult.setText(str(self.CLIENT.statusInfo['blocks']))
+            self.sizeResult.setText(str(self.CLIENT.statusInfo['size_on_disk']))
 
-            self.versionResult.setText(str(self.CLIENT.allInfo['version']))
-            self.agentResult.setText(str(self.CLIENT.allInfo['agent']))
-            self.relayResult.setText(str(self.CLIENT.allInfo['localrelay']))
-            self.connectionsResult.setText(str(self.CLIENT.allInfo['connections']))
+            self.versionResult.setText(str(self.CLIENT.statusInfo['version']))
+            self.agentResult.setText(str(self.CLIENT.statusInfo['agent']))
+            self.relayResult.setText(str(self.CLIENT.statusInfo['localrelay']))
+            self.connectionsResult.setText(str(self.CLIENT.statusInfo['connections']))
 
-            self.transactionsResult.setText(str(self.CLIENT.allInfo['transactions']))
-            self.bytesResult.setText(str(self.CLIENT.allInfo['bytes']))
-            self.relayfeeResult.setText(str(self.CLIENT.allInfo['minrelaytxfee']))
-            self.fullrbfResult.setText(str(self.CLIENT.allInfo['fullrbf']))
+            self.transactionsResult.setText(str(self.CLIENT.statusInfo['transactions']))
+            self.bytesResult.setText(str(self.CLIENT.statusInfo['bytes']))
+            self.relayfeeResult.setText(str(self.CLIENT.statusInfo['minrelaytxfee']))
+            self.fullrbfResult.setText(str(self.CLIENT.statusInfo['fullrbf']))
 
-            #self.weightResult.setText(self.CLIENT.allInfo['currentblockweight'])
-            #self.blocktxResult.setText(self.CLIENT.allInfo['currentblocktx'])
-            self.difficultyResult.setText(str(self.CLIENT.allInfo['difficulty']))
-            self.hashpsResult.setText(str(self.CLIENT.allInfo['networkhashps']))
+            #self.weightResult.setText(self.CLIENT.statusInfo['currentblockweight'])
+            #self.blocktxResult.setText(self.CLIENT.statusInfo['currentblocktx'])
+            self.difficultyResult.setText(str(self.CLIENT.statusInfo['difficulty']))
+            self.hashpsResult.setText(str(self.CLIENT.statusInfo['networkhashps']))
 
 
 
@@ -131,7 +131,8 @@ class MainWindow(QMainWindow):
 
     def init_status(self):
         self.STATUS = QWidget()
-
+        self.statusResult = {}
+        statusLabel = {}
         STATUSlayout = QVBoxLayout()
        
         groupConn = QGroupBox("Node Connection")
@@ -146,10 +147,43 @@ class MainWindow(QMainWindow):
         groupConnLayout.addWidget(self.groupConnButton)
         groupConn.setLayout(groupConnLayout)
 
+        groupNodeStatus = QGroupBox("Node Status")
+        groupNodeStatusLayout = QFormLayout()
+        statusLabel['uptime'] = QLabel("Uptime:")
+        statusLabel['chain'] = QLabel("Chain:")
+        statusLabel['blocks'] = QLabel("Blocks:")
+        statusLabel['headers'] = QLabel("Headers:")
+        statusLabel['verificationprogress'] = QLabel("Verification:")
+        statusLabel['pruned'] = QLabel("Pruned:")
+        statusLabel['size_on_disk'] = QLabel("Size:")
+
+        statusLabel['version'] = QLabel("Version:")
+        statusLabel['subversion'] = QLabel("Agent:")
+        statusLabel['protocolversion'] = QLabel("Protocol:")
+        statusLabel['connections'] = QLabel("Connections:")
+        statusLabel['relayfee'] = QLabel("Relay Fee:")
+
+        statusLabel['size'] = QLabel("Transactions:")
+        statusLabel['bytes'] = QLabel("Tot. Size:")
+        statusLabel['usage'] = QLabel("Usage Size:")
+        statusLabel['mempoolminfee'] = QLabel("Min. Fee:")
+        statusLabel['fullrbf'] = QLabel("Full RBF:")
+
+        #creates a result label for each of statusLabel
+        {self.statusResult[key]: QLabel() for key, value in statusLabel.items()}
+        #sets all result labels with alignment center
+        [self.statusResult[key].setAlignment(Qt.AlignCenter) for key, value in self.statusResult.items()]
+        #sets all result labels with default text " - "
+        self.setStatusDefault()
+
+        #creates the formlayout
+        for key, value in statusLabel:
+            groupNodeStatusLayout.addRow(statusLabel[key], self.statusResult[key])
+        """
         groupChain = QGroupBox("Blockchain")
         groupChainLayout = QFormLayout()
         uptimeLabel = QLabel("Uptime: ")
-        self.uptimeResult = QLabel(" - ")
+        self.statusResult['uptime'] = QLabel(" - ")
         self.uptimeResult.setAlignment(Qt.AlignCenter)
         chainLabel = QLabel("Chain: ")
         self.chainResult = QLabel(" - ")
@@ -234,10 +268,13 @@ class MainWindow(QMainWindow):
         allStatusLayout.addWidget(groupMempool, 1, 0)
         allStatusLayout.addWidget(groupMining, 1, 1)
         allStatus.setLayout(allStatusLayout)
+        """
 
         STATUSlayout.addWidget(groupConn)
         STATUSlayout.addWidget(allStatus)
         STATUSlayout.addStretch()
+
+        
 
         self.STATUS.setLayout(STATUSlayout)
 
@@ -270,6 +307,10 @@ class MainWindow(QMainWindow):
         self.ADVANCED.setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
     
+    def setStatusDefault(self):
+        for key, value in self.statusResult.items():
+            self.statusResult[key].setText(" - ")
+
     def menu_buttons(self, button):
         if button == "advanced":
             self.STATUS.setVisible(False)
