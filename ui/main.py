@@ -54,10 +54,13 @@ class MainWindow(QMainWindow):
         self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
         self.CLIENT = lib.client.Client()
 
+        self.refreshThread.start()
+
     
     def refreshController(self):
-        while self.CLIENT.network.isConnected:
-            self.refreshStatusInfo()
+        while True:
+            if self.CLIENT.network.isConnected:
+                self.refreshStatusInfo()
             time.sleep(5)
 
     def refreshStatusInfo(self):
@@ -278,17 +281,15 @@ class MainWindow(QMainWindow):
     def handle_connection(self):
         if self.CLIENT.network.isConnected:
             self.CLIENT.network.disconnectServer()
-            self.refreshThread.join()
         else:
             self.CLIENT.initConnection()           
         
         if self.CLIENT.network.isConnected:
             self.groupConnLEdit.setEnabled(False)
             self.groupConnButton.setText("Disconnect")
-            self.refreshThread.start()
+            
         else:
             self.groupConnButton.setText("Connect")
-            self.refreshThread.join()
             self.groupConnLEdit.setEnabled(True)
 
     def send_advanced_command(self):
