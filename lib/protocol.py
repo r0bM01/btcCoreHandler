@@ -35,22 +35,23 @@ class DaemonData:
         message['uptime'] = self.uptime['uptime']
         message['chain'] = self.blockchainInfo['chain']
         message['blocks'] = self.blockchainInfo['blocks']
+        message['headers'] = self.blockchainInfo['headers']
+        message['verificationprogress'] = self.blockchainInfo['verificationprogress']
+        message['pruned'] = self.blockchainInfo['pruned']
         message['size_on_disk'] = self.blockchainInfo['size_on_disk']
 
         message['version'] = self.networkInfo['version']
-        message['agent'] = self.networkInfo['subversion']
-        message['localrelay'] = self.networkInfo['localrelay']
+        message['subversion'] = self.networkInfo['subversion']
+        message['protocolversion'] = self.networkInfo['protocolversion']
         message['connections'] = self.networkInfo['connections']
+        message['relayfee'] = self.networkInfo['relayfee']
 
-        message['transactions'] = self.mempoolInfo['size']
+        message['size'] = self.mempoolInfo['size']
         message['bytes'] = self.mempoolInfo['bytes']
-        message['minrelaytxfee'] = self.mempoolInfo['minrelaytxfee']
+        message['usage'] = self.mempoolInfo['usage']
+        message['mempoolminfee'] = self.mempoolInfo['mempoolminfee']
         message['fullrbf'] = self.mempoolInfo['fullrbf']
-
-        #message['currentblockweight'] = self.miningInfo['blocks']
-        #message['currentblocktx'] = self.miningInfo['currentblocktx']
-        message['difficulty'] = self.miningInfo['difficulty']
-        message['networkhashps'] = self.miningInfo['networkhashps']
+        
 
         reply = json.dumps(message)
         return reply
