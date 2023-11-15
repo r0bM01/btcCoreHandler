@@ -170,15 +170,18 @@ class MainWindow(QMainWindow):
         statusLabel['fullrbf'] = QLabel("Full RBF:")
 
         #creates a result label for each of statusLabel
-        {self.statusResult[key]: QLabel() for key, value in statusLabel.items()}
+        for key, value in statusLabel.items():
+            self.statusResult[key] = QLabel() 
         #sets all result labels with alignment center
         [self.statusResult[key].setAlignment(Qt.AlignCenter) for key, value in self.statusResult.items()]
         #sets all result labels with default text " - "
         self.setStatusDefault()
 
         #creates the formlayout
-        for key, value in statusLabel:
+        for key, value in statusLabel.items():
             groupNodeStatusLayout.addRow(statusLabel[key], self.statusResult[key])
+
+        groupNodeStatus.setLayout(groupNodeStatusLayout)
         """
         groupChain = QGroupBox("Blockchain")
         groupChainLayout = QFormLayout()
@@ -271,7 +274,7 @@ class MainWindow(QMainWindow):
         """
 
         STATUSlayout.addWidget(groupConn)
-        STATUSlayout.addWidget(allStatus)
+        STATUSlayout.addWidget(groupNodeStatus)
         STATUSlayout.addStretch()
 
         
