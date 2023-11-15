@@ -6,6 +6,11 @@ from requests import get
 class Proto:
     def __init__(self):
         self.remoteSock = False
+    
+    def sockClosure(self):
+        self.remoteSock.shutdown(socket.SHUT_RDWR)
+        self.remoteSock.close()
+        self.remoteSock = False
 
     #################################################
     def sockSend(self, msg):
@@ -74,16 +79,16 @@ class Proto:
         if dataSent:
             return True
         else:
-            self.remoteSock.close()
-            self.remoteSock = False
+            #self.remoteSock.close()
+            #self.remoteSock = False
+            self.sockClosure()
             return False
     
     def receiver(self):
-        self.remoteSock.settimeout(30)
+        #self.remoteSock.settimeout(30)
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
-            print("message lenght", dataLenght)
             if dataLenght > 1024:
                 data = self.highRecv(dataLenght)
             else:
@@ -91,8 +96,9 @@ class Proto:
         if dataLenght and data:
             return data.decode()
         else:
-            self.remoteSock.close()
-            self.remoteSock = False
+            #self.remoteSock.close()
+            #self.remoteSock = False
+            self.sockClosure()
             return False
 
 class Client(Proto):
@@ -114,8 +120,9 @@ class Client(Proto):
             self.remoteSock = False
 
     def disconnectServer(self):
-        self.remoteSock.close()
-        self.remoteSock = False
+        #self.remoteSock.close()
+        #self.remoteSock = False
+        self.sockClosure()
         self.isConnected = False
         self.handshakeCode = False
 
@@ -128,7 +135,7 @@ class Settings:
         self.externalIP = False
 
         self.socketTimeout = 30
-        self.remoteSockTimeout = 30
+        self.remoteSockTimeout = 3
         self.backlog = 1
         self.maxSockets = 1
 
