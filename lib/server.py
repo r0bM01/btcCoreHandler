@@ -89,10 +89,10 @@ class Server:
             self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex())
 
             self.network.receiveClient(handshakeCode.hex())
-            if bool(self.network.remoteSock): lib.storage.Logger.add("connected by", self.network.remoteSock)
+            if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)
             else: lib.storage.Logger.add("no incoming connection detected")
 
-            while bool(self.network.remoteSock):
+            while bool(self.network._remoteSock):
 
                 encodedCall = self.network.receiver()
                 lib.storage.Logger.add("call: ", encodedCall)
@@ -107,12 +107,12 @@ class Server:
                 else:
                     reply = json.dumps({"error": "request not valid"})
                 ######################################################
-                if bool(reply) and bool(self.network.remoteSock):
+                if bool(reply) and bool(self.network._remoteSock):
                     lib.storage.Logger.add("reply content", len(reply.encode()))
                     replySent = self.network.sender(reply) #returns True or False
                     lib.storage.Logger.add("reply sent", replySent)
                 else:
-                    lib.storage.Logger.add("remote socket active", self.network.remoteSock)
+                    lib.storage.Logger.add("remote socket active", self.network._remoteSock)
                     lib.storage.Logger.add("connection closed")
 
         lib.storage.Logger.add("serving loop exit")

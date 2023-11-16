@@ -5,7 +5,7 @@ from requests import get
 
 class Proto:
     _remoteSock = False
-    _bufferSize = 1024
+    _bufferSize = 4096
     _opTimeout = 2
     
     def sockClosure(self):
@@ -82,7 +82,6 @@ class Proto:
             else:
                 dataSent = self.sockSend(data)
         if dataSent:
-            self._remoteSock.settimeout(self)
             return True
         else:
             #self._remoteSock.close()
