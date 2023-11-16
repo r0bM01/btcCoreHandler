@@ -4,32 +4,34 @@ import socket, threading, select, time, struct
 from requests import get
 
 class Proto:
-    def __init__(self):
-        self.remoteSock = False
+    _remoteSock = False
+    _bufferSize = 1024
+    _opTimeout = 2
     
     def sockClosure(self):
-        self.remoteSock.shutdown(socket.SHUT_RDWR)
-        self.remoteSock.close()
-        self.remoteSock = False
+        self._remoteSock.shutdown(socket.SHUT_RDWR)
+        self._remoteSock.close()
+        self._remoteSock = False
 
     #################################################
     def sockSend(self, msg):
         try:
-            msgSent = self.remoteSock.send(msg, socket.MSG_WAITALL)
+            msgSent = self._remoteSock.send(msg, socket.MSG_WAITALL)
         except (OSError, TimeoutError):
             msgSent = 0
         return True if msgSent == len(msg) else False
     
     def sockRecv(self, size):
         try:
-            msg = self.remoteSock.recv(int(size))
+            msg = self._remoteSock.recv(int(size))
         except (OSError, TimeoutError):
             msg = b""
         return msg if len(msg) == int(size) else False
     #################################################
     def highSend(self, data):
-        self.remoteSock.settimeout(1)
-        chunks = [data[c:c+1024] for c in range(0, len(data), 1024)]
+        tmpTimeout = self._remoteSock.gettimeout()
+        self._remoteSock.settimeout(self._opTimeout)
+        chunks = [data[c:c+self._bufferSize] for c in range(0, len(data), self._bufferSize)]
         for c in chunks:
             if self.sockSend(c) and bool(self.sockRecv(1)):
                 #time.sleep(0.1)
@@ -37,15 +39,17 @@ class Proto:
             else:
                 flag = False
                 break
+        self._remoteSock.settimeout(tmpTimeout)
         return flag
         
     def highRecv(self, size):
-        self.remoteSock.settimeout(2)
+        tmpTimeout = self._remoteSock.gettimeout()
+        self._remoteSock.settimeout(self._opTimeout)
         bytesRecv = 0
         dataArray = []
         while bytesRecv < size:
-            if size - bytesRecv > 1024:
-                chunk = self.sockRecv(1024)
+            if size - bytesRecv > self._bufferSize:
+                chunk = self.sockRecv(self._bufferSize)
             else: 
                 chunk = self.sockRecv(size - bytesRecv)
             if bool(chunk):
@@ -53,10 +57,11 @@ class Proto:
                 dataArray.append(chunk)
                 flag = True
             else:
-                #self.remoteSock.send(b"0")
+                #self._remoteSock.send(b"0")
                 flag = False
                 break
             bytesRecv += len(chunk)
+        self._remoteSock.settimeout(tmpTimeout)
         if flag:
             data = bytes()
             for d in dataArray:
@@ -72,32 +77,33 @@ class Proto:
         dataLenght = bytes.fromhex(dataLenght)
         dataSent = False
         if self.sockSend(dataLenght):
-            if len(data) > 1024:
+            if len(data) > self._bufferSize:
                 dataSent = self.highSend(data)
             else:
                 dataSent = self.sockSend(data)
         if dataSent:
+            self._remoteSock.settimeout(self)
             return True
         else:
-            #self.remoteSock.close()
-            #self.remoteSock = False
+            #self._remoteSock.close()
+            #self._remoteSock = False
             self.sockClosure()
             return False
     
     def receiver(self):
-        #self.remoteSock.settimeout(30)
+        #self._remoteSock.settimeout(30)
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
-            if dataLenght > 1024:
+            if dataLenght > self._bufferSize:
                 data = self.highRecv(dataLenght)
             else:
                 data = self.sockRecv(dataLenght)
         if dataLenght and data:
             return data.decode()
         else:
-            #self.remoteSock.close()
-            #self.remoteSock = False
+            #self._remoteSock.close()
+            #self._remoteSock = False
             self.sockClosure()
             return False
 
@@ -111,17 +117,17 @@ class Client(Proto):
 
     def connectToServer(self):
         try:
-            self.remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
-            #self.remoteSock.settimeout(10)
+            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
+            #self._remoteSock.settimeout(10)
             self.handshakeCode = self.receiver()
             self.isConnected = True if len(self.handshakeCode) == 32 else False
         except (OSError, TimeoutError):
             self.isConnected = False
-            self.remoteSock = False
+            self._remoteSock = False
 
     def disconnectServer(self):
-        #self.remoteSock.close()
-        #self.remoteSock = False
+        #self._remoteSock.close()
+        #self._remoteSock = False
         self.sockClosure()
         self.isConnected = False
         self.handshakeCode = False
@@ -156,11 +162,11 @@ class Server(Proto):
 
     def receiveClient(self, handshakeCode):
         try:
-            self.remoteSock, addr = self.socket.accept()
-            self.remoteSock.settimeout(self.settings.remoteSockTimeout)
+            self._remoteSock, addr = self.socket.accept()
+            self._remoteSock.settimeout(self.settings.remoteSockTimeout)
             self.sender(handshakeCode)
         except OSError:
-            self.remoteSock = False
+            self._remoteSock = False
         
 
 
