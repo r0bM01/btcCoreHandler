@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
                 elif key == 'size_on_disk': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 elif key == 'bytes': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 elif key == 'usage': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
+                else: self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
 
 

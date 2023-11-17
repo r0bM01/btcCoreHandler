@@ -32,7 +32,7 @@ def convertElapsedTime(numSeconds):
     return " ".join(result)
 
 def convertPercentage(num):
-    num = int(num)
+    num = float(num)
     if num < 100:
         return str(f"{int(num * 100)}%")
     else:
