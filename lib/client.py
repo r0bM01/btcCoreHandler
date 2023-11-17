@@ -11,6 +11,10 @@ class Client:
         self.certificate = "fefa"
         self.calls = False
         self.statusInfo = False
+        self.networkStats = False
+
+        self.nettotalsInfo = False
+        self.networkInfo = False
         self.peersInfo = False
     
     def initHashedCalls(self):
@@ -29,14 +33,21 @@ class Client:
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
         
-    
     def getAllNetworkInfo(self):
+        if self.network.isConnected and self.network.sender(self.calls['getnettotals']):
+            reply = self.network.receiver()
+            self.nettotalsInfo = json.loads(reply)
+        if self.network.isConnected and self.network.sender(self.calls['getnetworkinfo']):
+            reply = self.network.receiver()
+            self.networkInfo = json.load(reply)
         if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
             reply = self.network.receiver()
             self.peersInfo = json.loads(reply)
-
-
-
+    
+    def getNetworkStats(self):
+        if self.network.isConnected and self.network.sender(self.calls['getnetworkstats']):
+            reply = self.network.receiver()
+            self.networkStats = json.loads(reply)
 
 
 def main():

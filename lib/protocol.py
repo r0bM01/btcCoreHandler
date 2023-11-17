@@ -6,7 +6,8 @@ from lib.storage import Logger
 class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 
              'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
-             'getmempoolinfo', 'getmininginfo', 'getpeerinfo'}
+             'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+             'getnetworkstats'}
 
     @staticmethod
     def encodeCalls(hexCertificate, handshakeCode):
@@ -26,7 +27,7 @@ class DaemonData:
         self.networkInfo = None
         self.mempoolInfo = None
         self.miningInfo = None
-
+        self.nettotals = None
         self.peersInfo = None
 
     def getStatusInfo(self):
@@ -55,6 +56,16 @@ class DaemonData:
 
         reply = json.dumps(message)
         return reply
+    
+    def getNetworkStats(self):
+        message = {}
+        message['localservicesnames'] = self.networkInfo['localservicesnames']
+        message['totalbytessent'] = self.nettotals['totalbytessent']
+        message['totalbytesrecv'] = self.nettotals['totalbytesrecv']
+        message['connections'] = self.networkInfo['connections']
+        message['connections_in'] = self.networkInfo['connections_in']
+        message['connections_out'] = self.networkInfo['connections_out']
+        return json.dumps(message)
     
     def getPeerInfo(self):
         reply = json.dumps(self.peersInfo)

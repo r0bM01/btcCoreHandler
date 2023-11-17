@@ -88,7 +88,11 @@ class MainWindow(QMainWindow):
                 elif key == 'usage': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 else: self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
-
+    def refreshNetworkInfo(self):
+        self.CLIENT.getNetworkInfo()
+        if self.CLIENT.networkInfo:
+            for key, value in self.statsResult.items():
+                self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
 
     def init_left_menu(self):
         self.MENU = QWidget()
