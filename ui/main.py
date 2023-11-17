@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout,
-                            QHBoxLayout, QGroupBox, QTextEdit, QMessageBox )
+                            QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem )
 
 #import lib.network
 
@@ -181,6 +181,14 @@ class MainWindow(QMainWindow):
         
 
         self.STATUS.setLayout(STATUSlayout)
+    
+    def init_network(self):
+        self.NETWORK = QWidget()
+
+        NETWORKlayout = QVBoxLayout()
+
+        NETWORKtable = QTableWidget()
+
 
     def init_advanced(self):
         self.ADVANCED = QWidget()
@@ -246,7 +254,14 @@ class MainWindow(QMainWindow):
         command = self.commandLine.text()
         self.CLIENT.network.sender(self.CLIENT.calls[command])
         result = self.CLIENT.network.receiver()
-        self.debugLog.append(result)
+        result = json.loads(result)
+        if type(result) is list:
+            [self.debugLog.append(str(x)) for x in result]
+        elif type(result) is dict:
+            [self.debugLog.append(str(f"{key}: {value}")) for key, value in result.items()]
+        else:
+            self.debugLog.append(str(result))
+        
 
 
 app = QApplication(sys.argv)

@@ -12,6 +12,7 @@ class Client:
 
         self.calls = False
         self.statusInfo = False
+        self.peersInfo = False
     
     def initHashedCalls(self):
         if self.network.isConnected:
@@ -31,20 +32,10 @@ class Client:
         
     
     def getAllNetworkInfo(self):
-        if self.network.isConnected:
-            self.network.sender(self.calls['getnetworkinfo'])
+        if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
             reply = self.network.receiver()
-            if bool(reply):
-                net = json.loads(reply)
-                if "error" not in net: 
-                    self.networkPage.netInfo = net
-                    """
-            self.network.sender(self.calls['getpeerinfo'])
-            peers = json.loads(self.network.receiver())
-            print(peers)
-            if "error" not in peers: 
-                self.networkPage.peerInfo = peers
-                    """
+            self.peersInfo = json.loads(reply)
+
 
 
 

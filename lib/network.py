@@ -5,12 +5,15 @@ from requests import get
 
 class Proto:
     _remoteSock = False
-    _bufferSize = 4096
-    _opTimeout = 2
+    _bufferSize = 2048
+    _opTimeout = 5
     
     def sockClosure(self):
-        self._remoteSock.shutdown(socket.SHUT_RDWR)
-        self._remoteSock.close()
+        try: 
+            self._remoteSock.shutdown(socket.SHUT_RDWR)
+            self._remoteSock.close()
+        except (OSError, AttributeError):
+            pass
         self._remoteSock = False
 
     #################################################
@@ -23,7 +26,7 @@ class Proto:
     
     def sockRecv(self, size):
         try:
-            msg = self._remoteSock.recv(int(size))
+            msg = self._remoteSock.recv(int(size), socket.MSG_WAITALL)
         except (OSError, TimeoutError):
             msg = b""
         return msg if len(msg) == int(size) else False
@@ -31,44 +34,29 @@ class Proto:
     def highSend(self, data):
         tmpTimeout = self._remoteSock.gettimeout()
         self._remoteSock.settimeout(self._opTimeout)
+        flag = True
         chunks = [data[c:c+self._bufferSize] for c in range(0, len(data), self._bufferSize)]
         for c in chunks:
-            if self.sockSend(c) and bool(self.sockRecv(1)):
-                #time.sleep(0.1)
-                flag = True
-            else:
+            if not self.sockSend(c) or not bool(self.sockRecv(1)):
                 flag = False
                 break
         self._remoteSock.settimeout(tmpTimeout)
         return flag
         
     def highRecv(self, size):
-        tmpTimeout = self._remoteSock.gettimeout()
-        self._remoteSock.settimeout(self._opTimeout)
+        #tmpTimeout = self._remoteSock.gettimeout()
+        #self._remoteSock.settimeout(self._opTimeout)
         bytesRecv = 0
         dataArray = []
         while bytesRecv < size:
-            if size - bytesRecv > self._bufferSize:
-                chunk = self.sockRecv(self._bufferSize)
-            else: 
-                chunk = self.sockRecv(size - bytesRecv)
+            chunk = self.sockRecv(min(size - bytesRecv, self._bufferSize))
             if bool(chunk):
                 self.sockSend(b"1")
                 dataArray.append(chunk)
-                flag = True
+                bytesRecv += len(chunk)
             else:
-                #self._remoteSock.send(b"0")
-                flag = False
                 break
-            bytesRecv += len(chunk)
-        self._remoteSock.settimeout(tmpTimeout)
-        if flag:
-            data = bytes()
-            for d in dataArray:
-                data += d
-            return data
-        else:
-            return False
+        return b"".join(dataArray)
 
     def sender(self, data):
         #data must be already encoded in json
@@ -110,7 +98,7 @@ class Client(Proto):
     def __init__(self):
         self.remoteHost = "192.168.1.238"
         self.remotePort = 4600
-        self.timeout = 4
+        self.timeout = None
         self.isConnected = False
         self.handshakeCode = False
 
@@ -140,7 +128,7 @@ class Settings:
         self.externalIP = False
 
         self.socketTimeout = 30
-        self.remoteSockTimeout = 15
+        self.remoteSockTimeout = None
         self.backlog = 1
         self.maxSockets = 1
 
