@@ -9,7 +9,6 @@ class Client:
 
         self.network = lib.network.Client()
         self.certificate = "fefa"
-
         self.calls = False
         self.statusInfo = False
         self.peersInfo = False

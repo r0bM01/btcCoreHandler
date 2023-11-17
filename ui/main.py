@@ -1,8 +1,8 @@
 
 
 
-
 import lib.client
+import ui.utils as utils
 import sys, time, random, json, threading
 from PySide6.QtCore import Qt 
 from PySide6.QtGui import QPixmap, QIcon
@@ -68,23 +68,24 @@ class MainWindow(QMainWindow):
             else:
                 self.setStatusDefault()
             time.sleep(5)
+        
+    def refreshConnectionStatus(self):
+        if self.CLIENT.network.isConnected:
+            self.groupConnButton.setText("Disconnect")
+        else:
+            self.groupConnButton.setText("Connect")
+
 
     def refreshStatusInfo(self):
         self.CLIENT.getStatusInfo()
-
         if self.CLIENT.statusInfo:
-            uptimeSecs = int(self.CLIENT.statusInfo['uptime'])
-            d = uptimeSecs // 86400
-            h = (uptimeSecs % 86400) // 3600
-            m = ( (uptimeSecs % 86400) % 3600 ) // 60
-            s = ( (uptimeSecs % 86400) % 3600) % 60 
-            self.CLIENT.statusInfo['uptime'] = str(f"{d} Days {h}h {m}m {s}s")
-
-            verPerc = int(self.CLIENT.statusInfo['verificationprogress'] * 100)
-            self.CLIENT.statusInfo['verificationprogress'] = str(f"{verPerc}%")
-
             #adds the data to the status result
             for key, value in self.statusResult.items():
+                if key == 'uptime': self.statusResult[key].setText(utils.convertElapsedTime(self.CLIENT.statusInfo[key]))
+                elif key == 'verificationprogress': self.statusResult[key].setText(utils.convertPercentage(self.CLIENT.statusInfo[key]))
+                elif key == 'size_on_disk': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
+                elif key == 'bytes': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
+                elif key == 'usage': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
 
@@ -222,7 +223,7 @@ class MainWindow(QMainWindow):
         groupTableLayout = QVBoxLayout()
         self.peersTable = QTableWidget()
         self.peersTable.setColumnCount(4)
-        self.peersTable.setVerticalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'AGENT'])
+        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'AGENT'])
         groupTableLayout.addWidget(self.peersTable)
         groupTable.setLayout(groupTableLayout)
 
