@@ -36,14 +36,18 @@ class MainWindow(QMainWindow):
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
 
+        self.PAGES = {}
+
         self.init_left_menu()
         self.init_status()
+        self.init_network()
         self.init_advanced()
 
 
         self.mainLayout.addWidget(self.MENU)
-        self.mainLayout.addWidget(self.STATUS)
-        self.mainLayout.addWidget(self.ADVANCED)
+        self.mainLayout.addWidget(self.PAGES['STATUS'])
+        self.mainLayout.addWidget(self.PAGES['NETWORK'])
+        self.mainLayout.addWidget(self.PAGES['ADVANCED'])
         
         
         container = QWidget()
@@ -94,10 +98,11 @@ class MainWindow(QMainWindow):
         labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
 
         self.btSTATUS = QPushButton("Status")
-        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("status"))
+        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("STATUS"))
         self.btNETWORK = QPushButton("Network")
+        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("NETWORK"))
         self.btADVANCED = QPushButton("Advanced")
-        self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("advanced"))
+        self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("ADVANCED"))
         self.btOPTIONS = QPushButton("Options")
 
         labelVersion = QLabel()
@@ -119,7 +124,7 @@ class MainWindow(QMainWindow):
         self.MENU.setFixedWidth(200)
 
     def init_status(self):
-        self.STATUS = QWidget()
+        self.PAGES['STATUS'] = QWidget()
         self.statusResult = {}
         statusLabel = {}
         STATUSlayout = QVBoxLayout()
@@ -161,8 +166,8 @@ class MainWindow(QMainWindow):
         #creates a result label for each of statusLabel
         for key, value in statusLabel.items():
             self.statusResult[key] = QLabel() 
-        #sets all result labels with alignment center
-        [self.statusResult[key].setAlignment(Qt.AlignCenter) for key, value in self.statusResult.items()]
+            self.statusResult[key].setAlignment(Qt.AlignCenter)
+        
         #sets all result labels with default text " - "
         self.setStatusDefault()
         self.groupNodeStatus.setEnabled(False)
@@ -180,18 +185,55 @@ class MainWindow(QMainWindow):
 
         
 
-        self.STATUS.setLayout(STATUSlayout)
+        self.PAGES['STATUS'].setLayout(STATUSlayout)
     
     def init_network(self):
-        self.NETWORK = QWidget()
+        self.PAGES['NETWORK'] = QWidget()
+
+        statsLabel = {}
+        self.statsResult = {}
 
         NETWORKlayout = QVBoxLayout()
 
-        NETWORKtable = QTableWidget()
+        groupStats = QGroupBox("Network Stats")
+        groupStatsLayout = QHBoxLayout()
+        groupStatsForm1 = QFormLayout()
+        groupStatsForm2 = QFormLayout()
+        statsLabel['localservicesnames'] = QLabel("Services:")
+        statsLabel['totalbytesrecv'] = QLabel("Bytes Sent:")
+        statsLabel['totalbytessent'] = QLabel("Bytes Received:")
+        statsLabel['connections'] = QLabel("Connections:")
+        statsLabel['connections_in'] = QLabel("Inbound:")
+        statsLabel['connections_out'] = QLabel("Outbound:")
+        for key, value in statsLabel.items():
+            self.statsResult[key] = QLabel(" - ")
+            self.statsResult[key].setAlignment(Qt.AlignCenter)
+        groupStatsForm1.addRow(statsLabel['localservicesnames'], self.statsResult['localservicesnames'])
+        groupStatsForm1.addRow(statsLabel['totalbytesrecv'], self.statsResult['totalbytesrecv'])
+        groupStatsForm1.addRow(statsLabel['totalbytessent'], self.statsResult['totalbytessent'])
+        groupStatsForm2.addRow(statsLabel['connections'], self.statsResult['connections'])
+        groupStatsForm2.addRow(statsLabel['connections_in'], self.statsResult['connections_in'])
+        groupStatsForm2.addRow(statsLabel['connections_out'], self.statsResult['connections_out'])
+        groupStatsLayout.addLayout(groupStatsForm1)
+        groupStatsLayout.addLayout(groupStatsForm2)
+        groupStats.setLayout(groupStatsLayout)
 
+        groupTable = QGroupBox("Connected Peers")
+        groupTableLayout = QVBoxLayout()
+        self.peersTable = QTableWidget()
+        self.peersTable.setColumnCount(4)
+        self.peersTable.setVerticalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'AGENT'])
+        groupTableLayout.addWidget(self.peersTable)
+        groupTable.setLayout(groupTableLayout)
+
+        NETWORKlayout.addWidget(groupStats)
+        NETWORKlayout.addWidget(groupTable)
+        
+        self.PAGES['NETWORK'].setLayout(NETWORKlayout)
+        self.PAGES['NETWORK'].setVisible(False)
 
     def init_advanced(self):
-        self.ADVANCED = QWidget()
+        self.PAGES['ADVANCED'] = QWidget()
 
         ADVANCEDlayout = QVBoxLayout()
 
@@ -215,8 +257,8 @@ class MainWindow(QMainWindow):
         ADVANCEDlayout.addLayout(commandForm)
         ADVANCEDlayout.addWidget(self.debugLog)
 
-        self.ADVANCED.setLayout(ADVANCEDlayout)
-        self.ADVANCED.setVisible(False)
+        self.PAGES['ADVANCED'].setLayout(ADVANCEDlayout)
+        self.PAGES['ADVANCED'].setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
     
     def setStatusDefault(self):
@@ -224,12 +266,9 @@ class MainWindow(QMainWindow):
             self.statusResult[key].setText(" - ")
 
     def menu_buttons(self, button):
-        if button == "advanced":
-            self.STATUS.setVisible(False)
-            self.ADVANCED.setVisible(True)
-        elif button == "status":
-            self.STATUS.setVisible(True)
-            self.ADVANCED.setVisible(False)
+        for key, value in self.PAGES.items():
+            self.PAGES[key].setVisible(True) if key == button else self.PAGES[key].setVisible(False)
+        
     
     def handle_connection(self):
         if self.CLIENT.network.isConnected:
