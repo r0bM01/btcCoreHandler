@@ -27,7 +27,7 @@ class DaemonData:
         self.networkInfo = None
         self.mempoolInfo = None
         self.miningInfo = None
-        self.nettotals = None
+        self.nettotalsInfo = None
         self.peersInfo = None
 
     def getStatusInfo(self):
@@ -45,7 +45,13 @@ class DaemonData:
         message['subversion'] = self.networkInfo['subversion']
         message['protocolversion'] = self.networkInfo['protocolversion']
         message['connections'] = self.networkInfo['connections']
+        message['connections_in'] = self.networkInfo['connections_in']
+        message['connections_out'] = self.networkInfo['connections_out']
+        message['networkactive'] = self.networkInfo['networkactive']
         message['relayfee'] = self.networkInfo['relayfee']
+
+        message['totalbytessent'] = self.nettotalsInfo['totalbytessent']
+        message['totalbytesrecv'] = self.nettotalsInfo['totalbytesrecv']
 
         message['size'] = self.mempoolInfo['size']
         message['bytes'] = self.mempoolInfo['bytes']
@@ -53,19 +59,8 @@ class DaemonData:
         message['mempoolminfee'] = self.mempoolInfo['mempoolminfee']
         message['fullrbf'] = self.mempoolInfo['fullrbf']
         
-
         reply = json.dumps(message)
         return reply
-    
-    def getNetworkStats(self):
-        message = {}
-        message['localservicesnames'] = self.networkInfo['localservicesnames']
-        message['totalbytessent'] = self.nettotals['totalbytessent']
-        message['totalbytesrecv'] = self.nettotals['totalbytesrecv']
-        message['connections'] = self.networkInfo['connections']
-        message['connections_in'] = self.networkInfo['connections_in']
-        message['connections_out'] = self.networkInfo['connections_out']
-        return json.dumps(message)
     
     def getPeerInfo(self):
         reply = json.dumps(self.peersInfo)

@@ -65,7 +65,8 @@ class MainWindow(QMainWindow):
         while True:
             if self.CLIENT.network.isConnected:
                 self.refreshStatusInfo()
-                self.refreshNetworkInfo()
+                #self.refreshNetworkInfo()
+                self.refreshPeersInfo()
             else:
                 self.setStatusDefault()
             time.sleep(5)
@@ -89,11 +90,31 @@ class MainWindow(QMainWindow):
                 elif key == 'usage': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 else: self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
+            for key, value in self.statsResult.items():
+                if key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
+                elif key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
+                else: self.statsResult[key].setText(str(self.CLIENT.statusInfo[key]))
+
+
     def refreshNetworkInfo(self):
         self.CLIENT.getNetworkStats()
         if self.CLIENT.networkStats:
             for key, value in self.statsResult.items():
                 self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
+
+    def refreshPeersInfo(self):
+        self.CLIENT.getPeersInfo()
+        if self.CLIENT.peersInfo:
+            rowCounter = 0
+            for peer in self.peersInfo:
+                typeC = 'Inbound' if peer['inbound'] else: 'Outbound'
+                self.peersTable.setItem(rowCounter, 0, QTableWidgetItem(peer['id']))
+                self.peersTable.setItem(rowCounter, 1, QTableWidgetItem(peer['addr']))
+                self.peersTable.setItem(rowCounter, 2, QTableWidgetItem(typeC))
+                self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
+                rowCounter += 1
+                
+        
 
     def init_left_menu(self):
         self.MENU = QWidget()
@@ -161,11 +182,11 @@ class MainWindow(QMainWindow):
         statusLabel['subversion'] = QLabel("Agent:")
         statusLabel['protocolversion'] = QLabel("Protocol:")
         statusLabel['connections'] = QLabel("Connections:")
-        statusLabel['relayfee'] = QLabel("Relay Fee:")
+        #statusLabel['relayfee'] = QLabel("Relay Fee:")
 
         statusLabel['size'] = QLabel("Transactions:")
-        statusLabel['bytes'] = QLabel("Tot. Size:")
-        statusLabel['usage'] = QLabel("Usage Size:")
+        #statusLabel['bytes'] = QLabel("Tot. Size:")
+        statusLabel['usage'] = QLabel("Memory Usage:")
         statusLabel['mempoolminfee'] = QLabel("Min. Fee:")
         statusLabel['fullrbf'] = QLabel("Full RBF:")
 
@@ -205,7 +226,7 @@ class MainWindow(QMainWindow):
         groupStatsLayout = QHBoxLayout()
         groupStatsForm1 = QFormLayout()
         groupStatsForm2 = QFormLayout()
-        statsLabel['localservicesnames'] = QLabel("Services:")
+        statsLabel['networkactive'] = QLabel("Network Active:")
         statsLabel['totalbytesrecv'] = QLabel("Bytes Sent:")
         statsLabel['totalbytessent'] = QLabel("Bytes Received:")
         statsLabel['connections'] = QLabel("Connections:")
@@ -214,7 +235,7 @@ class MainWindow(QMainWindow):
         for key, value in statsLabel.items():
             self.statsResult[key] = QLabel(" - ")
             self.statsResult[key].setAlignment(Qt.AlignCenter)
-        groupStatsForm1.addRow(statsLabel['localservicesnames'], self.statsResult['localservicesnames'])
+        groupStatsForm1.addRow(statsLabel['networkactive'], self.statsResult['networkactive'])
         groupStatsForm1.addRow(statsLabel['totalbytesrecv'], self.statsResult['totalbytesrecv'])
         groupStatsForm1.addRow(statsLabel['totalbytessent'], self.statsResult['totalbytessent'])
         groupStatsForm2.addRow(statsLabel['connections'], self.statsResult['connections'])

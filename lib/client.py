@@ -32,6 +32,11 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
+    
+    def getPeersInfo(self):
+        if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
+            reply = self.network.receiver()
+            self.peersInfo = json.loads(reply)
         
     def getAllNetworkInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getnettotals']):

@@ -39,7 +39,7 @@ class DUpdater():
         self.bitcoinData.networkInfo = json.loads(networkInfo)
 
         nettotalsInfo = self.rpcCaller.runCall("getnettotals")
-        self.bitcoinData.nettotals = json.loads(nettotalsInfo)
+        self.bitcoinData.nettotalsInfo = json.loads(nettotalsInfo)
 
         mempoolInfo = self.rpcCaller.runCall("getmempoolinfo")
         self.bitcoinData.mempoolInfo = json.loads(mempoolInfo)
@@ -143,9 +143,7 @@ class Server:
 
         elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
             reply = self.bitcoinData.getPeerInfo()
-        
-        elif bool(self.bitcoinData.PID) and request == "getnetworkstats":
-            reply = self.bitcoinData.getNetworkStats()
+
         else:
             reply = self.rpcCaller.runCall(request)
         
