@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         self.btSTATUS = QPushButton("Status")
         self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("STATUS"))
         self.btNETWORK = QPushButton("Network")
-        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("NETWORK"))
+        self.btNETWORK.clicked.connect(lambda x: self.menu_buttons("NETWORK"))
         self.btADVANCED = QPushButton("Advanced")
         self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("ADVANCED"))
         self.btOPTIONS = QPushButton("Options")
