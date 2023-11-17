@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
         while True:
             if self.CLIENT.network.isConnected:
                 self.refreshStatusInfo()
+                self.refreshNetworkInfo()
             else:
                 self.setStatusDefault()
             time.sleep(5)
@@ -89,8 +90,8 @@ class MainWindow(QMainWindow):
                 else: self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
     def refreshNetworkInfo(self):
-        self.CLIENT.getNetworkInfo()
-        if self.CLIENT.networkInfo:
+        self.CLIENT.getNetworkStats()
+        if self.CLIENT.networkStats:
             for key, value in self.statsResult.items():
                 self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
 
