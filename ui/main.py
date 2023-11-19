@@ -4,10 +4,10 @@
 import lib.client
 import ui.utils as utils
 import sys, time, random, json, threading
-from PySide6.QtCore import Qt 
+from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
-                            QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout,
+                            QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout, QHeaderView,
                             QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem )
 
 #import lib.network
@@ -66,10 +66,11 @@ class MainWindow(QMainWindow):
             if self.CLIENT.network.isConnected:
                 self.refreshStatusInfo()
                 #self.refreshNetworkInfo()
+                time.sleep(1)
                 self.refreshPeersInfo()
             else:
                 self.setStatusDefault()
-            time.sleep(5)
+            time.sleep(3)
         
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
@@ -92,7 +93,7 @@ class MainWindow(QMainWindow):
 
             for key, value in self.statsResult.items():
                 if key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                elif key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
+                elif key == 'totalbytessent': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 else: self.statsResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
 
@@ -105,13 +106,14 @@ class MainWindow(QMainWindow):
     def refreshPeersInfo(self):
         self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
+            self.peersTable.setRowCount(len(self.CLIENT.peersInfo))
             rowCounter = 0
-            for peer in self.peersInfo:
-                typeC = 'Inbound' if peer['inbound'] else: 'Outbound'
-                self.peersTable.setItem(rowCounter, 0, QTableWidgetItem(peer['id']))
-                self.peersTable.setItem(rowCounter, 1, QTableWidgetItem(peer['addr']))
+            for peer in self.CLIENT.peersInfo:
+                typeC = 'Inbound' if peer['inbound'] else 'Outbound'
+                self.peersTable.setItem(rowCounter, 0, QTableWidgetItem(str(peer['id'])))
+                self.peersTable.setItem(rowCounter, 1, QTableWidgetItem(str(peer['addr'])))
                 self.peersTable.setItem(rowCounter, 2, QTableWidgetItem(typeC))
-                self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
+                #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
                 rowCounter += 1
                 
         
@@ -248,8 +250,12 @@ class MainWindow(QMainWindow):
         groupTable = QGroupBox("Connected Peers")
         groupTableLayout = QVBoxLayout()
         self.peersTable = QTableWidget()
-        self.peersTable.setColumnCount(4)
-        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'AGENT'])
+        self.peersTable.setColumnCount(3)
+        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE'])
+        peersHeader = self.peersTable.horizontalHeader()
+        peersHeader.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        peersHeader.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        peersHeader.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         groupTableLayout.addWidget(self.peersTable)
         groupTable.setLayout(groupTableLayout)
 
