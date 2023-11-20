@@ -128,8 +128,8 @@ class Settings:
         self.externalIP = False
 
         self.socketTimeout = 30
-        self.remoteSockTimeout = None
-        self.backlog = 1
+        self.remoteSockTimeout = 120
+        self.backlog = 5
         self.maxSockets = 1
 
 

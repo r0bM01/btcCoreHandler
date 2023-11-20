@@ -3,7 +3,7 @@
 
 import lib.client
 import ui.utils as utils
-import sys, time, random, json, threading
+import sys, time, random, json, threading, queue
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -55,33 +55,52 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
         
-        self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
+        
         self.CLIENT = lib.client.Client()
+        self.JOBS = queue.Queue(maxsize = 10)
+        self.baseTimeout = 180
+        self.connTimeout = 15
+        self.updateTimeout = 60
+        self.lastUpdate = False
 
+        self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
         self.refreshThread.start()
 
     
     def refreshController(self):
         while True:
-            if self.CLIENT.network.isConnected:
-                self.refreshStatusInfo()
-                #self.refreshNetworkInfo()
-                time.sleep(1)
-                self.refreshPeersInfo()
-            else:
-                self.setStatusDefault()
-            time.sleep(3)
-        
+            if not self.CLIENT.isConnected: timeout = self.baseTimeout
+            else: timeout = self.connTimeout
+            try:
+                job = self.JOBS.get(timeout = timeout)
+            except queue.Empty:
+                if self.CLIENT.network.isConnected:
+                    self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
+                else:
+                    self.setStatusDefault()
+                    self.setNetworkDefault()
+
+
+    def refreshAll(self):
+        self.refreshConnectionStatus()
+        self.refreshStatusInfo()
+        self.refreshNetworkInfo()
+        self.refreshPeersInfo()
+
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
+            self.groupConnLEdit.setEnabled(False)
             self.groupConnButton.setText("Disconnect")
         else:
+            self.groupConnLEdit.setEnabled(True)
             self.groupConnButton.setText("Connect")
+            self.setStatusDefault()
 
 
     def refreshStatusInfo(self):
         self.CLIENT.getStatusInfo()
         if self.CLIENT.statusInfo:
+            self.lastUpdate = time.time()
             #adds the data to the status result
             for key, value in self.statusResult.items():
                 if key == 'uptime': self.statusResult[key].setText(utils.convertElapsedTime(self.CLIENT.statusInfo[key]))
@@ -100,12 +119,14 @@ class MainWindow(QMainWindow):
     def refreshNetworkInfo(self):
         self.CLIENT.getNetworkStats()
         if self.CLIENT.networkStats:
+            self.lastUpdate = time.time()
             for key, value in self.statsResult.items():
                 self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
 
     def refreshPeersInfo(self):
         self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
+            self.lastUpdate = time.time()
             self.peersTable.setRowCount(len(self.CLIENT.peersInfo))
             rowCounter = 0
             for peer in self.CLIENT.peersInfo:
@@ -297,6 +318,10 @@ class MainWindow(QMainWindow):
     def setStatusDefault(self):
         for key, value in self.statusResult.items():
             self.statusResult[key].setText(" - ")
+    
+    def setNetworkDefault(self):
+        for key, value in self.statsResult.items():
+            self.statsResult[key].setText(" - ")
 
     def menu_buttons(self, button):
         for key, value in self.PAGES.items():
@@ -304,23 +329,10 @@ class MainWindow(QMainWindow):
         
     
     def handle_connection(self):
-        if self.CLIENT.network.isConnected:
-            self.CLIENT.network.disconnectServer()
-            self.setStatusDefault()
-            self.groupNodeStatus.setEnabled(False)
-        else:
-            self.CLIENT.initConnection()           
+        if not self.CLIENT.isConnected: self.JOBS.put(self.CLIENT.initConnection)
+        else: self.JOBS.put(self.CLIENT.closeConnection)
+        self.JOBS.put(self.refreshAll)
         
-        if self.CLIENT.network.isConnected:
-            self.groupConnLEdit.setEnabled(False)
-            self.groupConnButton.setText("Disconnect")
-
-            self.groupNodeStatus.setEnabled(True)
-            
-        else:
-            self.groupConnButton.setText("Connect")
-            self.groupConnLEdit.setEnabled(True)
-            self.groupNodeStatus.setEnabled(False)
 
     def send_advanced_command(self):
         command = self.commandLine.text()

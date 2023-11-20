@@ -24,9 +24,19 @@ class Client:
             self.calls = False
 
     def initConnection(self):
-        self.network.connectToServer()
+        if not self.network.isConnected: 
+            self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()
+    
+    def closeConnection(self):
+        if self.network.isConnected:
+            self.network.disconnectServer()
+            self.calls = False
+        
+    def keepAlive(self):
+        if self.network.isConnected and self.network.sender(self.calls['keepalive']):
+            reply = self.network.receiver()
 
     def getStatusInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):

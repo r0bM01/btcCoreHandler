@@ -4,7 +4,7 @@ import lib.crypto
 from lib.storage import Logger
 
 class Commands:
-    calls = {'uptime', 'start', 'stop', 'closeconn', 
+    calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
              'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
              'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
              'getnetworkstats'}

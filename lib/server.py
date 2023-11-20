@@ -143,6 +143,9 @@ class Server:
 
         elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
             reply = self.bitcoinData.getPeerInfo()
+        
+        elif request == "keepalive":
+            reply = "keepalive"
 
         else:
             reply = self.rpcCaller.runCall(request)
