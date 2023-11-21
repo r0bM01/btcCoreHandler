@@ -49,7 +49,6 @@ class MainWindow(QMainWindow):
         self.mainLayout.addWidget(self.PAGES['NETWORK'])
         self.mainLayout.addWidget(self.PAGES['ADVANCED'])
         
-        
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
@@ -64,13 +63,14 @@ class MainWindow(QMainWindow):
         self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
         self.refreshThread.start()
 
-    
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
-            self.JOBS.put(self.CLIENT.initConnection)
+            job = {'func': self.CLIENT.initConnection, 'args': False}
+            self.JOBS.put(job)
             print('start conn')
-        else: 
-            self.JOBS.put(self.CLIENT.closeConnection)
+        else:
+            job = {'func': self.CLIENT.closeConnection, 'args': False} 
+            self.JOBS.put(job)
             print('close conn')
         self.JOBS.put(self.refreshAll)
 
@@ -81,7 +81,10 @@ class MainWindow(QMainWindow):
             print('timeout: ', timeout)
             try:
                 job = self.JOBS.get(timeout = timeout)
-                job()
+                jobFunction = job['func']
+                jobArgs = job['args']
+                if jobArgs: jobFunction(jobArgs)
+                else: jobFunction()
                 print('job executed')
             except queue.Empty:
                 print('no jobs')
@@ -155,8 +158,7 @@ class MainWindow(QMainWindow):
                 #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
                 rowCounter += 1
                 
-        
-
+    
     def init_left_menu(self):
         self.MENU = QWidget()
 
@@ -251,8 +253,6 @@ class MainWindow(QMainWindow):
         STATUSlayout.addWidget(self.groupNodeStatus)
         STATUSlayout.addStretch()
 
-        
-
         self.PAGES['STATUS'].setLayout(STATUSlayout)
     
     def init_network(self):
@@ -321,7 +321,6 @@ class MainWindow(QMainWindow):
         commandForm.addWidget(commandLabel)
         commandForm.addWidget(self.commandLine)
         commandForm.addWidget(self.commandButton)
-        
 
         self.debugLog = QTextEdit()
         self.debugLog.setReadOnly(True)
@@ -348,9 +347,10 @@ class MainWindow(QMainWindow):
 
     def send_advanced_command(self):
         command = self.commandLine.text()
-        self.CLIENT.network.sender(self.CLIENT.calls[command])
-        result = self.CLIENT.network.receiver()
-        result = json.loads(result)
+        job = {'func': self.CLIENT.advancedCall, 'args': command}
+        self.JOBS.put(job)
+        #query = self.CLIENT.registry
+        result = json.loads()
         if type(result) is list:
             [self.debugLog.append(str(x)) for x in result]
         elif type(result) is dict:
