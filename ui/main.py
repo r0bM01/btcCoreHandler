@@ -67,32 +67,52 @@ class MainWindow(QMainWindow):
         self.refreshThread.start()
 
     
+    def handle_connection(self):
+        if not self.CLIENT.network.isConnected: 
+            self.JOBS.put(self.CLIENT.initConnection)
+            print('start conn')
+        else: 
+            self.JOBS.put(self.CLIENT.closeConnection)
+            print('close conn')
+        self.JOBS.put(self.refreshAll)
+
+
     def refreshController(self):
         while True:
-            if not self.CLIENT.isConnected: timeout = self.baseTimeout
+            if not self.CLIENT.network.isConnected: timeout = self.baseTimeout
             else: timeout = self.connTimeout
+            print('timeout: ', timeout)
             try:
                 job = self.JOBS.get(timeout = timeout)
+                job()
+                job = False
+                print('job executed')
             except queue.Empty:
+                job = False
+                print('no jobs')
                 if self.CLIENT.network.isConnected:
                     self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
                 else:
                     self.setStatusDefault()
                     self.setNetworkDefault()
-
+             
 
     def refreshAll(self):
+        print('refresh all')
         self.refreshConnectionStatus()
+ 
         self.refreshStatusInfo()
-        self.refreshNetworkInfo()
+       
         self.refreshPeersInfo()
 
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
             self.groupConnLEdit.setEnabled(False)
+            self.groupNodeStatus.setEnabled(True)
             self.groupConnButton.setText("Disconnect")
         else:
             self.groupConnLEdit.setEnabled(True)
+            self.groupNodeStatus.setEnabled(False)
             self.groupConnButton.setText("Connect")
             self.setStatusDefault()
 
@@ -326,12 +346,6 @@ class MainWindow(QMainWindow):
     def menu_buttons(self, button):
         for key, value in self.PAGES.items():
             self.PAGES[key].setVisible(True) if key == button else self.PAGES[key].setVisible(False)
-        
-    
-    def handle_connection(self):
-        if not self.CLIENT.isConnected: self.JOBS.put(self.CLIENT.initConnection)
-        else: self.JOBS.put(self.CLIENT.closeConnection)
-        self.JOBS.put(self.refreshAll)
         
 
     def send_advanced_command(self):
