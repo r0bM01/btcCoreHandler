@@ -87,6 +87,7 @@ class MainWindow(QMainWindow):
                 print('no jobs')
             finally:
                 if self.CLIENT.network.isConnected:
+                    print('is connected: ',self.CLIENT.network.isConnected)
                     self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
                     timeout = self.connTimeout
                 else:
@@ -96,8 +97,8 @@ class MainWindow(QMainWindow):
 
     def refreshAll(self):
         self.refreshConnectionStatus()
-        self.refreshStatusInfo()
-        self.refreshPeersInfo()
+        self.getStatusInfo()
+        self.getPeersInfo()
 
 
     def refreshConnectionStatus(self):
