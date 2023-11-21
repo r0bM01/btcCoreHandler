@@ -54,13 +54,11 @@ class MainWindow(QMainWindow):
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
-        
-        
         self.CLIENT = lib.client.Client()
         self.JOBS = queue.Queue(maxsize = 10)
-        self.baseTimeout = 180
-        self.connTimeout = 15
-        self.updateTimeout = 60
+        self.baseTimeout = 180 #checks 3 mins when no connection
+        self.connTimeout = 15 #check 15 secs when connected
+        self.updateTimeout = 60 #if connected updates every minute
         self.lastUpdate = False
 
         self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
@@ -78,32 +76,29 @@ class MainWindow(QMainWindow):
 
 
     def refreshController(self):
+        timeout = self.baseTimeout
         while True:
-            if not self.CLIENT.network.isConnected: timeout = self.baseTimeout
-            else: timeout = self.connTimeout
             print('timeout: ', timeout)
             try:
                 job = self.JOBS.get(timeout = timeout)
                 job()
-                job = False
                 print('job executed')
             except queue.Empty:
-                job = False
                 print('no jobs')
+            finally:
                 if self.CLIENT.network.isConnected:
                     self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
+                    timeout = self.connTimeout
                 else:
-                    self.setStatusDefault()
-                    self.setNetworkDefault()
+                    self.refreshConnectionStatus()
+                    timeout = self.baseTimeout
              
 
     def refreshAll(self):
-        print('refresh all')
         self.refreshConnectionStatus()
- 
         self.refreshStatusInfo()
-       
         self.refreshPeersInfo()
+
 
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
@@ -115,9 +110,10 @@ class MainWindow(QMainWindow):
             self.groupNodeStatus.setEnabled(False)
             self.groupConnButton.setText("Connect")
             self.setStatusDefault()
+            self.setNetworkDefault()
 
 
-    def refreshStatusInfo(self):
+    def getStatusInfo(self):
         self.CLIENT.getStatusInfo()
         if self.CLIENT.statusInfo:
             self.lastUpdate = time.time()
@@ -135,15 +131,16 @@ class MainWindow(QMainWindow):
                 elif key == 'totalbytessent': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 else: self.statsResult[key].setText(str(self.CLIENT.statusInfo[key]))
 
-
+    """
     def refreshNetworkInfo(self):
         self.CLIENT.getNetworkStats()
         if self.CLIENT.networkStats:
             self.lastUpdate = time.time()
             for key, value in self.statsResult.items():
                 self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
+    """
 
-    def refreshPeersInfo(self):
+    def getPeersInfo(self):
         self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
             self.lastUpdate = time.time()
