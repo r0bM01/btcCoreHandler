@@ -72,7 +72,8 @@ class MainWindow(QMainWindow):
             job = {'func': self.CLIENT.closeConnection, 'args': False} 
             self.JOBS.put(job)
             print('close conn')
-        self.JOBS.put(self.refreshAll)
+        job = {'func': self.refreshAll, 'args': False} 
+        self.JOBS.put(job)
 
 
     def refreshController(self):
@@ -90,7 +91,6 @@ class MainWindow(QMainWindow):
                 print('no jobs')
             finally:
                 if self.CLIENT.network.isConnected:
-                    print('is connected: ',self.CLIENT.network.isConnected)
                     self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
                     timeout = self.connTimeout
                 else:
