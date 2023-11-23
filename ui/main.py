@@ -83,8 +83,14 @@ class MainWindow(QMainWindow):
             try:
                 job = self.JOBS.get(timeout = timeout)
                 jobFunction = job['func']
-                jobArgs = job['args']
-                if jobArgs: jobFunction(jobArgs)
+                if jobFunction is self.CLIENT.advancedCall:
+                    reply = jobFunction(job['args'])
+                    if type(reply) is list:
+                        [self.debugLog.append(str(x)) for x in reply]
+                    elif type(reply) is dict:
+                        [self.debugLog.append(str(f"{key}: {value}")) for key, value in reply.items()]
+                    else:
+                        self.debugLog.append(str(reply))
                 else: jobFunction()
                 print('job executed')
             except queue.Empty:
@@ -97,7 +103,6 @@ class MainWindow(QMainWindow):
                     self.refreshConnectionStatus()
                     timeout = self.baseTimeout
              
-
     def refreshAll(self):
         self.refreshConnectionStatus()
         self.getStatusInfo()
@@ -349,14 +354,7 @@ class MainWindow(QMainWindow):
         command = self.commandLine.text()
         job = {'func': self.CLIENT.advancedCall, 'args': command}
         self.JOBS.put(job)
-        #query = self.CLIENT.registry
-        result = json.loads()
-        if type(result) is list:
-            [self.debugLog.append(str(x)) for x in result]
-        elif type(result) is dict:
-            [self.debugLog.append(str(f"{key}: {value}")) for key, value in result.items()]
-        else:
-            self.debugLog.append(str(result))
+        
         
 
 

@@ -11,8 +11,6 @@ class Client:
         self.certificate = "fefa"
         self.calls = False
 
-        self.registry = []
-
         self.statusInfo = False
         self.networkStats = False
 
@@ -68,15 +66,11 @@ class Client:
             self.networkStats = json.loads(reply)
     
     def advancedCall(self, call):
-        if self.network.isConnected:
-            record = {}
-            record['time'] = int(time.time())
-            record['call'] = call
-            record['encodedCall'] = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            self.network.sender(record['encodedCall'])
-            record['reply'] = self.network.receiver()
-
-            self.registry.append(record)
+        if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
+            encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
+            self.network.sender(encodedCall)
+            reply = self.network.receiver()
+            return json.loads(reply)
 
 
 
