@@ -78,7 +78,6 @@ class RPC:
     
     def checkDaemon(self):
         PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
-        print(PID)
         if PID != "": PID = int(PID)
         else: PID = False
         return PID

@@ -111,7 +111,7 @@ class Server:
                     reply = json.dumps({"error": "request not valid"})
                 ######################################################
                 if bool(reply) and bool(self.network._remoteSock):
-                    lib.storage.Logger.add("reply content", len(reply.encode()))
+                    lib.storage.Logger.add("reply content size", len(reply.encode()))
                     replySent = self.network.sender(reply) #returns True or False
                     lib.storage.Logger.add("reply sent", replySent)
                 else:
@@ -145,20 +145,16 @@ class Server:
             reply = self.bitcoinData.getPeerInfo()
         
         elif bool(self.bitcoinData.PID) and request == "advancedcall":
-            print('advanced call requested')
             rawCall = self.network.receiver() #wait for actual call
-            print('Adv enc received', rawCall)
             reply = self.rpcCaller.runCall(rawCall)
 
         elif request == "keepalive":
             reply = "keepalive"
 
         else:
-            reply = self.rpcCaller.runCall(request)
+            reply = json.dumps({"error": "command not allowed"})
         
         return reply
-
-
 
 
 def main():

@@ -126,6 +126,8 @@ class MainWindow(QMainWindow):
 
     def getStatusInfo(self):
         self.CLIENT.getStatusInfo()
+        # job = {'func': self.CLIENT.getStatusInfo, 'args': False}
+        # self.JOBS.put(job)
         if self.CLIENT.statusInfo:
             self.lastUpdate = time.time()
             #adds the data to the status result

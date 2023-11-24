@@ -153,7 +153,7 @@ class Server(Proto):
             self._remoteSock.settimeout(self.settings.remoteSockTimeout)
             self.sender(handshakeCode)
         except OSError:
-            self._remoteSock = False
+            self.sockClosure()
         
 
 
