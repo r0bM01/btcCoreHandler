@@ -37,3 +37,35 @@ def convertPercentage(num):
         return str(f"{int(num * 100)}%")
     else:
         return num
+
+def convertToPrintable(data):
+    def prtList(dataL):
+        rsl = str()
+        for i in dataL:
+            rsl += str(f"{i} ")
+        return rsl
+
+    def prtDict(dataD):
+        rsl = str()
+        for key, value in dataD.items():
+            rsl += str(f"{key}: {value} ")
+        return rsl
+
+    def prtValue(dataValue):
+        if type(dataValue) is list: rsl = prtList(dataValue)
+        elif type(dataValue) is dict: rsl = prtDict(dataValue)
+        else: rsl = dataValue
+        return rsl
+
+    printableResult = str()
+    
+    if type(data) is list:
+        for i in data:
+            printableResult += prtValue(i) + str("\n")
+    elif type(data) is dict:
+        for key, value in data.items():
+            printableResult += str(f"{key}: ")
+            printableResult += prtValue(value) + str("\n")
+    else:
+        printableResult = str(data) + str("\n")
+    return printableResult

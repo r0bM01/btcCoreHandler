@@ -86,12 +86,7 @@ class MainWindow(QMainWindow):
                 print('queue call: ', jobFunction)
                 if jobFunction == self.CLIENT.advancedCall:
                     reply = jobFunction(job['args'])
-                    if type(reply) is list:
-                        [self.debugLog.append(str(x)) for x in reply]
-                    elif type(reply) is dict:
-                        [self.debugLog.append(str(f"{key}: {value}")) for key, value in reply.items()]
-                    else:
-                        self.debugLog.append(str(reply))
+                    self.debugLog.append(utils.convertToPrintable(reply))
                 else: 
                     jobFunction()
                 print('job executed')

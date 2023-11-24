@@ -1,7 +1,15 @@
-import json, time, subprocess, threading
+import json, time, subprocess, threading, platform
 import lib.network
 import lib.storage
 import lib.protocol
+
+
+class Machine:
+    dataInfo = {}
+    dataInfo['node'] = platform.node()
+    dataInfo['machine'] = platform.machine()
+    dataInfo['system'] = platform.system()
+    dataInfo['release'] = platform.release()
 
 class DUpdater():
     def __init__(self, rpcCaller, bitcoinData):
@@ -51,7 +59,7 @@ class DUpdater():
         peersInfo = json.loads(peersInfo)
         self.bitcoinData.peersInfo = [p for p in peersInfo]
         
-        
+
 class Server:
     def __init__(self):
         #init procedure
@@ -152,6 +160,9 @@ class Server:
 
         elif request == "keepalive":
             reply = "keepalive"
+        
+        elif request == "systeminfo":
+            reply = json.dumps(Machine.dataInfo)
 
         else:
             reply = json.dumps({"error": "command not allowed"})
