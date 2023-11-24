@@ -146,7 +146,9 @@ class Server:
         
         elif bool(self.bitcoinData.PID) and request == "advancedcall":
             rawCall = self.network.receiver() #wait for actual call
+            lib.storage.Logger.add("Advanced call", rawCall)
             reply = self.rpcCaller.runCall(rawCall)
+            if not bool(reply): reply = json.dumps({"error": "command not allowed"})
 
         elif request == "keepalive":
             reply = "keepalive"
