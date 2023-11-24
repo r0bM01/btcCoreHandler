@@ -7,7 +7,7 @@ class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
              'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
              'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-             'getnetworkstats'}
+             'getnetworkstats', 'advancedcall'}
 
     @staticmethod
     def encodeCalls(hexCertificate, handshakeCode):

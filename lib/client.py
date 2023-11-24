@@ -67,8 +67,8 @@ class Client:
     
     def advancedCall(self, call):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
-            encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            self.network.sender(encodedCall)
+            #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
+            self.network.sender(call)
             reply = self.network.receiver()
             return json.loads(reply)
 

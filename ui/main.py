@@ -83,7 +83,8 @@ class MainWindow(QMainWindow):
             try:
                 job = self.JOBS.get(timeout = timeout)
                 jobFunction = job['func']
-                if jobFunction is self.CLIENT.advancedCall:
+                print('queue call: ', jobFunction)
+                if jobFunction == self.CLIENT.advancedCall:
                     reply = jobFunction(job['args'])
                     if type(reply) is list:
                         [self.debugLog.append(str(x)) for x in reply]
@@ -91,7 +92,8 @@ class MainWindow(QMainWindow):
                         [self.debugLog.append(str(f"{key}: {value}")) for key, value in reply.items()]
                     else:
                         self.debugLog.append(str(reply))
-                else: jobFunction()
+                else: 
+                    jobFunction()
                 print('job executed')
             except queue.Empty:
                 print('no jobs')
@@ -352,6 +354,7 @@ class MainWindow(QMainWindow):
 
     def send_advanced_command(self):
         command = self.commandLine.text()
+        print('Adv Call obj: ', self.CLIENT.advancedCall)
         job = {'func': self.CLIENT.advancedCall, 'args': command}
         self.JOBS.put(job)
         

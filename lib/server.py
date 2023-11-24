@@ -144,6 +144,12 @@ class Server:
         elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
             reply = self.bitcoinData.getPeerInfo()
         
+        elif bool(self.bitcoinData.PID) and request == "advancedcall":
+            print('advanced call requested')
+            rawCall = self.network.receiver() #wait for actual call
+            print('Adv enc received', rawCall)
+            reply = self.rpcCaller.runCall(rawCall)
+
         elif request == "keepalive":
             reply = "keepalive"
 
