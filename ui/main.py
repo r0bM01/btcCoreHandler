@@ -54,56 +54,32 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
         self.CLIENT = lib.client.Client()
-        self.JOBS = queue.Queue(maxsize = 10)
-        self.baseTimeout = 180 #checks 3 mins when no connection
-        self.connTimeout = 15 #check 15 secs when connected
-        self.updateTimeout = 60 #if connected updates every minute
-        self.lastUpdate = False
 
-        self.refreshThread = threading.Thread(target = self.refreshController, daemon = True)
+        self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
         self.refreshThread.start()
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
-            job = {'func': self.CLIENT.initConnection, 'args': False}
-            self.JOBS.put(job)
-            print('start conn')
+            self.CLIENT.initConnection()
+            self.getStatusInfo()
+            self.getPeersInfo()
         else:
-            job = {'func': self.CLIENT.closeConnection, 'args': False} 
-            self.JOBS.put(job)
-            print('close conn')
-        job = {'func': self.refreshAll, 'args': False} 
-        self.JOBS.put(job)
+            self.CLIENT.closeConnection()
+            
+            
+        #self.refreshAll()
+        
 
-
-    def refreshController(self):
-        timeout = self.baseTimeout
-        while True:
-            print('timeout: ', timeout)
-            try:
-                job = self.JOBS.get(timeout = timeout)
-                jobFunction = job['func']
-                print('queue call: ', jobFunction)
-                if jobFunction == self.CLIENT.advancedCall:
-                    reply = jobFunction(job['args'])
-                    self.debugLog.append(utils.convertToPrintable(reply))
-                else: 
-                    jobFunction()
-                print('job executed')
-            except queue.Empty:
-                print('no jobs')
-            finally:
-                if self.CLIENT.network.isConnected:
-                    self.refreshAll if (time.time() - self.lastUpdate) > self.updateTimeout else self.CLIENT.keepAlive()
-                    timeout = self.connTimeout
-                else:
-                    self.refreshConnectionStatus()
-                    timeout = self.baseTimeout
-             
     def refreshAll(self):
-        self.refreshConnectionStatus()
-        self.getStatusInfo()
-        self.getPeersInfo()
+        while True:
+            self.refreshConnectionStatus()
+            if bool(self.CLIENT.timeLastUpdate) and (time.time() - self.CLIENT.timeLastUpdate) > 30:
+                print('updating now')
+                self.CLIENT.getStatusInfo()
+                self.getStatusInfo()
+                self.CLIENT.getPeersInfo()
+                self.setStatusDefault()
+            time.sleep(1)
 
 
     def refreshConnectionStatus(self):
@@ -120,7 +96,7 @@ class MainWindow(QMainWindow):
 
 
     def getStatusInfo(self):
-        self.CLIENT.getStatusInfo()
+        # self.CLIENT.getStatusInfo()
         # job = {'func': self.CLIENT.getStatusInfo, 'args': False}
         # self.JOBS.put(job)
         if self.CLIENT.statusInfo:
@@ -149,7 +125,7 @@ class MainWindow(QMainWindow):
     """
 
     def getPeersInfo(self):
-        self.CLIENT.getPeersInfo()
+        # self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
             self.lastUpdate = time.time()
             self.peersTable.setRowCount(len(self.CLIENT.peersInfo))

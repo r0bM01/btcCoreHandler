@@ -65,7 +65,7 @@ def convertToPrintable(data):
     elif type(data) is dict:
         for key, value in data.items():
             printableResult += str(f"{key}: ")
-            printableResult += prtValue(value) + str("\n")
+            printableResult += str(prtValue(value)) + str("\n")
     else:
         printableResult = str(data) + str("\n")
     return printableResult

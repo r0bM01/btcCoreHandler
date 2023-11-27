@@ -1,8 +1,21 @@
 import lib.network
 import lib.crypto
-import json, threading, time
+import json, threading, time, queue
 
 from lib.protocol import Commands
+
+
+class Worker:
+    def __init__(self, networkObj):
+        self.network = networkObj
+
+        
+        
+    
+    
+           
+           
+                
 
 class Client:
     def __init__(self):
@@ -10,13 +23,18 @@ class Client:
         self.network = lib.network.Client()
         self.certificate = "fefa"
         self.calls = False
-
+        
         self.statusInfo = False
         self.networkStats = False
 
         self.nettotalsInfo = False
         self.networkInfo = False
         self.peersInfo = False
+        
+        self.timeLastUpdate = False
+        
+
+    
     
     def initHashedCalls(self):
         if self.network.isConnected:
@@ -29,9 +47,13 @@ class Client:
             self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()
+            self.getStatusInfo()
+            self.getPeersInfo()
+            
     
     def closeConnection(self):
         if self.network.isConnected:
+            self.isWorking = False
             self.network.disconnectServer()
             self.calls = False
         
@@ -43,11 +65,13 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
+            self.timeLastUpdate = time.time()
     
     def getPeersInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
             reply = self.network.receiver()
-            self.peersInfo = json.loads(reply)
+            self.peersInfo = json.loads(reply) if bool(reply) else False
+            self.timeLastUpdate = time.time()
         
     def getAllNetworkInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getnettotals']):
