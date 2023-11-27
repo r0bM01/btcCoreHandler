@@ -337,9 +337,12 @@ class MainWindow(QMainWindow):
         
 
     def send_advanced_command(self):
-        command = self.commandLine.text()
+        insertedCommand = self.commandLine.text()
+        fullCommand = insertedCommand.split(" ", 1)
+        command = fullCommand[0]
+        arg = fullCommand[1] if len(fullCommand) > 1 else False
         self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer
-        reply = self.CLIENT.advancedCall(command)
+        reply = self.CLIENT.advancedCall(command, arg)
         self.commandEvent.set() # updater can now restart
         self.debugLog.append(utils.convertToPrintable(reply))
 

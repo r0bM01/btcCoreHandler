@@ -38,10 +38,8 @@ class Client:
             self.getStatusInfo()
             self.getPeersInfo()
             
-    
     def closeConnection(self):
         if self.network.isConnected:
-            self.isWorking = False
             self.network.disconnectServer()
             self.calls = False
         
@@ -80,15 +78,10 @@ class Client:
             reply = self.network.receiver()
             self.networkStats = json.loads(reply)
     
-    def advancedCall(self, call):
+    def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            call = call.split(" ")
-            jsonCommand = {'call': call[0]}
-            if len(call) == 2:
-                jsonCommand['arg'] = call[1]
-            else:
-                jsonCommand['arg'] = False
+            jsonCommand = {'call': call, 'arg': arg}
             self.network.sender(json.dumps(jsonCommand))
             reply = self.network.receiver()
             return json.loads(reply)
