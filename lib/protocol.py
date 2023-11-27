@@ -85,12 +85,12 @@ class RPC:
     def getLocalIP(self):
         IP = subprocess.run(["hostname", "I"], capture_output = True).stdout.decode()
         return str(IP)
-    
+    """    
     def caller(self, command):
         call = subprocess.run([self.base, command], capture_output = True)
         return call.stdout.decode()
-        
-    def runCall(self, command):
+    """
+    def runCall(self, command, arg = False):
         if command == 'uptime':
             call = self.caller(command)
             call = json.dumps({"uptime": int(call)})
@@ -101,7 +101,8 @@ class RPC:
             subprocess.run(["bitcoind"])
             call = json.dumps({"start": bool(self.checkDaemon())})
         else:
-            call = self.caller(command)
+            caller = [self.base, command, arg] if arg else [self.base, command]
+            call = subprocess.run(caller, capture_output = True).stdout.decode()
         return call
 
     

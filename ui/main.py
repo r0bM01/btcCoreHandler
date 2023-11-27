@@ -55,32 +55,41 @@ class MainWindow(QMainWindow):
 
         self.CLIENT = lib.client.Client()
 
-        self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
-        self.refreshThread.start()
-        self.sendCommandEvent = threading.Event()
+        self.commandEvent = threading.Event()
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
             self.CLIENT.initConnection()
-            self.getStatusInfo()
-            self.getPeersInfo()
+            self.commandEvent.set()
+            self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
+            self.refreshThread.start()
         else:
             self.CLIENT.closeConnection()
+            self.refreshThread.join()
+        self.refreshConnectionStatus()
+        self.writeStatusInfo()
+        self.writePeersInfo()
             
-            
-        #self.refreshAll()
-        
-
     def refreshAll(self):
-        while True:
-            self.refreshConnectionStatus()
-            if bool(self.CLIENT.timeLastUpdate) and (time.time() - self.CLIENT.timeLastUpdate) > 30:
-                print('updating now')
-                self.CLIENT.getStatusInfo()
-                self.getStatusInfo()
+        while self.CLIENT.network.isConnected:
+            self.refreshConnectionStatus() #always check the connection status
+            timeNow = time.time()
+            if (timeNow - self.CLIENT.lastPeersUpdate) > 120:
+                self.commandEvent.wait(10)
                 self.CLIENT.getPeersInfo()
-                self.setStatusDefault()
-            time.sleep(1)
+                self.writePeersInfo()
+            
+            if (timeNow - self.CLIENT.lastStatusUpdate) > 60:
+                self.commandEvent.wait(10)
+                self.CLIENT.getStatusInfo()
+                self.writeStatusInfo()
+                
+            if (timeNow - self.CLIENT.lastConnCheck) > 30:
+                self.commandEvent.wait(10)
+                self.CLIENT.keepAlive()
+                
+            time.sleep(5)
+        
 
 
     def refreshConnectionStatus(self):
@@ -92,16 +101,14 @@ class MainWindow(QMainWindow):
             self.groupConnLEdit.setEnabled(True)
             self.groupNodeStatus.setEnabled(False)
             self.groupConnButton.setText("Connect")
-            self.setStatusDefault()
-            self.setNetworkDefault()
 
 
-    def getStatusInfo(self):
+
+    def writeStatusInfo(self):
         # self.CLIENT.getStatusInfo()
         # job = {'func': self.CLIENT.getStatusInfo, 'args': False}
         # self.JOBS.put(job)
         if self.CLIENT.statusInfo:
-            self.lastUpdate = time.time()
             #adds the data to the status result
             for key, value in self.statusResult.items():
                 if key == 'uptime': self.statusResult[key].setText(utils.convertElapsedTime(self.CLIENT.statusInfo[key]))
@@ -115,6 +122,8 @@ class MainWindow(QMainWindow):
                 if key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 elif key == 'totalbytessent': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
                 else: self.statsResult[key].setText(str(self.CLIENT.statusInfo[key]))
+        else:
+            self.setStatusDefault()
 
     """
     def refreshNetworkInfo(self):
@@ -125,10 +134,9 @@ class MainWindow(QMainWindow):
                 self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
     """
 
-    def getPeersInfo(self):
+    def writePeersInfo(self):
         # self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
-            self.lastUpdate = time.time()
             self.peersTable.setRowCount(len(self.CLIENT.peersInfo))
             rowCounter = 0
             for peer in self.CLIENT.peersInfo:
@@ -138,6 +146,8 @@ class MainWindow(QMainWindow):
                 self.peersTable.setItem(rowCounter, 2, QTableWidgetItem(typeC))
                 #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
                 rowCounter += 1
+        else:
+            self.setNetworkDefault()
                 
     
     def init_left_menu(self):
@@ -328,8 +338,10 @@ class MainWindow(QMainWindow):
 
     def send_advanced_command(self):
         command = self.commandLine.text()
-        self.sendCommandEvent.wait()
+        self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer
         reply = self.CLIENT.advancedCall(command)
+        self.commandEvent.set() # updater can now restart
+        self.debugLog.append(utils.convertToPrintable(reply))
 
         
         

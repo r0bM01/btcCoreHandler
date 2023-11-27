@@ -18,7 +18,9 @@ class Client:
         self.networkInfo = False
         self.peersInfo = False
         
-        self.timeLastUpdate = False
+        self.lastStatusUpdate = False
+        self.lastPeersUpdate = False
+        self.lastConnCheck = False
         
     
     
@@ -46,18 +48,21 @@ class Client:
     def keepAlive(self):
         if self.network.isConnected and self.network.sender(self.calls['keepalive']):
             reply = self.network.receiver()
+            self.lastConnCheck = time.time()
 
     def getStatusInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
-            self.timeLastUpdate = time.time()
+            self.lastStatusUpdate = time.time()
+            self.lastConnCheck = time.time()
     
     def getPeersInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
             reply = self.network.receiver()
             self.peersInfo = json.loads(reply) if bool(reply) else False
-            self.timeLastUpdate = time.time()
+            self.lastPeersUpdate = time.time()
+            self.lastConnCheck = time.time()
         
     def getAllNetworkInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getnettotals']):
@@ -79,11 +84,14 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
             call = call.split(" ")
-            jsonCommand = {'call': call[0], 'arg': call[1]}
+            jsonCommand = {'call': call[0]}
+            if len(call) == 2:
+                jsonCommand['arg'] = call[1]
+            else:
+                jsonCommand['arg'] = False
             self.network.sender(json.dumps(jsonCommand))
             reply = self.network.receiver()
             return json.loads(reply)
-
 
 
 def main():
