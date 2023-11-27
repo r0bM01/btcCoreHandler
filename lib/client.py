@@ -4,19 +4,6 @@ import json, threading, time, queue
 
 from lib.protocol import Commands
 
-
-class Worker:
-    def __init__(self, networkObj):
-        self.network = networkObj
-
-        
-        
-    
-    
-           
-           
-                
-
 class Client:
     def __init__(self):
 
@@ -33,7 +20,6 @@ class Client:
         
         self.timeLastUpdate = False
         
-
     
     
     def initHashedCalls(self):
@@ -92,7 +78,9 @@ class Client:
     def advancedCall(self, call):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            self.network.sender(call)
+            call = call.split(" ")
+            jsonCommand = {'call': call[0], 'arg': call[1]}
+            self.network.sender(json.dumps(jsonCommand))
             reply = self.network.receiver()
             return json.loads(reply)
 

@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
 
         self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
         self.refreshThread.start()
+        self.sendCommandEvent = threading.Event()
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
@@ -327,9 +328,10 @@ class MainWindow(QMainWindow):
 
     def send_advanced_command(self):
         command = self.commandLine.text()
-        print('Adv Call obj: ', self.CLIENT.advancedCall)
-        job = {'func': self.CLIENT.advancedCall, 'args': command}
-        self.JOBS.put(job)
+        self.sendCommandEvent.wait()
+        reply = self.CLIENT.advancedCall(command)
+
+        
         
         
 
