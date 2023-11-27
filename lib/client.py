@@ -23,7 +23,6 @@ class Client:
         self.lastConnCheck = False
         
     
-    
     def initHashedCalls(self):
         if self.network.isConnected:
             self.calls = {call : lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in Commands.calls}
