@@ -92,7 +92,7 @@ class RPC:
     """
     def runCall(self, command, arg = False):
         if command == 'uptime':
-            call = self.caller(command)
+            call = subprocess.run([self.base, command], capture_output = True).stdout.decode()
             call = json.dumps({"uptime": int(call)})
         elif command == 'stop':
             subprocess.run([self.base, "stop"])
