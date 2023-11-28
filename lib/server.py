@@ -114,7 +114,7 @@ class Server:
             handshakeCode = lib.crypto.getRandomBytes(16)
             lib.storage.Logger.add("handshake code generated", handshakeCode.hex())
 
-            self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex())
+            self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex()) # temporary certificate "fefa"
 
             self.network.receiveClient(handshakeCode.hex())
             if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)

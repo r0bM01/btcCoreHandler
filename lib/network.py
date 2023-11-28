@@ -16,9 +16,7 @@
 
 
 import socket, threading, select, time, struct
-
-
-from requests import get
+import urllib.request
 
 class Proto:
     _remoteSock = False
@@ -142,8 +140,6 @@ class Settings:
         self.host = str(host) if host else "192.168.1.238" #socket.gethostbyname(socket.gethostname()) #"192.168.1.238"
         self.port = int(port) if port else 4600
 
-        self.externalIP = False
-
         self.socketTimeout = 30
         self.remoteSockTimeout = 120
         self.backlog = 5
@@ -163,7 +159,6 @@ class Server(Proto):
         except OSError:
             self.socket = False
 
-
     def receiveClient(self, handshakeCode):
         try:
             self._remoteSock, addr = self.socket.accept()
@@ -171,6 +166,12 @@ class Server(Proto):
             self.sender(handshakeCode)
         except OSError:
             self.sockClosure()
-        
+    
+    def getExternalIP(self):
+        extIP = urllib.request.openurl("https://ident.me").read().decode('utf-8')
+        return extIP
+    
+    def getBitnodesInfo(self, addr, port):
+        pass
 
 

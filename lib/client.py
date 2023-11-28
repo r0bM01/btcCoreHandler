@@ -24,9 +24,11 @@ class Client:
     def __init__(self):
 
         self.network = lib.network.Client()
-        self.certificate = "fefa"
+        self.certificate = "fefa" # temporary certificate
         self.calls = False
         
+        self.systemInfo = False
+
         self.statusInfo = False
         self.networkStats = False
 
@@ -62,6 +64,12 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['keepalive']):
             reply = self.network.receiver()
             self.lastConnCheck = time.time()
+
+    def getSystemInfo(self):
+        if self.network.isConnected and self.network.sender(sel.calls['systeminfo']):
+            reply = self.network.receiver()
+            self.systemInfo = json.loads(reply) if bool(reply) else False
+
 
     def getStatusInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
