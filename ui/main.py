@@ -43,7 +43,6 @@ class MainWindow(QMainWindow):
         self.init_network()
         self.init_advanced()
 
-
         self.mainLayout.addWidget(self.MENU)
         self.mainLayout.addWidget(self.PAGES['STATUS'])
         self.mainLayout.addWidget(self.PAGES['NETWORK'])
@@ -65,7 +64,7 @@ class MainWindow(QMainWindow):
             self.refreshThread.start()
         else:
             self.CLIENT.closeConnection()
-            self.refreshThread.join()
+            # self.refreshThread.join()
         self.refreshConnectionStatus()
         self.writeStatusInfo()
         self.writePeersInfo()
@@ -90,7 +89,6 @@ class MainWindow(QMainWindow):
                 
             time.sleep(5)
         
-
 
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
@@ -259,8 +257,8 @@ class MainWindow(QMainWindow):
         groupStatsForm1 = QFormLayout()
         groupStatsForm2 = QFormLayout()
         statsLabel['networkactive'] = QLabel("Network Active:")
-        statsLabel['totalbytesrecv'] = QLabel("Bytes Sent:")
-        statsLabel['totalbytessent'] = QLabel("Bytes Received:")
+        statsLabel['totalbytessent'] = QLabel("Bytes Sent:")
+        statsLabel['totalbytesrecv'] = QLabel("Bytes Received:")
         statsLabel['connections'] = QLabel("Connections:")
         statsLabel['connections_in'] = QLabel("Inbound:")
         statsLabel['connections_out'] = QLabel("Outbound:")
@@ -268,11 +266,11 @@ class MainWindow(QMainWindow):
             self.statsResult[key] = QLabel(" - ")
             self.statsResult[key].setAlignment(Qt.AlignCenter)
         groupStatsForm1.addRow(statsLabel['networkactive'], self.statsResult['networkactive'])
-        groupStatsForm1.addRow(statsLabel['totalbytesrecv'], self.statsResult['totalbytesrecv'])
         groupStatsForm1.addRow(statsLabel['totalbytessent'], self.statsResult['totalbytessent'])
+        groupStatsForm1.addRow(statsLabel['totalbytesrecv'], self.statsResult['totalbytesrecv'])
         groupStatsForm2.addRow(statsLabel['connections'], self.statsResult['connections'])
-        groupStatsForm2.addRow(statsLabel['connections_in'], self.statsResult['connections_in'])
         groupStatsForm2.addRow(statsLabel['connections_out'], self.statsResult['connections_out'])
+        groupStatsForm2.addRow(statsLabel['connections_in'], self.statsResult['connections_in'])
         groupStatsLayout.addLayout(groupStatsForm1)
         groupStatsLayout.addLayout(groupStatsForm2)
         groupStats.setLayout(groupStatsLayout)

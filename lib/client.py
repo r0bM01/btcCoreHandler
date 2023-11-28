@@ -83,7 +83,7 @@ class Client:
             jsonCommand = {'call': call, 'arg': arg}
             self.network.sender(json.dumps(jsonCommand))
             reply = self.network.receiver()
-            return json.loads(reply)
+            return reply
 
 
 def main():
