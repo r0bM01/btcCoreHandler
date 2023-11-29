@@ -104,9 +104,12 @@ class Client:
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            jsonCommand = {'call': call, 'arg': arg}
-            self.network.sender(json.dumps(jsonCommand))
-            reply = self.network.receiver()
+            if call != "start" and call != "stop":
+                jsonCommand = {'call': call, 'arg': arg}
+                self.network.sender(json.dumps(jsonCommand))
+                reply = self.network.receiver()
+            else:
+                reply = {"error": "control commands not allowed"}
             return reply
 
 
