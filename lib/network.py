@@ -168,11 +168,11 @@ class Server(Proto):
             self.handshakeCode = handshakeCode
         except OSError:
             self.sockClosure()
+            self.handshakeCode = False
     
     def getExternalIP(self):
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP
     
-        
-
+    
 

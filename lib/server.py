@@ -185,6 +185,9 @@ class Server:
         
         elif request == "systeminfo":
             reply = json.dumps(Machine.dataInfo)
+        
+        elif request == "externalip":
+            reply = json.dumps({'extIP': self.network.getExternalIP()})
 
         else:
             reply = json.dumps({"error": "command not allowed"})
