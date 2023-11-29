@@ -3,9 +3,9 @@
   <img src = "https://github.com/r0bM01/btcCoreHandler/blob/main/status_page.png" alt = "screenshot">
 </p>
 Simple GUI tool to handle bitcoincore (server setup) by remote.
-Coded in pure Python using only standard module with exception for QT bindings (PySide6).
+Coded in pure Python using the standard library only with the exception for QT bindings (PySide6).
 It is composed by a "server", running on the same bitcoincore machine, and a "client" (the actual GUI).
-As of now it is Linux only compatible.
+As of now is Linux only compatible.
 
 ## Next 
 - improving "Status" page;
