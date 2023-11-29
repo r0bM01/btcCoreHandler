@@ -111,12 +111,14 @@ class Server:
         self.isServing = True
         lib.storage.Logger.add("serving loop entered")
         while self.isServing:
-            handshakeCode = lib.crypto.getRandomBytes(16)
-            lib.storage.Logger.add("handshake code generated", handshakeCode.hex())
+            # handshakeCode = lib.crypto.getRandomBytes(16)
+            # lib.storage.Logger.add("handshake code generated", handshakeCode.hex())
 
-            self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex()) # temporary certificate "fefa"
+            # self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex()) # temporary certificate "fefa"
 
-            self.network.receiveClient(handshakeCode.hex())
+            # self.network.receiveClient(handshakeCode.hex())
+            self.network.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client and not before
+            if bool(self.network.handshakeCode): lib.protocol.Commands.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
             if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)
             else: lib.storage.Logger.add("no incoming connection detected")
 

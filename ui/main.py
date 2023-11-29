@@ -349,7 +349,7 @@ class MainWindow(QMainWindow):
 
     def send_advanced_command(self):
         insertedCommand = self.commandLine.text()
-        fullCommand = insertedCommand.split(" ", 1)
+        fullCommand = insertedCommand.lower().split(" ", 1)
         command = fullCommand[0]
         arg = fullCommand[1] if len(fullCommand) > 1 else False
         self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer

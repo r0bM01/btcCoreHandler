@@ -150,6 +150,7 @@ class Server(Proto):
     def __init__(self, settings):
         self.settings = settings
         self.socket = False
+        self.handshakeCode = False
 
     def openSocket(self):
         try:
@@ -164,6 +165,7 @@ class Server(Proto):
             self._remoteSock, addr = self.socket.accept()
             self._remoteSock.settimeout(self.settings.remoteSockTimeout)
             self.sender(handshakeCode)
+            self.handshakeCode = handshakeCode
         except OSError:
             self.sockClosure()
     
