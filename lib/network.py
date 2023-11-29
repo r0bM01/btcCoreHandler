@@ -171,13 +171,6 @@ class Server(Proto):
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP
     
-    def getBitnodesInfo(self):
-        context = ssl.create_default_context()
-        node = str(self.settings.host) + str("-") + str(self.settings.port)
-        bitnodesUrl = "https://bitnodes.io/api/v1/nodes/" + node
-        req = urllib.request.Request(url=bitnodesUrl, headers={'User-Agent': 'Mozilla/5.0'})
-        nodeInfo = json.loads(urllib.request.urlopen(req, context = context).read().decode())
-        return nodeInfo
         
 
 

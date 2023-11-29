@@ -52,6 +52,7 @@ class Client:
             self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()
+            self.getSystemInfo()
             self.getStatusInfo()
             self.getPeersInfo()
             
@@ -96,11 +97,6 @@ class Client:
             reply = self.network.receiver()
             self.peersInfo = json.loads(reply)
     
-    def getNetworkStats(self):
-        if self.network.isConnected and self.network.sender(self.calls['getnetworkstats']):
-            reply = self.network.receiver()
-            self.networkStats = json.loads(reply)
-    
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
@@ -112,6 +108,13 @@ class Client:
                 reply = {"error": "control commands not allowed"}
             return reply
 
+    def getBitnodesInfo(self, extIP, port):
+        context = ssl.create_default_context()
+        node = str(extIP) + str("-") + str(port)
+        bitnodesUrl = "https://bitnodes.io/api/v1/nodes/" + node
+        req = urllib.request.Request(url=bitnodesUrl, headers={'User-Agent': 'Mozilla/5.0'})
+        nodeInfo = json.loads(urllib.request.urlopen(req, context = context).read().decode())
+        return nodeInfo
 
 def main():
     print("btcCoreHandler")
