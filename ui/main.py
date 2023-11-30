@@ -351,11 +351,14 @@ class MainWindow(QMainWindow):
         insertedCommand = self.commandLine.text()
         fullCommand = insertedCommand.lower().split(" ", 1)
         command = fullCommand[0]
-        arg = fullCommand[1] if len(fullCommand) > 1 else False
-        self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer
-        reply = self.CLIENT.advancedCall(command, arg)
-        self.commandEvent.set() # updater can now restart
-        self.debugLog.append(utils.convertToPrintable(reply))
+        if command != "start" and command != "stop":
+            arg = fullCommand[1] if len(fullCommand) > 1 else False
+            self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer
+            reply = self.CLIENT.advancedCall(command, arg)
+            self.commandEvent.set() # updater can now restart
+            self.debugLog.append(utils.convertToPrintable(reply))
+        else:
+            self.debugLog.append("error: control commands not allowed")
 
         
         

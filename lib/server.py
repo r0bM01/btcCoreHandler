@@ -118,7 +118,9 @@ class Server:
 
             # self.network.receiveClient(handshakeCode.hex())
             self.network.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client and not before
-            if bool(self.network.handshakeCode): lib.protocol.Commands.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
+            if bool(self.network.handshakeCode): 
+                self.calls = lib.protocol.Commands.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
+                lib.storage.Logger.add("handshake code generated", self.network.handshakeCode)
             if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)
             else: lib.storage.Logger.add("no incoming connection detected")
 

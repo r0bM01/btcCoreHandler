@@ -67,7 +67,7 @@ class Client:
             self.lastConnCheck = time.time()
 
     def getSystemInfo(self):
-        if self.network.isConnected and self.network.sender(sel.calls['systeminfo']):
+        if self.network.isConnected and self.network.sender(self.calls['systeminfo']):
             reply = self.network.receiver()
             self.systemInfo = json.loads(reply) if bool(reply) else False
 
@@ -100,12 +100,9 @@ class Client:
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            if call != "start" and call != "stop":
-                jsonCommand = {'call': call, 'arg': arg}
-                self.network.sender(json.dumps(jsonCommand))
-                reply = self.network.receiver()
-            else:
-                reply = {"error": "control commands not allowed"}
+            jsonCommand = {'call': call, 'arg': arg}
+            self.network.sender(json.dumps(jsonCommand))
+            reply = self.network.receiver()
             return reply
 
     def getBitnodesInfo(self, extIP, port):

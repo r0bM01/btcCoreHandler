@@ -31,9 +31,9 @@ def convertBytesSizes(numBytes):
 def convertElapsedTime(numSeconds):
     numSeconds = int(numSeconds)
     result = []
-    if numSeconds // 604800:
-        result.append(str(f"{numSeconds // 604800} Weeks"))
-        numSeconds %= 604800
+    # if numSeconds // 604800:
+    #     result.append(str(f"{numSeconds // 604800} Weeks"))
+    #     numSeconds %= 604800
     if numSeconds // 86400:
         result.append(str(f"{numSeconds // 86400} Days"))
         numSeconds %= 86400
