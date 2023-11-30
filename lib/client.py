@@ -28,9 +28,7 @@ class Client:
         self.calls = False
         
         self.systemInfo = False
-
         self.statusInfo = False
-        self.networkStats = False
 
         self.nettotalsInfo = False
         self.networkInfo = False
@@ -71,7 +69,6 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['systeminfo']):
             reply = self.network.receiver()
             self.systemInfo = json.loads(reply) if bool(reply) else False
-
 
     def getStatusInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
@@ -114,32 +111,46 @@ class Client:
         nodeInfo = json.loads(urllib.request.urlopen(req, context = context).read().decode())
         return nodeInfo
 
-def main():
-    print("btcCoreHandler")
-    remoteConn = lib.network.Client()
-    remoteConn.connectToServer()
-    print(remoteConn)
-    print(remoteConn.handshakeCode)
+def clientTerminal():
+    remoteConn = Client()
+    eventThread = threading.Event()
+    keepAliveThread = threading.Thread(target = keepConnAlive, daemon = True)
+    def keepConnAlive():
+        while remoteConn.network.isConnected:
+            eventThread.wait()
+            remoteConn.keepAlive()
+            time.sleep(10)
+
+    print("Bitcoin Core Handler terminal")
+    ipAddr = input("insert server ip: \n>> ")
+    input("\nPress enter to connect\n")
+    remoteConn.initConnection(ipAddr)
+    
+    print(f"Handshake code: {self.network.handshakeCode} \n")
+    print("receiving info from server...")
+    time.sleep(0.5)
+    print(f"connected to server: {remoteConn.network.isConnected}\n")
 
     try:
 
         while True:
-            command = input("cmd >> ")
-            hashed = lib.crypto.getHashedCommand(command, "fefa", remoteConn.handshakeCode)
-            print(command)
-
-            remoteConn.sender(hashed)
-            if command == "closeconn": 
-                break
-            result = json.loads(remoteConn.receiver())
-    
-            if command == 'getpeerinfo':
-                for p in result:
-                    print(p['addr'])
-            else:
-                for key, value in result.items():
-                    print(f"{key}: {value}")
+            print("[1] - remote server info")
+            print("[2] - bitcoin node status info")
+            print("[3] - send advanced call")
+            print("[0] - print remote server info")
+            command = int(input(">> "))
+            if command == 0: break
+            elif command == 1: print(remoteConn.systemInfo)
+            elif command == 2: print(remoteConn.statusInfo)
+            elif command == 3: 
+                call = input("\ninsert call: ")
+                eventThread.clear()
+                remoteReply = remoteConn.advancedCall(call)
+                eventThread.set()
+                print(remoteReply)
+            print("\n")
+        remoteConn.closeConnection()
 
     except KeyboardInterrupt:
-        remoteConn.sender("closeconn")
+        remoteConn.closeConnection()
         print("closing")

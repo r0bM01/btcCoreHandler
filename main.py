@@ -23,7 +23,7 @@ print("[3] - start GUI")
 c = int(input(">> "))
 
 if c == 1: lib.server.main()
-if c == 2: lib.client.main()
+if c == 2: lib.client.clientTerminal()
 if c == 3: import ui.main
 
 print("program closed")
