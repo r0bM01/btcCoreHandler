@@ -110,9 +110,9 @@ class Proto:
             return False
 
 class Client(Proto):
-    def __init__(self):
-        self.remoteHost = "192.168.1.238"
-        self.remotePort = 4600
+    def __init__(self, host, port = False):
+        self.remoteHost = host 
+        self.remotePort = port if port else 4600 # default port
         self.timeout = None
         self.isConnected = False
         self.handshakeCode = False
@@ -137,7 +137,7 @@ class Client(Proto):
 
 class Settings:
     def __init__(self, host = False, port = False):
-        self.host = str(host) if host else "192.168.1.238" #socket.gethostbyname(socket.gethostname()) #"192.168.1.238"
+        self.host = str(host) if host else "" # if not provided binds it to all interfaces # socket.gethostbyname(socket.gethostname()) 
         self.port = int(port) if port else 4600
 
         self.socketTimeout = 30
