@@ -112,42 +112,54 @@ class Client:
         return nodeInfo
 
 def clientTerminal():
-    remoteConn = Client()
-    eventThread = threading.Event()
-    keepAliveThread = threading.Thread(target = keepConnAlive, daemon = True)
     def keepConnAlive():
         while remoteConn.network.isConnected:
             eventThread.wait()
             remoteConn.keepAlive()
             time.sleep(10)
 
+    remoteConn = Client()
+    eventThread = threading.Event()
+    keepAliveThread = threading.Thread(target = keepConnAlive, daemon = True)
+
     print("Bitcoin Core Handler terminal")
     ipAddr = input("insert server ip: \n>> ")
     input("\nPress enter to connect\n")
     remoteConn.initConnection(ipAddr)
     
-    print(f"Handshake code: {self.network.handshakeCode} \n")
+    print(f"Handshake code: {remoteConn.network.handshakeCode} \n")
     print("receiving info from server...")
     time.sleep(0.5)
     print(f"connected to server: {remoteConn.network.isConnected}\n")
 
+    if remoteConn.network.isConnected:
+        eventThread.set()
+        keepAliveThread.start()
+        print("keep alive thread started")
+        
     try:
 
         while True:
             print("[1] - remote server info")
             print("[2] - bitcoin node status info")
             print("[3] - send advanced call")
-            print("[0] - print remote server info")
+            print("[0] - quit terminal")
             command = int(input(">> "))
             if command == 0: break
             elif command == 1: print(remoteConn.systemInfo)
             elif command == 2: print(remoteConn.statusInfo)
             elif command == 3: 
-                call = input("\ninsert call: ")
-                eventThread.clear()
-                remoteReply = remoteConn.advancedCall(call)
-                eventThread.set()
-                print(remoteReply)
+                insertedCommand = input("\ninsert call: ")
+                fullCommand = insertedCommand.lower().split(" ", 1)
+                command = fullCommand[0]
+                if command != "start" and command != "stop":
+                    arg = fullCommand[1] if len(fullCommand) > 1 else False
+                    eventThread.clear()
+                    remoteReply = remoteConn.advancedCall(command, arg)
+                    eventThread.set()
+                    print(remoteReply)
+                else:
+                    print("control commands not allowed")
             print("\n")
         remoteConn.closeConnection()
 
