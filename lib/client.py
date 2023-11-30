@@ -33,6 +33,8 @@ class Client:
         self.nettotalsInfo = False
         self.networkInfo = False
         self.peersInfo = False
+
+        self.peersGeolocation = False
         
         self.lastStatusUpdate = False
         self.lastPeersUpdate = False
@@ -104,12 +106,28 @@ class Client:
             return reply
 
     def getBitnodesInfo(self, extIP, port):
-        context = ssl.create_default_context()
+        # 300 requests per day only. For peers geolocation use "getPeersGeolocation"
+        context = lib.network.Utils.ssl_default_context()
         node = str(extIP) + str("-") + str(port)
         bitnodesUrl = "https://bitnodes.io/api/v1/nodes/" + node
         req = urllib.request.Request(url=bitnodesUrl, headers={'User-Agent': 'Mozilla/5.0'})
         nodeInfo = json.loads(urllib.request.urlopen(req, context = context).read().decode())
         return nodeInfo
+    
+    def getPeersGeolocation(self):
+        if bool(self.peersInfo):
+            context = lib.network.Utils.ssl_default_context()
+            baseUrl = "https://api.iplocation.net/?ip="
+            baseHeader = {'User-Agent': 'Mozilla/5.0'}
+
+            peersIPonly = [peer['addr'].split(":")[0] for peer in self.peersInfo]
+            for ip in peersIPonly:
+                url = baseUrl + str(ip)
+                request = urllib.request.Request(url=url, headers=baseHeader)
+                self.peersGeolocation.append(json.loads(urllib.request.urlopen(request, context = context).read().decode()))
+                
+            
+
 
 def clientTerminal():
     def keepConnAlive():

@@ -170,9 +170,31 @@ class Server(Proto):
             self.sockClosure()
             self.handshakeCode = False
     
-    def getExternalIP(self):
+    
+class Utils:
+    @staticmethod
+    def ssl_default_context():
+        return ssl.create_default_context()
+    
+    @staticmethod
+    def getExternalIP():
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP
     
+    @staticmethod
+    def getBitnodesInfo(extIP, port):
+        # 300 requests per day only. For peers geolocation use "getPeersGeolocation"
+        context = ssl.create_default_context()
+        node = str(extIP) + str("-") + str(port)
+        bitnodesUrl = "https://bitnodes.io/api/v1/nodes/" + node
+        request = urllib.request.Request(url=bitnodesUrl, headers={'User-Agent': 'Mozilla/5.0'})
+        nodeInfo = urllib.request.urlopen(req, context = context).read().decode()
+        return nodeInfo
     
-
+    @staticmethod
+    def getGeolocation(ip):
+        context = lib.network.Utils.ssl_default_context()
+        baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
+        request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
+        locationData = urllib.request.urlopen(request, context = context).read().decode()
+        return locationData

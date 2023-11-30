@@ -13,7 +13,13 @@
 # limitations under the License.                                            #
 #############################################################################
 
+import time
 
+
+def uptimeSince(uptime):
+    timeNow = time.time()
+    upSince = str(time.ctime(timeNow - int(uptime)))
+    return upSince
 
 def convertBytesSizes(numBytes):
     size = {}
