@@ -47,8 +47,9 @@ class Client:
         else:
             self.calls = False
 
-    def initConnection(self):
+    def initConnection(self, host, port = False):
         if not self.network.isConnected: 
+            self.network.remoteHost = str(host)
             self.network.connectToServer()
         if self.network.isConnected:
             self.initHashedCalls()

@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
-            self.CLIENT.initConnection()
+            self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
             self.commandEvent.set()
             self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
             self.refreshThread.start()
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         groupConn = QGroupBox("Node Connection")
         groupConnLayout = QHBoxLayout()
         groupConnLabel = QLabel("node IP:")
-        self.groupConnLEdit = QLineEdit("192.168.1.238")
+        self.groupConnLEdit = QLineEdit("") 
         self.groupConnButton = QPushButton("Connect")
         self.groupConnButton.setFixedWidth(80)
         self.groupConnButton.clicked.connect(self.handle_connection)

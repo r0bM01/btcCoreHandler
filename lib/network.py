@@ -110,9 +110,9 @@ class Proto:
             return False
 
 class Client(Proto):
-    def __init__(self, host, port = False):
-        self.remoteHost = host 
-        self.remotePort = port if port else 4600 # default port
+    def __init__(self):
+        self.remoteHost = None # has to be given by UI  
+        self.remotePort = 4600 # default port
         self.timeout = None
         self.isConnected = False
         self.handshakeCode = False
