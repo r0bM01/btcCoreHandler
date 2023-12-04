@@ -18,12 +18,13 @@
 import subprocess, json, time
 import lib.crypto
 from lib.storage import Logger
+from lib.network import Utils
 
 class Commands:
     calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
              'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
              'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-             'advancedcall', 'systeminfo', 'externalip'}
+             'advancedcall', 'systeminfo', 'externalip', 'getgeolocation'}
 
     @staticmethod
     def encodeCalls(hexCertificate, handshakeCode):
@@ -33,6 +34,43 @@ class Commands:
     def check(command):
         return command in Commands.calls
     
+
+class IPGeolocation:
+        knownNodes = list()
+        connectedNodes = list()
+        knwownCountries = list()
+    
+        @staticmethod
+        def updateList(nodeList):
+            IPGeolocation.connectedNodes = []
+            for nodeip in nodeList:
+                if not IPGeolocation.isKnown(nodeip):
+                    nodeGeodata = json.loads(Utils.getGeolocation(nodeip))
+                    IPGeolocation.knownNodes.append(nodeGeodata)
+                else:
+                    nodeGeodata = IPGeolocation.getKnownData(nodeip)
+                if nodeGeodata['country_name'] not in IPGeolocation.knwownCountries:
+                    IPGeolocation.knwownCountries.append(nodeGeodata['country_name'])
+                
+                IPGeolocation.connectedNodes.append(nodeGeodata)
+
+        @staticmethod
+        def isKnown(nodeip):
+            return any(node['ip'] == nodeip for node in IPGeolocation.knownNodes)
+        
+        @staticmethod
+        def getKnownData(nodeip):
+            if IPGeolocation.isKnown(nodeip):
+                return [node for node in IPGeolocation.knownNodes if node['ip'] == nodeip][0]
+        
+        @staticmethod
+        def getConnectedCountries():
+            connectedCountries = [nodeGeodata['country_name'] for nodeGeodata in IPGeolocation.connectedNodes]
+            counted = [{'country': country, 'counts': connectedCountries.count(country)} for country in IPGeolocation.knwownCountries]
+            return [country for country in counted if country['counts'] != 0]
+                
+        
+
 
 class DaemonData:
     def __init__(self):
@@ -99,7 +137,7 @@ class RPC:
         return PID
 
     def getLocalIP(self):
-        IP = subprocess.run(["hostname", "I"], capture_output = True).stdout.decode()
+        IP = subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip(" \n")
         return str(IP)
     """    
     def caller(self, command):

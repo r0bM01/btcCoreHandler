@@ -96,6 +96,14 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
             reply = self.network.receiver()
             self.peersInfo = json.loads(reply)
+
+    def getConnectedCountries(self):
+        if self.network.isConnected and self.network.sender(self.calls["getcountries"]):
+            return json.loads(self.network.receiver())
+
+    def getPeersGeolocation(self):
+        if self.network.isConnected and self.network.sender(self.calls["getgeolocation"]):
+            return json.loads(self.network.receiver())
     
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
@@ -104,7 +112,7 @@ class Client:
             self.network.sender(json.dumps(jsonCommand))
             reply = self.network.receiver()
             return reply
-
+    """
     def getBitnodesInfo(self, extIP, port):
         # 300 requests per day only. For peers geolocation use "getPeersGeolocation"
         context = lib.network.Utils.ssl_default_context()
@@ -125,7 +133,7 @@ class Client:
                 url = baseUrl + str(ip)
                 request = urllib.request.Request(url=url, headers=baseHeader)
                 self.peersGeolocation.append(json.loads(urllib.request.urlopen(request, context = context).read().decode()))
-                
+    """          
             
 
 
@@ -160,13 +168,17 @@ def clientTerminal():
         while True:
             print("[1] - remote server info")
             print("[2] - bitcoin node status info")
-            print("[3] - send advanced call")
+            print("[3] - print all peers geolocation")
+            # print("[4] - print contries stats")
+            print("[5] - send advanced call")
             print("[0] - quit terminal")
             command = int(input(">> "))
             if command == 0: break
             elif command == 1: print(remoteConn.systemInfo)
             elif command == 2: print(remoteConn.statusInfo)
-            elif command == 3: 
+            elif command == 3: [print(node) for node in remoteConn.getPeersGeolocation()]
+            # elif command == 4: [print(f"{country['country']}: {country['counts']}") for country in remoteConn.getConnectedCountries()]
+            elif command == 5: 
                 insertedCommand = input("\ninsert call: ")
                 fullCommand = insertedCommand.lower().split(" ", 1)
                 command = fullCommand[0]

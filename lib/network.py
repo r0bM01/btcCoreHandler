@@ -193,7 +193,7 @@ class Utils:
     
     @staticmethod
     def getGeolocation(ip):
-        context = lib.network.Utils.ssl_default_context()
+        context = ssl.create_default_context()
         baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
         request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
         locationData = urllib.request.urlopen(request, context = context).read().decode()

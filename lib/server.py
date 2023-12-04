@@ -43,7 +43,7 @@ class DUpdater():
     def stop(self):
         if self.isRunning:
             self.isRunning = False
-            self.thread.join()
+            # self.thread.join()
             lib.storage.Logger.add("autoupdater loop stopped")
 
     def updater_loop(self):
@@ -51,6 +51,7 @@ class DUpdater():
         lib.storage.Logger.add("autoupdater loop started")
         while self.isRunning:
             self.sendUpdateCall() #update all bitcoin data field
+            # self.listGeolocation()
             time.sleep(self.restTime) #rest for minutes
     
     def sendUpdateCall(self):
@@ -73,9 +74,15 @@ class DUpdater():
         self.bitcoinData.miningInfo = json.loads(miningInfo)
 
         peersInfo = self.rpcCaller.runCall("getpeerinfo")
-        peersInfo = json.loads(peersInfo)
-        self.bitcoinData.peersInfo = [p for p in peersInfo]
+        self.bitcoinData.peersInfo = json.loads(peersInfo)
+        # self.bitcoinData.peersInfo = [p for p in peersInfo]
         
+    def listGeolocation(self):
+        if self.bitcoinData.peersInfo:
+            nodeList = [peer['addr'].split(":")[0] for peer in self.bitcoinData.peersInfo]
+            lib.protocol.IPGeolocation.updateList(nodeList)
+                
+               
 
 class Server:
     def __init__(self):
@@ -191,6 +198,9 @@ class Server:
         elif request == "externalip":
             reply = json.dumps({'extIP': self.network.getExternalIP()})
 
+        elif bool(self.bitcoinData.PID) and request == "getgeolocation":
+            reply = json.dumps(lib.protocol.IPGeolocation.connectedNodes)
+
         else:
             reply = json.dumps({"error": "command not allowed"})
         
@@ -202,6 +212,10 @@ def main():
     SERVER = Server()
 
     SERVER.check_network()
+    lib.storage.Logger.add("calling first update")
+    SERVER.autoUpdater.sendUpdateCall()
+    lib.storage.Logger.add("getting geolocation connected peers")
+    # SERVER.autoUpdater.listGeolocation()
 
     if SERVER.isOnline:
         try:
