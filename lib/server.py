@@ -84,7 +84,7 @@ class DUpdater():
                 
                
 
-class Server:
+class Server(lib.protocol.RequestHandler):
     def __init__(self):
         #init procedure
         self.storage = lib.storage.Data()
@@ -93,8 +93,6 @@ class Server:
 
         self.calls = None #lib.protocol.Commands.encodeCalls("fefa")
 
-        self.rpcCaller = lib.protocol.RPC()
-        self.bitcoinData = lib.protocol.DaemonData()
 
         self.bitcoinData.PID = self.rpcCaller.checkDaemon()
         lib.storage.Logger.add("bitcoind running", bool(self.bitcoinData.PID))

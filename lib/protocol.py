@@ -21,6 +21,9 @@ from lib.storage import Logger
 from lib.network import Utils
 
 class Commands:
+    def __init__(self):
+        self.control_calls = {"startbitcoind", "stopbitcoind"}
+        self.info_calls = {"getstatusinfo": }
     calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
              'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
              'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
@@ -70,6 +73,91 @@ class IPGeolocation:
             return [country for country in counted if country['counts'] != 0]
                 
         
+class RequestHandler:
+    #must be inherited by server class
+    #do not instantiate directly
+    OPERATOR = RPC()
+    DATA = DaemonData()
+
+
+    def startbitcoind(self):
+        if not bool(self.OPERATOR.checkDaemon()):
+            return self.OPERATOR.runCall("start")
+        else:
+            return json.dumps({"error": "bitcoind already running"})
+    
+    def stopbitcoind(self):
+        if bool(self.OPERATOR.checkDaemon()):
+            return self.OPERATOR.runCall("stop")
+        else:
+            return json.dumps({"error": "bitcoind already stopped"})
+
+    def keepalive(self):
+        return json.dumps({"confirm": "alive"})
+
+    def getsysteminfo(self):
+        return json.dumps(Machine.dataInfo) 
+    
+    def getstatusinfo(self):
+        return json.dumps(self.DATA.getStatusInfo())
+
+    def getpeerinfo(self):
+        return json.dumps(self.DATA.peersInfo)
+    
+    def getgeolocation(self):
+        return json.dumps(IPGeolocation.connectedNodes)
+
+              
+         
+
+    if not bool(self.bitcoinData.PID) and request == "start":
+            #starts the daemon if not running
+            reply = self.rpcCaller.runCall(request)
+            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+            if bool(self.bitcoinData.PID): self.autoUpdater.start()
+
+        elif not bool(self.bitcoinData.PID) and request != "start":
+            reply = json.dumps({"error": "bitcoin daemon not running"})
+
+        elif bool(self.bitcoinData.PID) and request == "start":
+            reply = json.dumps({"error": "bitcoin daemon already running"})
+
+        elif bool(self.bitcoinData.PID) and request == "stop":
+            reply = self.rpcCaller.runCall(request)
+            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
+            self.autoUpdater.stop()
+
+        elif bool(self.bitcoinData.PID) and request == "getstatusinfo":
+            reply = self.bitcoinData.getStatusInfo()
+
+        elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
+            reply = self.bitcoinData.getPeerInfo()
+        
+        elif bool(self.bitcoinData.PID) and request == "advancedcall":
+            jsonCall = json.loads(self.network.receiver()) #wait for actual call
+            lib.storage.Logger.add("Advanced call", jsonCall['call'], jsonCall['arg'])
+            if jsonCall['call'] != "start" and jsonCall['call'] != "stop":  
+                reply = self.rpcCaller.runCall(jsonCall['call'], jsonCall['arg'])
+            else:
+                reply = False
+            if not bool(reply): reply = json.dumps({"error": "command not allowed"})
+
+        elif request == "keepalive":
+            reply = "keepalive"
+        
+        elif request == "systeminfo":
+            reply = json.dumps(Machine.dataInfo)
+        
+        elif request == "externalip":
+            reply = json.dumps({'extIP': self.network.getExternalIP()})
+
+        elif bool(self.bitcoinData.PID) and request == "getgeolocation":
+            reply = json.dumps(lib.protocol.IPGeolocation.connectedNodes)
+
+        else:
+            reply = json.dumps({"error": "command not allowed"})
+        
+        return reply
 
 
 class DaemonData:
