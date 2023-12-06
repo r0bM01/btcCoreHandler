@@ -20,22 +20,24 @@ import lib.crypto
 from lib.storage import Logger
 from lib.network import Utils
 
-class Commands:
+class Control:
     def __init__(self):
-        self.control_calls = {"startbitcoind", "stopbitcoind"}
-        self.info_calls = {"getstatusinfo": }
-    calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
-             'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
-             'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-             'advancedcall', 'systeminfo', 'externalip', 'getgeolocation'}
+        
+        self.calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
+                      'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
+                      'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+                      'advancedcall', 'systeminfo', 'externalip', 'getgeolocation'}
+        
+        self.encodedCalls = False
 
-    @staticmethod
-    def encodeCalls(hexCertificate, handshakeCode):
-        return {lib.crypto.getHashedCommand(call, hexCertificate, handshakeCode) : call for call in Commands.calls}
+        # self.LEVELS = {"blocked": 0, "user": 1, "admin": 2} not implemented yet
+     
 
-    @staticmethod
-    def check(command):
-        return command in Commands.calls
+    def encodeCalls(self, hexCertificate, handshakeCode):
+        self.encodedCalls = {lib.crypto.getHashedCommand(call, hexCertificate, handshakeCode) : call for call in self.calls}
+
+    def check(self, call):
+        return call in self.calls
     
 
 class IPGeolocation:
@@ -74,11 +76,20 @@ class IPGeolocation:
                 
         
 class RequestHandler:
-    #must be inherited by server class
-    #do not instantiate directly
-    OPERATOR = RPC()
-    DATA = DaemonData()
+    def __init__(self, dataController):
+        #must be inherited by server class
+        #do not instantiate directly
+        self.OPERATOR = RPC()
+        self.DATA = dataController
+        self.CONTROL = Control()
 
+        self.controlCalls = {"startbitcoind": self.startbitcoind, "stopbitcoind": self.stopbitcoind}
+        self.generalCalls = {"keepalive": self.keepalive, "getsysteminfo": self.getsysteminfo, "getstatusinfo": self.getstatusinfo, 
+                             "getpeerinfo": self.getpeerinfo, "getgeolocationinfo": self.getgeolocationinfo}
+
+    def handle_request(self, remoteCall):
+        if remoteCall not in self.CONTROL.encodedCalls: return json.dumps({"error": "invalid command"})
+        request = self.CONTROL.encodedCalls[remoteCall]
 
     def startbitcoind(self):
         if not bool(self.OPERATOR.checkDaemon()):
@@ -104,7 +115,7 @@ class RequestHandler:
     def getpeerinfo(self):
         return json.dumps(self.DATA.peersInfo)
     
-    def getgeolocation(self):
+    def getgeolocationinfo(self):
         return json.dumps(IPGeolocation.connectedNodes)
 
               

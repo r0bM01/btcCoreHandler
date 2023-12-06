@@ -83,7 +83,7 @@ class DUpdater():
             lib.protocol.IPGeolocation.updateList(nodeList)
                 
                
-
+ 
 class Server(lib.protocol.RequestHandler):
     def __init__(self):
         #init procedure
@@ -124,19 +124,19 @@ class Server(lib.protocol.RequestHandler):
             # self.network.receiveClient(handshakeCode.hex())
             self.network.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client and not before
             if bool(self.network.handshakeCode): 
-                self.calls = lib.protocol.Commands.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
+                self.CONTROL.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
                 lib.storage.Logger.add("handshake code generated", self.network.handshakeCode)
             if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)
             else: lib.storage.Logger.add("no incoming connection detected")
 
             while bool(self.network._remoteSock):
 
-                encodedCall = self.network.receiver()
-                lib.storage.Logger.add("call: ", encodedCall)
+                remoteCall = self.network.receiver()
+                lib.storage.Logger.add("call: ", remoteCall)
 
-                if encodedCall in self.calls:
+                if remoteCall in self.CONTROL.calls:
 
-                    request = self.calls[encodedCall]
+                    request = self.CONTROL.calls[remoteCall]
                     lib.storage.Logger.add("request: ", request)
                     if request != "closeconn": reply = self.handle_request(request)
                     else: reply = False
