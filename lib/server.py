@@ -19,88 +19,27 @@ import json, time, subprocess, threading, platform
 import lib.network
 import lib.storage
 import lib.protocol
-
-
-class Machine:
-    dataInfo = {}
-    dataInfo['node'] = platform.node()
-    dataInfo['machine'] = platform.machine()
-    dataInfo['system'] = platform.system()
-    dataInfo['release'] = platform.release()
-
-class DUpdater():
-    def __init__(self, rpcCaller, bitcoinData):
-        self.isRunning = False
-        self.restTime = 30 #seconds
-        self.rpcCaller = rpcCaller
-        self.bitcoinData = bitcoinData
-        self.thread = threading.Thread(target = self.updater_loop, daemon = True)
-
-    def start(self):
-        if not self.isRunning:
-            self.thread.start()
-
-    def stop(self):
-        if self.isRunning:
-            self.isRunning = False
-            # self.thread.join()
-            lib.storage.Logger.add("autoupdater loop stopped")
-
-    def updater_loop(self):
-        self.isRunning = True
-        lib.storage.Logger.add("autoupdater loop started")
-        while self.isRunning:
-            self.sendUpdateCall() #update all bitcoin data field
-            # self.listGeolocation()
-            time.sleep(self.restTime) #rest for minutes
-    
-    def sendUpdateCall(self):
-        uptime = self.rpcCaller.runCall("uptime")
-        self.bitcoinData.uptime = json.loads(uptime)
-
-        blockchainInfo = self.rpcCaller.runCall("getblockchaininfo")
-        self.bitcoinData.blockchainInfo = json.loads(blockchainInfo)
-        
-        networkInfo = self.rpcCaller.runCall("getnetworkinfo")
-        self.bitcoinData.networkInfo = json.loads(networkInfo)
-
-        nettotalsInfo = self.rpcCaller.runCall("getnettotals")
-        self.bitcoinData.nettotalsInfo = json.loads(nettotalsInfo)
-
-        mempoolInfo = self.rpcCaller.runCall("getmempoolinfo")
-        self.bitcoinData.mempoolInfo = json.loads(mempoolInfo)
-        
-        miningInfo = self.rpcCaller.runCall("getmininginfo")
-        self.bitcoinData.miningInfo = json.loads(miningInfo)
-
-        peersInfo = self.rpcCaller.runCall("getpeerinfo")
-        self.bitcoinData.peersInfo = json.loads(peersInfo)
-        # self.bitcoinData.peersInfo = [p for p in peersInfo]
-        
-    def listGeolocation(self):
-        if self.bitcoinData.peersInfo:
-            nodeList = [peer['addr'].split(":")[0] for peer in self.bitcoinData.peersInfo]
-            lib.protocol.IPGeolocation.updateList(nodeList)
-                
+       
                
  
 class Server(lib.protocol.RequestHandler):
     def __init__(self):
+        lib.protocol.RequestHandler.__init__(self)
         #init procedure
-        self.storage = lib.storage.Data()
+        self.STORAGE = lib.storage.Data()
+        self.NETWORK = lib.network.Server(lib.network.Settings(host = self.OPERATOR.getLocalIP()))
+
         self.storage.init_files()
         lib.storage.Logger.FILE = self.storage.fileLogs
 
-        self.calls = None #lib.protocol.Commands.encodeCalls("fefa")
 
+        self.autoCache = threading.Thread(target = self.cacheUpdater, daemon = True)
+        self.autoCacheRun = False
+        self.autoCacheRest = 30
+        
+        lib.storage.Logger.add("bitcoind running", bool(self.BITCOIN_DATA.PID))
 
-        self.bitcoinData.PID = self.rpcCaller.checkDaemon()
-        lib.storage.Logger.add("bitcoind running", bool(self.bitcoinData.PID))
-
-        self.autoUpdater = DUpdater(self.rpcCaller, self.bitcoinData)
-        #init server settings
-        self.netSettings = lib.network.Settings(host = self.rpcCaller.getLocalIP())
-        self.network = lib.network.Server(self.netSettings)
+       
         
         self.isServing = False
         self.isOnline = False
@@ -110,31 +49,32 @@ class Server(lib.protocol.RequestHandler):
         self.isOnline = bool(self.network.socket)
         lib.storage.Logger.add("socket online", self.isOnline)
         lib.storage.Logger.add("bind to IP", self.network.settings.host)
-        
+    
+    def cacheUpdater(self):
+        self.autoCacheRun = True
+        while self.autoCacheRun and self.bitcoindRunning:
+            self.updateCacheData()
+            time.sleep(self.autoCacheRest)
 
     def start_serving(self):
         self.isServing = True
         lib.storage.Logger.add("serving loop entered")
         while self.isServing:
-            # handshakeCode = lib.crypto.getRandomBytes(16)
-            # lib.storage.Logger.add("handshake code generated", handshakeCode.hex())
-
-            # self.calls = lib.protocol.Commands.encodeCalls("fefa", handshakeCode.hex()) # temporary certificate "fefa"
-
-            # self.network.receiveClient(handshakeCode.hex())
-            self.network.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client and not before
-            if bool(self.network.handshakeCode): 
-                self.CONTROL.encodeCalls("fefa", self.network.handshakeCode) # temporary certificate "fefa"
-                lib.storage.Logger.add("handshake code generated", self.network.handshakeCode)
-            if bool(self.network._remoteSock): lib.storage.Logger.add("connected by", self.network._remoteSock)
+         
+            self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
+            if bool(self.NETWORK.handshakeCode): 
+                self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
+                lib.storage.Logger.add("handshake code generated", self.NETWORK.handshakeCode)
+            if bool(self.NETWORK._remoteSock): lib.storage.Logger.add("connected by", self.NETWORK._remoteSock)
             else: lib.storage.Logger.add("no incoming connection detected")
 
-            while bool(self.network._remoteSock):
+            while bool(self.NETWORK._remoteSock):
 
-                remoteCall = self.network.receiver()
+                remoteCall = self.NETWORK.receiver()
                 lib.storage.Logger.add("call: ", remoteCall)
 
-                if remoteCall in self.CONTROL.calls:
+                if remoteCall:
+                    reply = self.handle_request(remoteCall)
 
                     request = self.CONTROL.calls[remoteCall]
                     lib.storage.Logger.add("request: ", request)
@@ -203,6 +143,62 @@ class Server(lib.protocol.RequestHandler):
             reply = json.dumps({"error": "command not allowed"})
         
         return reply
+
+
+class AutoCache:
+    def __init__(self, operator, bitcoinData):
+        self.isRunning = False
+        self.restTime = 30 #seconds
+        self.rpcCaller = operator
+        self.bitcoinData = bitcoinData
+        self.thread = threading.Thread(target = self.updater_loop, daemon = True)
+
+    def start(self):
+        if not self.isRunning:
+            self.thread.start()
+
+    def stop(self):
+        if self.isRunning:
+            self.isRunning = False
+            # self.thread.join()
+            lib.storage.Logger.add("autoupdater loop stopped")
+
+    def updater_loop(self):
+        self.isRunning = True
+        lib.storage.Logger.add("autoupdater loop started")
+        while self.isRunning:
+            self.sendUpdateCall() #update all bitcoin data field
+            # self.listGeolocation()
+            time.sleep(self.restTime) #rest for minutes
+    
+    def sendUpdateCall(self):
+        uptime = self.rpcCaller.runCall("uptime")
+        self.bitcoinData.uptime = json.loads(uptime)
+
+        blockchainInfo = self.rpcCaller.runCall("getblockchaininfo")
+        self.bitcoinData.blockchainInfo = json.loads(blockchainInfo)
+        
+        networkInfo = self.rpcCaller.runCall("getnetworkinfo")
+        self.bitcoinData.networkInfo = json.loads(networkInfo)
+
+        nettotalsInfo = self.rpcCaller.runCall("getnettotals")
+        self.bitcoinData.nettotalsInfo = json.loads(nettotalsInfo)
+
+        mempoolInfo = self.rpcCaller.runCall("getmempoolinfo")
+        self.bitcoinData.mempoolInfo = json.loads(mempoolInfo)
+        
+        miningInfo = self.rpcCaller.runCall("getmininginfo")
+        self.bitcoinData.miningInfo = json.loads(miningInfo)
+
+        peersInfo = self.rpcCaller.runCall("getpeerinfo")
+        self.bitcoinData.peersInfo = json.loads(peersInfo)
+        # self.bitcoinData.peersInfo = [p for p in peersInfo]
+        
+    def listGeolocation(self):
+        if self.bitcoinData.peersInfo:
+            nodeList = [peer['addr'].split(":")[0] for peer in self.bitcoinData.peersInfo]
+            lib.protocol.IPGeolocation.updateList(nodeList)
+
 
 
 def main():

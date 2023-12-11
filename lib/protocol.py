@@ -15,8 +15,9 @@
 
 
 
-import subprocess, json, time
+import subprocess, json, time, threading
 import lib.crypto
+import lib.data
 from lib.storage import Logger
 from lib.network import Utils
 
@@ -26,7 +27,7 @@ class Control:
         self.calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
                       'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
                       'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-                      'advancedcall', 'systeminfo', 'externalip', 'getgeolocation'}
+                      'advancedcall', 'systeminfo', 'getgeolocation'}
         
         self.encodedCalls = False
 
@@ -38,58 +39,33 @@ class Control:
 
     def check(self, call):
         return call in self.calls
-    
-
-class IPGeolocation:
-        knownNodes = list()
-        connectedNodes = list()
-        knwownCountries = list()
-    
-        @staticmethod
-        def updateList(nodeList):
-            IPGeolocation.connectedNodes = []
-            for nodeip in nodeList:
-                if not IPGeolocation.isKnown(nodeip):
-                    nodeGeodata = json.loads(Utils.getGeolocation(nodeip))
-                    IPGeolocation.knownNodes.append(nodeGeodata)
-                else:
-                    nodeGeodata = IPGeolocation.getKnownData(nodeip)
-                if nodeGeodata['country_name'] not in IPGeolocation.knwownCountries:
-                    IPGeolocation.knwownCountries.append(nodeGeodata['country_name'])
-                
-                IPGeolocation.connectedNodes.append(nodeGeodata)
-
-        @staticmethod
-        def isKnown(nodeip):
-            return any(node['ip'] == nodeip for node in IPGeolocation.knownNodes)
-        
-        @staticmethod
-        def getKnownData(nodeip):
-            if IPGeolocation.isKnown(nodeip):
-                return [node for node in IPGeolocation.knownNodes if node['ip'] == nodeip][0]
-        
-        @staticmethod
-        def getConnectedCountries():
-            connectedCountries = [nodeGeodata['country_name'] for nodeGeodata in IPGeolocation.connectedNodes]
-            counted = [{'country': country, 'counts': connectedCountries.count(country)} for country in IPGeolocation.knwownCountries]
-            return [country for country in counted if country['counts'] != 0]
-                
+                  
         
 class RequestHandler:
-    def __init__(self, dataController):
+    def __init__(self):
         #must be inherited by server class
         #do not instantiate directly
-        self.OPERATOR = RPC()
-        self.DATA = dataController
+        self.OPERATOR = MachineInterface()
         self.CONTROL = Control()
+        self.BITCOIN_DATA = lib.data.Bitcoin()
 
-        self.controlCalls = {"startbitcoind": self.startbitcoind, "stopbitcoind": self.stopbitcoind}
-        self.generalCalls = {"keepalive": self.keepalive, "getsysteminfo": self.getsysteminfo, "getstatusinfo": self.getstatusinfo, 
-                             "getpeerinfo": self.getpeerinfo, "getgeolocationinfo": self.getgeolocationinfo}
+        self.bitcoindRunning = self.OPERATOR.checkDaemon()
+        
 
     def handle_request(self, remoteCall):
-        if remoteCall not in self.CONTROL.encodedCalls: return json.dumps({"error": "invalid command"})
+        if not self.CONTROL.check(remoteCall): return json.dumps({"error": "invalid command"})
         request = self.CONTROL.encodedCalls[remoteCall]
+        if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
+        elif not self.bitcoindRunning and request == "start": self.startbitcoind()
+        elif self.bitcoindRunning and request == "stop": self.stopbitcoind()
+
+        if request == "keepalive": self.keepalive()
+        elif request == "systeminfo": self.getsysteminfo()
+        elif request == "statusinfo": self.getstatusinfo()
+        elif request == "peerinfo": self.getpeerinfo()
+        elif request == "geolocationinfo": self.getgeolocationinfo()
+        elif request == "advancedcall": self.getadvancedcall()
+
 
     def startbitcoind(self):
         if not bool(self.OPERATOR.checkDaemon()):
@@ -110,139 +86,53 @@ class RequestHandler:
         return json.dumps(Machine.dataInfo) 
     
     def getstatusinfo(self):
-        return json.dumps(self.DATA.getStatusInfo())
+        return json.dumps(self.BITCOIN_DATA.getStatusInfo())
 
     def getpeerinfo(self):
-        return json.dumps(self.DATA.peersInfo)
+        return json.dumps(self.BITCOIN_DATA.peersInfo)
     
     def getgeolocationinfo(self):
-        return json.dumps(IPGeolocation.connectedNodes)
+        return "GEOLOCATIONSERVICE"
+    
+    def getadvancedcall(self):
+        return "ADVANCEDCALLSERVICE"
+         
+    def updateCacheData(self):
+        uptime = self.OPERATOR.runCall("uptime")
+        self.BITCOIN_DATA.uptime = json.loads(uptime)
+
+        blockchainInfo = self.OPERATOR.runCall("getblockchaininfo")
+        self.BITCOIN_DATA.blockchainInfo = json.loads(blockchainInfo)
+        
+        networkInfo = self.OPERATOR.runCall("getnetworkinfo")
+        self.BITCOIN_DATA.networkInfo = json.loads(networkInfo)
+
+        nettotalsInfo = self.OPERATOR.runCall("getnettotals")
+        self.BITCOIN_DATA.nettotalsInfo = json.loads(nettotalsInfo)
+
+        mempoolInfo = self.OPERATOR.runCall("getmempoolinfo")
+        self.BITCOIN_DATA.mempoolInfo = json.loads(mempoolInfo)
+        
+        miningInfo = self.OPERATOR.runCall("getmininginfo")
+        self.BITCOIN_DATA.miningInfo = json.loads(miningInfo)
+
+        peersInfo = self.OPERATOR.runCall("getpeerinfo")
+        self.BITCOIN_DATA.peersInfo = json.loads(peersInfo)
 
               
-         
 
-    if not bool(self.bitcoinData.PID) and request == "start":
-            #starts the daemon if not running
-            reply = self.rpcCaller.runCall(request)
-            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
-            if bool(self.bitcoinData.PID): self.autoUpdater.start()
-
-        elif not bool(self.bitcoinData.PID) and request != "start":
-            reply = json.dumps({"error": "bitcoin daemon not running"})
-
-        elif bool(self.bitcoinData.PID) and request == "start":
-            reply = json.dumps({"error": "bitcoin daemon already running"})
-
-        elif bool(self.bitcoinData.PID) and request == "stop":
-            reply = self.rpcCaller.runCall(request)
-            self.bitcoinData.PID = self.rpcCaller.checkDaemon()
-            self.autoUpdater.stop()
-
-        elif bool(self.bitcoinData.PID) and request == "getstatusinfo":
-            reply = self.bitcoinData.getStatusInfo()
-
-        elif bool(self.bitcoinData.PID) and request == "getpeerinfo":
-            reply = self.bitcoinData.getPeerInfo()
-        
-        elif bool(self.bitcoinData.PID) and request == "advancedcall":
-            jsonCall = json.loads(self.network.receiver()) #wait for actual call
-            lib.storage.Logger.add("Advanced call", jsonCall['call'], jsonCall['arg'])
-            if jsonCall['call'] != "start" and jsonCall['call'] != "stop":  
-                reply = self.rpcCaller.runCall(jsonCall['call'], jsonCall['arg'])
-            else:
-                reply = False
-            if not bool(reply): reply = json.dumps({"error": "command not allowed"})
-
-        elif request == "keepalive":
-            reply = "keepalive"
-        
-        elif request == "systeminfo":
-            reply = json.dumps(Machine.dataInfo)
-        
-        elif request == "externalip":
-            reply = json.dumps({'extIP': self.network.getExternalIP()})
-
-        elif bool(self.bitcoinData.PID) and request == "getgeolocation":
-            reply = json.dumps(lib.protocol.IPGeolocation.connectedNodes)
-
-        else:
-            reply = json.dumps({"error": "command not allowed"})
-        
-        return reply
-
-
-class DaemonData:
-    def __init__(self):
-        self.PID = None
-
-        self.uptime = None
-        self.blockchainInfo = None
-        self.networkInfo = None
-        self.mempoolInfo = None
-        self.miningInfo = None
-        self.nettotalsInfo = None
-        self.peersInfo = None
-
-    def getStatusInfo(self):
-        message = {}
-        #message['startData'] = self.startDate
-        message['uptime'] = self.uptime['uptime']
-        message['chain'] = self.blockchainInfo['chain']
-        message['blocks'] = self.blockchainInfo['blocks']
-        message['headers'] = self.blockchainInfo['headers']
-        message['verificationprogress'] = self.blockchainInfo['verificationprogress']
-        message['pruned'] = self.blockchainInfo['pruned']
-        message['size_on_disk'] = self.blockchainInfo['size_on_disk']
-
-        message['version'] = self.networkInfo['version']
-        message['subversion'] = self.networkInfo['subversion']
-        message['protocolversion'] = self.networkInfo['protocolversion']
-        message['connections'] = self.networkInfo['connections']
-        message['connections_in'] = self.networkInfo['connections_in']
-        message['connections_out'] = self.networkInfo['connections_out']
-        message['networkactive'] = self.networkInfo['networkactive']
-        message['relayfee'] = self.networkInfo['relayfee']
-
-        message['totalbytessent'] = self.nettotalsInfo['totalbytessent']
-        message['totalbytesrecv'] = self.nettotalsInfo['totalbytesrecv']
-
-        message['size'] = self.mempoolInfo['size']
-        message['bytes'] = self.mempoolInfo['bytes']
-        message['usage'] = self.mempoolInfo['usage']
-        message['mempoolminfee'] = self.mempoolInfo['mempoolminfee']
-        message['fullrbf'] = self.mempoolInfo['fullrbf']
-        
-        reply = json.dumps(message)
-        return reply
-    
-    def getPeerInfo(self):
-        reply = json.dumps(self.peersInfo)
-        return reply
-
-    def getSinglePeerInfo(self, peerID):
-        for p in self.peersInfo:
-            if str(peerID) == p['id']: message = p
-        reply = json.dumps(message)
-        return reply
-
-class RPC:
+class MachineInterface:
     def __init__(self):
         self.base = "bitcoin-cli"
     
     def checkDaemon(self):
         PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
-        if PID != "": PID = int(PID)
-        else: PID = False
-        return PID
+        return bool(PID)
 
     def getLocalIP(self):
         IP = subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip(" \n")
         return str(IP)
-    """    
-    def caller(self, command):
-        call = subprocess.run([self.base, command], capture_output = True)
-        return call.stdout.decode()
-    """
+    
     def runCall(self, command, arg = False):
         if command == 'uptime':
             call = subprocess.run([self.base, command], capture_output = True).stdout.decode()
