@@ -18,7 +18,13 @@ import lib.network
 import lib.crypto
 import json, threading, time, queue
 
-from lib.protocol import Commands
+
+class Commands:
+    
+    calls = {'uptime', 'start', 'stop', 'keepalive',
+            'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
+            'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+            'advancedcall', 'getsysteminfo', 'getgeolocationinfo'}
 
 class Client:
     def __init__(self):
@@ -68,7 +74,7 @@ class Client:
             self.lastConnCheck = time.time()
 
     def getSystemInfo(self):
-        if self.network.isConnected and self.network.sender(self.calls['systeminfo']):
+        if self.network.isConnected and self.network.sender(self.calls['getsysteminfo']):
             reply = self.network.receiver()
             self.systemInfo = json.loads(reply) if bool(reply) else False
 

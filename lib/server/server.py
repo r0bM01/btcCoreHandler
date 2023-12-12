@@ -22,10 +22,10 @@ import lib.server.storage
 import lib.server.protocol
 
 
-class Server(lib.protocol.RequestHandler):
+class Server(lib.server.protocol.RequestHandler):
     def __init__(self, logger):
         self.LOG = logger
-        lib.protocol.RequestHandler.__init__(self)
+        lib.server.protocol.RequestHandler.__init__(self)
         #init procedure
         self.LOGGER = logger
         self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
@@ -124,7 +124,7 @@ def main():
             SERVER.autoCache.start()
             SERVER.start_serving()
         except KeyboardInterrupt:
-            SERVER.autoUpdater.stop()
+            
             SERVER.isServing = False
             logger.add("Server stopped")
     else:

@@ -13,6 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
+import platform, json
 from collections import Counter
 from lib.network import Utils
 

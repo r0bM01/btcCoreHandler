@@ -40,7 +40,7 @@ class Control:
         self.encodedCalls = {lib.crypto.getHashedCommand(call, hexCertificate, handshakeCode) : call for call in self.calls}
 
     def check(self, call):
-        return call in self.calls
+        return call in self.encodedCalls
                   
         
 class RequestHandler:
@@ -113,7 +113,7 @@ class RequestHandler:
     
     def updateGeolocationData(self):
         if self.BITCOIN_DATA.peersInfo:
-            self.GEO_DATA.updateList(self.BITCOIN_DATA.peersInfo)
+            self.GEO_DATA.updateData(self.BITCOIN_DATA.peersInfo)
 
 
 

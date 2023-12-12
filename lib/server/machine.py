@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import subprocess
+import subprocess, json
 
 
 class MachineInterface:
@@ -40,6 +40,6 @@ class MachineInterface:
             subprocess.run(["bitcoind"])
             call = json.dumps({"start": bool(self.checkDaemon())})
         else:
-            caller = ["bitcoin-cli", command, arg] if arg else [self.base, command]
+            caller = ["bitcoin-cli", command, arg] if arg else ["bitcoin-cli", command]
             call = subprocess.run(caller, capture_output = True).stdout.decode()
         return call
