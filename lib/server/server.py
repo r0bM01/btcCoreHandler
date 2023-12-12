@@ -21,16 +21,16 @@ import lib.server.machine
 import lib.server.storage
 import lib.server.protocol
 
-       
-               
- 
+
 class Server(lib.protocol.RequestHandler):
-    def __init__(self):
+    def __init__(self, logger):
+        self.LOG = logger
         lib.protocol.RequestHandler.__init__(self)
         #init procedure
-        self.STORAGE = lib.storage.Data()
+        self.LOGGER = logger
         self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
 
+        self.isCached = False
         self.isServing = False
         self.isOnline = False
 
@@ -38,101 +38,97 @@ class Server(lib.protocol.RequestHandler):
         self.autoCacheRun = False
         self.autoCacheRest = 30
         
-        self.STORAGE.init_files()
-        lib.storage.Logger.FILE = self.storage.fileLogs
-        lib.storage.Logger.add("bitcoind running", bool(self.BITCOIN_DATA.PID))
-
+        self.LOGGER.add("bitcoind running", self.bitcoindRunning)
     
-    
-    def check_network(self):
+    def start_network(self):
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
-        lib.storage.Logger.add("socket online", self.isOnline)
-        lib.storage.Logger.add("bind to IP", self.NETWORK.settings.host)
-    
+        self.LOGGER.add("socket online", self.isOnline)
+        self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
+
+    def checkCacheData(self):
+        self.isCached = bool(self.BITCOIN_DATA.uptime)
+        return self.isCached
+
     def cacheUpdater(self):
+        self.LOGGER.add("auto cache thread started")
         self.autoCacheRun = True
         while self.autoCacheRun and self.bitcoindRunning:
             self.updateCacheData()
+            self.updateGeolocationData()
             time.sleep(self.autoCacheRest)
+        self.LOGGER.add("auto cache thread stopped")
+            
 
     def start_serving(self):
         self.isServing = True
-        lib.storage.Logger.add("serving loop entered")
+        self.LOGGER.add("server started")
+        self.LOGGER.add("waiting for incoming connections")
         while self.isServing:
          
             self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
                 self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
-                lib.storage.Logger.add("handshake code generated", self.NETWORK.handshakeCode)
-            if bool(self.NETWORK._remoteSock): lib.storage.Logger.add("connected by", self.NETWORK._remoteSock)
-            else: lib.storage.Logger.add("no incoming connection detected")
+                self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
+            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK._remoteSock)
+            else: self.LOGGER.add("no incoming connection detected")
 
             while bool(self.NETWORK._remoteSock):
-
                 remoteCall = self.NETWORK.receiver()
-                lib.storage.Logger.add("call: ", remoteCall)
+                self.LOGGER.add("encoded call: ", remoteCall)
 
                 if remoteCall:
                     callResult = self.handle_request(remoteCall)
 
                     if callResult == "ADVANCEDCALLSERVICE":
                         jsonCall = json.loads(self.NETWORK.receiver())
-                        lib.storage.Logger.add("Advanced call", jsonCall['call'], jsonCall['arg'])
-                        if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
-                            reply = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
-                        else:
-                            reply = json.dumps({"error": "command not allowed"})
-
-                    elif callResult == "GEOLOCATIONSERVICE":
-                        reply = json.dumps(lib.protocol.IPGeolocation.connectedNodes)
-
-                    elif callResult == "CLOSECONNECTIONSERVICE":
-                        reply = False
-                    
+                        self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
+                        reply = self.directCall(jsonCall)
                     else:
                         reply = callResult
                 else:
+                    self.LOGGER.add("client couldn't send remote call")
                     reply = False
                 ######################################################
                 if bool(reply) and bool(self.NETWORK._remoteSock):
-                    lib.storage.Logger.add("reply content size", len(reply.encode()))
+                    self.LOGGER.add("reply content size", len(reply.encode()))
                     replySent = self.NETWORK.sender(reply) #returns True or False
-                    lib.storage.Logger.add("reply sent", replySent)
+                    self.LOGGER.add("reply sent", replySent)
                 else:
-                    lib.storage.Logger.add("remote socket active", self.NETWORK._remoteSock)
-                    lib.storage.Logger.add("connection closed")
-            ############################################################################################
-        lib.storage.Logger.add("serving loop exit")
+                    self.LOGGER.add("remote socket active", self.NETWORK._remoteSock)
+                    self.LOGGER.add("connection closed")
+                #######################################################
+        self.LOGGER.add("serving loop exit")
 
         
-    def listGeolocation(self):
-        if self.bitcoinData.peersInfo:
-            nodeList = [peer['addr'].split(":")[0] for peer in self.bitcoinData.peersInfo]
-            lib.protocol.IPGeolocation.updateList(nodeList)
-
 
 
 def main():
+    storage = lib.server.storage.Data()
+    storage.init_files()
+    logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
 
-    SERVER = Server()
+    SERVER = Server(logger)
 
-    SERVER.check_network()
-    lib.storage.Logger.add("calling first update")
-    SERVER.autoUpdater.sendUpdateCall()
-    lib.storage.Logger.add("getting geolocation connected peers")
-    # SERVER.autoUpdater.listGeolocation()
+    logger.add("update base cache data")
+    SERVER.updateCacheData()
+
+    logger.add("update geolocation data")
+    SERVER.updateGeolocationData()
+
+    logger.add("starting network")
+    SERVER.start_network()
 
     if SERVER.isOnline:
         try:
-            SERVER.autoUpdater.start()
+            SERVER.autoCache.start()
             SERVER.start_serving()
         except KeyboardInterrupt:
             SERVER.autoUpdater.stop()
             SERVER.isServing = False
-            lib.storage.Logger.add("Server stopped")
+            logger.add("Server stopped")
     else:
-        lib.storage.Logger.add("Server socket not working")
+        logger.add("Server socket not working")
 
 
 

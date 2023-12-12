@@ -97,10 +97,6 @@ class Client:
             reply = self.network.receiver()
             self.peersInfo = json.loads(reply)
 
-    def getConnectedCountries(self):
-        if self.network.isConnected and self.network.sender(self.calls["getcountries"]):
-            return json.loads(self.network.receiver())
-
     def getPeersGeolocation(self):
         if self.network.isConnected and self.network.sender(self.calls["getgeolocation"]):
             return json.loads(self.network.receiver())
@@ -108,8 +104,7 @@ class Client:
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            jsonCommand = {'call': call, 'arg': arg}
-            self.network.sender(json.dumps(jsonCommand))
+            self.network.sender(json.dumps({'call': call, 'arg': arg}))
             reply = self.network.receiver()
             return reply
     """

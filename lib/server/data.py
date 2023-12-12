@@ -13,12 +13,15 @@
 # limitations under the License.                                            #
 #############################################################################
 
+from collections import Counter
+from lib.network import Utils
 
 class Bitcoin:
     def __init__(self):
         self.PID = None
 
         self.uptime = None
+
         self.blockchainInfo = None
         self.networkInfo = None
         self.mempoolInfo = None
@@ -61,39 +64,43 @@ class Bitcoin:
             if str(peerID) == p['id']: message = p
         return message
 
-class IPGeolocation:
-        knownNodes = list()
-        connectedNodes = list()
-        knwownCountries = list()
-    
-        @staticmethod
-        def updateList(nodeList):
-            IPGeolocation.connectedNodes = []
-            for nodeip in nodeList:
-                if not IPGeolocation.isKnown(nodeip):
-                    nodeGeodata = json.loads(Utils.getGeolocation(nodeip))
-                    IPGeolocation.knownNodes.append(nodeGeodata)
-                else:
-                    nodeGeodata = IPGeolocation.getKnownData(nodeip)
-                if nodeGeodata['country_name'] not in IPGeolocation.knwownCountries:
-                    IPGeolocation.knwownCountries.append(nodeGeodata['country_name'])
-                
-                IPGeolocation.connectedNodes.append(nodeGeodata)
 
-        @staticmethod
-        def isKnown(nodeip):
-            return any(node['ip'] == nodeip for node in IPGeolocation.knownNodes)
+class IPGeolocation:
+        def __init__(self):
+            self.GEODATA = list()
+    
+        def updateData(self, peersInfo):
+            nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
+            for nodeip in nodeList:
+                if not self.isKnown(nodeip):
+                    self.GEODATA.append(json.loads(Utils.getGeolocation(nodeip)))
+                
+        def isKnown(self, nodeip):
+            return any(node['ip'] == nodeip for node in self.GEODATA)
         
-        @staticmethod
-        def getKnownData(nodeip):
-            if IPGeolocation.isKnown(nodeip):
-                return [node for node in IPGeolocation.knownNodes if node['ip'] == nodeip][0]
+        def getRawData(self, nodeip):
+            if self.isKnown(nodeip):
+                return [node for node in self.GEODATA if node['ip'] == nodeip][0]
+            else:
+                geoData = json.loads(Utils.getGeolocation(nodeip))
+                self.GEODATA.append(geoData)
+                return geoData
         
-        @staticmethod
-        def getConnectedCountries():
-            connectedCountries = [nodeGeodata['country_name'] for nodeGeodata in IPGeolocation.connectedNodes]
-            counted = [{'country': country, 'counts': connectedCountries.count(country)} for country in IPGeolocation.knwownCountries]
-            return [country for country in counted if country['counts'] != 0]
+        def getCountry(self, nodeip):
+            if self.isKnown(nodeip):
+                return [node['country_name'] for node in self.GEODATA if node['ip'] == nodeip][0]
+            else:
+                geoData = self.getRawData(nodeip)
+                return geoData['country_name']
+        
+        def getCountryList(self, peersInfo):
+            nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
+            return [self.getCountry(nodeip) for nodeip in nodeList]
+        
+        def getCountriesStats(self, peersInfo):
+            countryList = self.getCountryList(peersInfo)
+            return {c[0] : c[1] for c in Counter(countryList).items()}
+
 
 class Machine:
     dataInfo = {}

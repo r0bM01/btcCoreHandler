@@ -55,17 +55,18 @@ class Data:
     
 
 class Logger:
-    FILE = False
-    SESSION = []
+    def __init__(self, filePath, verbose = False):
+        self.verbose = verbose
+        self.FILE = filePath
+        self.SESSION = []
 
-    @staticmethod
-    def add(message, *args):
+    def add(self, message, *args):
         
         log = str(f"{time.ctime(getTime())} - {message}")
         if args:
             arguments = str([a for a in args])
             log += str(f": {arguments}")
-        Logger.SESSION.append(log)
-        with open(Logger.FILE, "a") as F:
+        self.SESSION.append(log)
+        with open(self.FILE, "a") as F:
             F.write(log + "\n")
-        print(log)
+        if self.verbose: print(log)

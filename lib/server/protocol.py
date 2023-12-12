@@ -26,10 +26,10 @@ from lib.network import Utils
 class Control:
     def __init__(self):
         
-        self.calls = {'uptime', 'start', 'stop', 'closeconn', 'keepalive',
+        self.calls = {'uptime', 'start', 'stop', 'keepalive',
                       'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
                       'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-                      'advancedcall', 'systeminfo', 'getgeolocation'}
+                      'advancedcall', 'getsysteminfo', 'getgeolocationinfo'}
         
         self.encodedCalls = False
 
@@ -50,10 +50,10 @@ class RequestHandler:
         
         self.CONTROL = Control()
         self.BITCOIN_DATA = lib.server.data.Bitcoin()
+        self.GEO_DATA = lib.server.data.IPGeolocation()
 
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
         
-
     def handle_request(self, remoteCall):
         if not self.CONTROL.check(remoteCall): return json.dumps({"error": "invalid command"})
         request = self.CONTROL.encodedCalls[remoteCall]
@@ -62,13 +62,11 @@ class RequestHandler:
         elif self.bitcoindRunning and request == "stop": self.stopbitcoind()
 
         if request == "keepalive": return json.dumps({"confirm": "alive"})
-        elif request == "systeminfo": return json.dumps(Machine.dataInfo) 
-        elif request == "statusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
-        elif request == "peerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
-        elif request == "geolocationinfo": return "GEOLOCATIONSERVICE"
+        elif request == "getsysteminfo": return json.dumps(lib.server.data.Machine.dataInfo) 
+        elif request == "getstatusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
+        elif request == "getpeerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
+        elif request == "geolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
         elif request == "advancedcall": return "ADVANCEDCALLSERVICE"
-        elif request == "closeconn": return "CLOSECONNECTIONSERVICE"
-
 
     def startbitcoind(self):
         if not bool(self.bitcoindRunning):
@@ -81,29 +79,41 @@ class RequestHandler:
             return lib.server.machine.MachineInterface.runBitcoindCall("stop")
         else:
             return json.dumps({"error": "bitcoind already stopped"})
-
+    
+    def directCall(self, jsonCall):
+        if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
+            result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
+            return json.dumps(result)
+        else:
+            return json.dumps({"error": "command not allowed"})
+        
          
     def updateCacheData(self):
-        uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
-        self.BITCOIN_DATA.uptime = json.loads(uptime)
+        if self.bitcoindRunning:
+            uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
+            self.BITCOIN_DATA.uptime = json.loads(uptime)
 
-        blockchainInfo = lib.server.machine.MachineInterface.runBitcoindCall("getblockchaininfo")
-        self.BITCOIN_DATA.blockchainInfo = json.loads(blockchainInfo)
-        
-        networkInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnetworkinfo")
-        self.BITCOIN_DATA.networkInfo = json.loads(networkInfo)
+            blockchainInfo = lib.server.machine.MachineInterface.runBitcoindCall("getblockchaininfo")
+            self.BITCOIN_DATA.blockchainInfo = json.loads(blockchainInfo)
+            
+            networkInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnetworkinfo")
+            self.BITCOIN_DATA.networkInfo = json.loads(networkInfo)
 
-        nettotalsInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnettotals")
-        self.BITCOIN_DATA.nettotalsInfo = json.loads(nettotalsInfo)
+            nettotalsInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnettotals")
+            self.BITCOIN_DATA.nettotalsInfo = json.loads(nettotalsInfo)
 
-        mempoolInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmempoolinfo")
-        self.BITCOIN_DATA.mempoolInfo = json.loads(mempoolInfo)
-        
-        miningInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmininginfo")
-        self.BITCOIN_DATA.miningInfo = json.loads(miningInfo)
+            mempoolInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmempoolinfo")
+            self.BITCOIN_DATA.mempoolInfo = json.loads(mempoolInfo)
+            
+            miningInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmininginfo")
+            self.BITCOIN_DATA.miningInfo = json.loads(miningInfo)
 
-        peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
-        self.BITCOIN_DATA.peersInfo = json.loads(peersInfo)
+            peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
+            self.BITCOIN_DATA.peersInfo = json.loads(peersInfo)
+    
+    def updateGeolocationData(self):
+        if self.BITCOIN_DATA.peersInfo:
+            self.GEO_DATA.updateList(self.BITCOIN_DATA.peersInfo)
 
 
 
