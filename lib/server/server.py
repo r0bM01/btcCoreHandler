@@ -110,11 +110,20 @@ def main():
 
     SERVER = Server(logger)
 
-    logger.add("update base cache data")
+    logger.add("updating base cache data")
     SERVER.updateCacheData()
 
-    logger.add("update geolocation data")
+    logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
+    logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
+    logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
+    logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
+
+    logger.add("updating geolocation data... wait until complete (2 minutes)")
     SERVER.updateGeolocationData()
+
+    logger.add("BitcoinCore connected countries")
+    countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
+    [logger.add(f"{key}", value) for key, value in countries.items()]
 
     logger.add("starting network")
     SERVER.start_network()
@@ -124,7 +133,6 @@ def main():
             SERVER.autoCache.start()
             SERVER.start_serving()
         except KeyboardInterrupt:
-            
             SERVER.isServing = False
             logger.add("Server stopped")
     else:
