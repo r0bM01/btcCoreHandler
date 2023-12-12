@@ -104,7 +104,7 @@ class Client:
             self.peersInfo = json.loads(reply)
 
     def getPeersGeolocation(self):
-        if self.network.isConnected and self.network.sender(self.calls["getgeolocation"]):
+        if self.network.isConnected and self.network.sender(self.calls["getgeolocationinfo"]):
             return json.loads(self.network.receiver())
     
     def advancedCall(self, call, arg = False):

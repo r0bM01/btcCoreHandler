@@ -78,8 +78,8 @@ class Server(lib.server.protocol.RequestHandler):
                 self.LOGGER.add("encoded call: ", remoteCall)
 
                 if remoteCall:
-                    callResult = self.handle_request(remoteCall)
-
+                    callResult = self.handle_request(remoteCall, self.LOGGER)
+                    self.LOGGER.add("call handled", bool(callResult))
                     if callResult == "ADVANCEDCALLSERVICE":
                         jsonCall = json.loads(self.NETWORK.receiver())
                         self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
@@ -118,13 +118,14 @@ def main():
     logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
     logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
 
+    """
     logger.add("updating geolocation data... wait until complete (2 minutes)")
     SERVER.updateGeolocationData()
 
     logger.add("BitcoinCore connected countries")
     countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
     [logger.add(f"{key}", value) for key, value in countries.items()]
-
+    """
     logger.add("starting network")
     SERVER.start_network()
 

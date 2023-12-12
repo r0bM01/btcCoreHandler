@@ -54,9 +54,10 @@ class RequestHandler:
 
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
         
-    def handle_request(self, remoteCall):
+    def handle_request(self, remoteCall, LOGGER):
         if not self.CONTROL.check(remoteCall): return json.dumps({"error": "invalid command"})
         request = self.CONTROL.encodedCalls[remoteCall]
+        LOGGER.add("call", request)
         if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
         elif not self.bitcoindRunning and request == "start": self.startbitcoind()
         elif self.bitcoindRunning and request == "stop": self.stopbitcoind()
@@ -65,7 +66,7 @@ class RequestHandler:
         elif request == "getsysteminfo": return json.dumps(lib.server.data.Machine.dataInfo) 
         elif request == "getstatusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
         elif request == "getpeerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
-        elif request == "geolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
+        elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
         elif request == "advancedcall": return "ADVANCEDCALLSERVICE"
 
     def startbitcoind(self):
