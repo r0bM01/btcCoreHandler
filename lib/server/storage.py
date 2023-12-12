@@ -35,8 +35,9 @@ class Data:
         F = open(self.fileLogs, "w")
         F.close()
 
-        F = open(self.geolocationFile, "wb")
-        F.close()
+        if not os.path.exists(self.geolocationFile):
+            F = open(self.geolocationFile, "wb")
+            F.close()
     
     def load_geolocation(self):
         with open(self.geolocationFile, "rb") as F:
@@ -44,10 +45,10 @@ class Data:
         return [json.loads(peer[:-1]) for peer in peers]
 
     def write_geolocation(self, geolocationData):
+        encodedData = [str(json.dumps(peer)).encode() for peer in gelocationData]
         with open(self.geolocationFile, "wb") as F:
-            for peer in geolocationData:
-                F.write(str(json.dumps(peer)) + "\n")
-
+            [F.write(peer + "\n") for peer in encodedData]
+                
 
     def create_certificate(self):
         with open(self.fileCert, "wb") as F:
@@ -76,7 +77,7 @@ class Logger:
 
     def add(self, message, *args):
         
-        log = str(f"{time.ctime(getTime())} - {message}")
+        log = str(f"{time.ctime(int(time.time()))} - {message}")
         if args:
             arguments = str([a for a in args])
             log += str(f": {arguments}")

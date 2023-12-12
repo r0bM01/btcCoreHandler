@@ -108,11 +108,10 @@ class Server(lib.server.protocol.RequestHandler):
 def main():
     storage = lib.server.storage.Data()
     storage.init_files()
+    saved_geodata = storage.load_geolocation()
     logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
 
-    
-
-    SERVER = Server(logger)
+    SERVER = Server(logger, saved_geodata)
 
     logger.add("updating base cache data")
     SERVER.updateCacheData()
@@ -122,16 +121,14 @@ def main():
     logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
     logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
 
-
-    saved_geodata = storage.load_geolocation()
     logger.add("loaded geodata", len(saved_geodata))
     
     logger.add("updating geolocation data... wait until complete (2 minutes)")
     SERVER.updateGeolocationData()
 
-    logger.add("BitcoinCore connected countries")
-    countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
-    [logger.add(f"{key}", value) for key, value in countries.items()]
+    # logger.add("BitcoinCore connected countries")
+    # countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
+    # [logger.add(f"{key}", value) for key, value in countries.items()]
     
 
     logger.add("starting network")
