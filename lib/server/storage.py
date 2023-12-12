@@ -14,17 +14,17 @@
 #############################################################################
 
 
-import os, pathlib, time
+import os, pathlib, time, json
 import lib.settings
 import lib.crypto
 
-def getTime():
-    return int(time.time())
 
 class Data:
     def __init__(self):
         self.fileCert = lib.settings.BASE_DIR.joinpath("cert.rob")
-        self.fileLogs = lib.settings.BASE_DIR.joinpath(f"debug_{getTime()}.log")
+        self.fileLogs = lib.settings.BASE_DIR.joinpath(f"debug_{int(time.time())}.log")
+
+        self.geolocationFile = lib.settings.BASE_DIR.joinpath("geolocation.rob")
 
         self.certificate = False
     
@@ -34,7 +34,21 @@ class Data:
         F.close()
         F = open(self.fileLogs, "w")
         F.close()
+
+        F = open(self.geolocationFile, "wb")
+        F.close()
     
+    def load_geolocation(self):
+        with open(self.geolocationFile, "rb") as F:
+            peers = F.readlines()
+        return [json.loads(peer[:-1]) for peer in peers]
+
+    def write_geolocation(self, geolocationData):
+        with open(self.geolocationFile, "wb") as F:
+            for peer in geolocationData:
+                F.write(str(json.dumps(peer)) + "\n")
+
+
     def create_certificate(self):
         with open(self.fileCert, "wb") as F:
             dataBytes = lib.crypto.getRandomBytes(lib.settings.CERT_SIZE)

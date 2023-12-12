@@ -23,12 +23,14 @@ import lib.server.protocol
 
 
 class Server(lib.server.protocol.RequestHandler):
-    def __init__(self, logger):
+    def __init__(self, logger, loadedGeodata):
         self.LOG = logger
         lib.server.protocol.RequestHandler.__init__(self)
         #init procedure
         self.LOGGER = logger
         self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
+
+        if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
 
         self.isCached = False
         self.isServing = False
@@ -108,6 +110,8 @@ def main():
     storage.init_files()
     logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
 
+    
+
     SERVER = Server(logger)
 
     logger.add("updating base cache data")
@@ -118,14 +122,18 @@ def main():
     logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
     logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
 
-    """
+
+    saved_geodata = storage.load_geolocation()
+    logger.add("loaded geodata", len(saved_geodata))
+    
     logger.add("updating geolocation data... wait until complete (2 minutes)")
     SERVER.updateGeolocationData()
 
     logger.add("BitcoinCore connected countries")
     countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
     [logger.add(f"{key}", value) for key, value in countries.items()]
-    """
+    
+
     logger.add("starting network")
     SERVER.start_network()
 
@@ -134,6 +142,7 @@ def main():
             SERVER.autoCache.start()
             SERVER.start_serving()
         except KeyboardInterrupt:
+            storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
             SERVER.isServing = False
             logger.add("Server stopped")
     else:
