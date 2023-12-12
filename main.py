@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import lib.server
+import lib.server.server
 import lib.client
 
 print("[1] - start server")
@@ -22,7 +22,7 @@ print("[3] - start GUI")
 
 c = int(input(">> "))
 
-if c == 1: lib.server.main()
+if c == 1: lib.server.server.main()
 if c == 2: lib.client.clientTerminal()
 if c == 3: import ui.main
 
