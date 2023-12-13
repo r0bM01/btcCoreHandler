@@ -77,6 +77,7 @@ class Server(lib.server.protocol.RequestHandler):
 
             while bool(self.NETWORK._remoteSock):
                 remoteCall = self.NETWORK.receiver()
+                self.LOGGER.add("##########################")
                 self.LOGGER.add("encoded call: ", remoteCall)
 
                 if remoteCall:
@@ -123,13 +124,8 @@ def main():
 
     logger.add("loaded geodata", len(saved_geodata))
     
-    logger.add("updating geolocation data... wait until complete (2 minutes)")
+    logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
     SERVER.updateGeolocationData()
-
-    # logger.add("BitcoinCore connected countries")
-    # countries = SERVER.GEO_DATA.getCountriesStats(SERVER.BITCOIN_DATA.peersInfo)
-    # [logger.add(f"{key}", value) for key, value in countries.items()]
-    
 
     logger.add("starting network")
     SERVER.start_network()

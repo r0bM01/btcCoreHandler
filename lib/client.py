@@ -17,7 +17,7 @@
 import lib.network
 import lib.crypto
 import json, threading, time, queue
-
+from collections import Counter
 
 class Commands:
     
@@ -62,6 +62,7 @@ class Client:
             self.getSystemInfo()
             self.getStatusInfo()
             self.getPeersInfo()
+            self.getPeersGeolocation()
             
     def closeConnection(self):
         if self.network.isConnected:
@@ -72,6 +73,7 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['keepalive']):
             reply = self.network.receiver()
             self.lastConnCheck = time.time()
+            if not bool(reply): self.network.disconnectServer()
 
     def getSystemInfo(self):
         if self.network.isConnected and self.network.sender(self.calls['getsysteminfo']):
@@ -105,7 +107,7 @@ class Client:
 
     def getPeersGeolocation(self):
         if self.network.isConnected and self.network.sender(self.calls["getgeolocationinfo"]):
-            return json.loads(self.network.receiver())
+            self.peersGeolocation = json.loads(self.network.receiver())
     
     def advancedCall(self, call, arg = False):
         if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
@@ -123,17 +125,6 @@ class Client:
         nodeInfo = json.loads(urllib.request.urlopen(req, context = context).read().decode())
         return nodeInfo
     
-    def getPeersGeolocation(self):
-        if bool(self.peersInfo):
-            context = lib.network.Utils.ssl_default_context()
-            baseUrl = "https://api.iplocation.net/?ip="
-            baseHeader = {'User-Agent': 'Mozilla/5.0'}
-
-            peersIPonly = [peer['addr'].split(":")[0] for peer in self.peersInfo]
-            for ip in peersIPonly:
-                url = baseUrl + str(ip)
-                request = urllib.request.Request(url=url, headers=baseHeader)
-                self.peersGeolocation.append(json.loads(urllib.request.urlopen(request, context = context).read().decode()))
     """          
             
 
@@ -144,6 +135,7 @@ def clientTerminal():
             eventThread.wait()
             remoteConn.keepAlive()
             time.sleep(10)
+        print("\nconnection terminated")
 
     remoteConn = Client()
     eventThread = threading.Event()
@@ -166,19 +158,20 @@ def clientTerminal():
         
     try:
 
-        while True:
+        while True and remoteConn.network.isConnected:
             print("[1] - remote server info")
             print("[2] - bitcoin node status info")
             print("[3] - print all peers geolocation")
-            # print("[4] - print contries stats")
+            print("[4] - print contries stats")
             print("[5] - send advanced call")
             print("[0] - quit terminal")
             command = int(input(">> "))
+            if not bool(command): command = 0
             if command == 0: break
             elif command == 1: print(remoteConn.systemInfo)
             elif command == 2: print(remoteConn.statusInfo)
-            elif command == 3: [print(node) for node in remoteConn.getPeersGeolocation()]
-            # elif command == 4: [print(f"{country['country']}: {country['counts']}") for country in remoteConn.getConnectedCountries()]
+            elif command == 3: [print(node) for node in remoteConn.peersGeolocation]
+            elif command == 4: [print(f"{c[0]} : {c[1]}") for c in Counter([node[1] for node in remoteConn.peersGeolocation]).items()]
             elif command == 5: 
                 insertedCommand = input("\ninsert call: ")
                 fullCommand = insertedCommand.lower().split(" ", 1)

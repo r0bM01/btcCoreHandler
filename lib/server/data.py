@@ -96,7 +96,7 @@ class IPGeolocation:
         
         def getCountryList(self, peersInfo):
             nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
-            return [self.getCountry(nodeip) for nodeip in nodeList]
+            return [(nodeip, self.getCountry(nodeip)) for nodeip in nodeList]
         
         def getCountriesStats(self, peersInfo):
             countryList = self.getCountryList(peersInfo)

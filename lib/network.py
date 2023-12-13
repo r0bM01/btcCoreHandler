@@ -79,11 +79,16 @@ class Proto:
         dataLenght = hex(len(data))[2:].zfill(8)
         dataLenght = bytes.fromhex(dataLenght)
         dataSent = False
-        if self.sockSend(dataLenght):
+        if bool(self._remoteSock) and self.sockSend(dataLenght): #checks if remote sock is connected and sends the data lenght
+            """
             if len(data) > self._bufferSize:
                 dataSent = self.highSend(data)
             else:
                 dataSent = self.sockSend(data)
+            """
+            dataSent = self.highSend(data)
+        else:
+            dataSent = False
         if dataSent:
             return True
         else:
@@ -97,10 +102,13 @@ class Proto:
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
+            """
             if dataLenght > self._bufferSize:
                 data = self.highRecv(dataLenght)
             else:
                 data = self.sockRecv(dataLenght)
+            """
+            data = self.highRecv(dataLenght)
         if dataLenght and data:
             return data.decode()
         else:

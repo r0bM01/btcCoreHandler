@@ -45,9 +45,9 @@ class Data:
         return [json.loads(peer[:-1]) for peer in peers]
 
     def write_geolocation(self, geolocationData):
-        encodedData = [str(json.dumps(peer)).encode() for peer in gelocationData]
+        encodedData = [str(json.dumps(peer)).encode() for peer in geolocationData]
         with open(self.geolocationFile, "wb") as F:
-            [F.write(peer + "\n") for peer in encodedData]
+            [F.write(peer + b"\n") for peer in encodedData]
                 
 
     def create_certificate(self):

@@ -82,11 +82,14 @@ class RequestHandler:
             return json.dumps({"error": "bitcoind already stopped"})
     
     def directCall(self, jsonCall):
-        if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
-            result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
-            return json.dumps(result)
+        if jsonCall['call'] in self.CONTROL.calls:
+            if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
+                result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
+                return json.dumps(result)
+            else:
+                return json.dumps({"error": "command not authorized"})
         else:
-            return json.dumps({"error": "command not allowed"})
+            return json.dumps({"error": "command not existent"})
         
          
     def updateCacheData(self):
