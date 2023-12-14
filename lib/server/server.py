@@ -24,7 +24,6 @@ import lib.server.protocol
 
 class Server(lib.server.protocol.RequestHandler):
     def __init__(self, logger, loadedGeodata):
-        self.LOG = logger
         lib.server.protocol.RequestHandler.__init__(self)
         #init procedure
         self.LOGGER = logger
@@ -72,7 +71,7 @@ class Server(lib.server.protocol.RequestHandler):
             if bool(self.NETWORK.handshakeCode): 
                 self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
                 self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
-            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK._remoteSock)
+            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK.remoteAddr)
             else: self.LOGGER.add("no incoming connection detected")
 
             while bool(self.NETWORK._remoteSock):
@@ -133,9 +132,11 @@ def main():
     if SERVER.isOnline:
         try:
             SERVER.autoCache.start()
+            logger.verbose = False
             SERVER.start_serving()
         except KeyboardInterrupt:
             storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
+            logger.verbose = True
             SERVER.isServing = False
             logger.add("Server stopped")
     else:

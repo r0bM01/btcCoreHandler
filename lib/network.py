@@ -22,16 +22,10 @@ class Proto:
     _remoteSock = False
     _bufferSize = 2048
     _opTimeout = 5
-    
-    def sockClosure(self):
-        try: 
-            self._remoteSock.shutdown(socket.SHUT_RDWR)
-            self._remoteSock.close()
-        except (OSError, AttributeError):
-            pass
-        self._remoteSock = False
+    _header = 4
 
     #################################################
+        # LOW LEVEL SOCKET SEND/RECEIVE
     def sockSend(self, msg):
         try:
             msgSent = self._remoteSock.send(msg, socket.MSG_WAITALL)
@@ -45,15 +39,24 @@ class Proto:
         except (OSError, TimeoutError):
             msg = b""
         return msg
+
+    def sockClosure(self):
+        try: 
+            self._remoteSock.shutdown(socket.SHUT_RDWR)
+            self._remoteSock.close()
+        except (OSError, AttributeError):
+            pass
+        self._remoteSock = False
     #################################################
    
     
     ###########################################################################################################
+        # MESSAGE SEND/RECEIVE WITH CONFIRM
     def dataSend(self, data):
         #tmpTimeout = self._remoteSock.gettimeout()
         #self._remoteSock.settimeout(self._opTimeout)
         
-        lenghtMsg = bytes.fromhex(hex(len(data))[2:].zfill(8))
+        lenghtMsg = bytes.fromhex(hex(len(data))[2:].zfill(self._header*2))
         lenghtSent = self.sockSend(lenghtMsg)
 
         dataSent = 0
@@ -73,7 +76,7 @@ class Proto:
         #tmpTimeout = self._remoteSock.gettimeout()
         #self._remoteSock.settimeout(self._opTimeout)
 
-        lenghtMsg = self.sockRecv(4)
+        lenghtMsg = self.sockRecv(self._header)
 
         dataRecv = 0
         if bool(lenghtMsg):
@@ -91,19 +94,18 @@ class Proto:
         #self._remoteSock.settimeout(tmpTimeout)
         return  b"".join(dataArray) if dataRecv == lenghtMsg else False
     ###########################################################################################################
-
+        # HIGH LEVEL INTERFACE SENDING/RECEIVING MESSAGES WITH SOCKET CLOSURE
     def sender(self, data):
         #data must be already encoded in json
-        msgSent = self.dataSend(data.encode())
+        msgSent = self.dataSend(data.encode('utf-8'))
         if bool(msgSent): return True
         else: 
             self.sockClosure()
             return False
     
-
     def receiver(self):
         msgReceived = self.dataRecv()
-        if bool(msgReceived): return msgReceived.decode()
+        if bool(msgReceived): return msgReceived.decode('utf-8')
         else:
             self.sockClosure()
             return False
@@ -154,6 +156,7 @@ class Server(Proto):
     def __init__(self, settings):
         self.settings = settings
         self.socket = False
+        self.remoteAddr = None
         self.handshakeCode = False
 
     def openSocket(self):
@@ -166,7 +169,7 @@ class Server(Proto):
 
     def receiveClient(self, handshakeCode):
         try:
-            self._remoteSock, addr = self.socket.accept()
+            self._remoteSock, self.remoteAddr = self.socket.accept()
             self._remoteSock.settimeout(self.settings.remoteSockTimeout)
             self.sender(handshakeCode)
             self.handshakeCode = handshakeCode

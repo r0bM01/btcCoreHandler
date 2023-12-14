@@ -19,11 +19,15 @@ import lib.client
 print("[1] - start server")
 print("[2] - start client")
 print("[3] - start GUI")
+print("[4] - subprocess server")
 
 c = int(input(">> "))
 
 if c == 1: lib.server.server.main()
 if c == 2: lib.client.clientTerminal()
 if c == 3: import ui.main
+if c == 4:
+    import subprocess
+    subprocess.run(["python3", "test_server.py"])
 
 print("program closed")

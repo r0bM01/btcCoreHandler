@@ -26,11 +26,16 @@ from lib.network import Utils
 class Control:
     def __init__(self):
         
-        self.calls = {'uptime', 'start', 'stop', 'keepalive',
-                      'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
-                      'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-                      'advancedcall', 'getsysteminfo', 'getgeolocationinfo'}
-        
+        self.cachedCalls = {'getsysteminfo', 'getstatusinfo', 'getgeolocationinfo'}
+        self.bitcoinCalls = {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals'}
+        self.controlCalls = {'start', 'stop', 'keepalive', 'advancedcall'}
+
+        self.calls = set()
+        self.calls.update(self.cachedCalls)
+        self.calls.update(self.bitcoinCalls)
+        self.calls.update(self.controlCalls)
+
+
         self.encodedCalls = False
 
         # self.LEVELS = {"blocked": 0, "user": 1, "admin": 2} not implemented yet
@@ -82,16 +87,15 @@ class RequestHandler:
             return json.dumps({"error": "bitcoind already stopped"})
     
     def directCall(self, jsonCall):
-        if jsonCall['call'] in self.CONTROL.calls:
+        if jsonCall['call'] in self.CONTROL.bitcoinCalls:
             if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
                 result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
                 return json.dumps(result)
             else:
                 return json.dumps({"error": "command not authorized"})
         else:
-            return json.dumps({"error": "command not existent"})
+            return json.dumps({"error": "invalid command"})
         
-         
     def updateCacheData(self):
         if self.bitcoindRunning:
             uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
