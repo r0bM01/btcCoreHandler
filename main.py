@@ -28,6 +28,6 @@ if c == 2: lib.client.clientTerminal()
 if c == 3: import ui.main
 if c == 4:
     import subprocess
-    subprocess.run(["python3", "test_server.py"])
+    subprocess.run(["./test_server.py"])
 
 print("program closed")

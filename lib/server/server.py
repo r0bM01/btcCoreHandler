@@ -130,6 +130,7 @@ def main():
     SERVER.start_network()
 
     if SERVER.isOnline:
+
         try:
             SERVER.autoCache.start()
             logger.verbose = False
