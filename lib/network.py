@@ -49,12 +49,13 @@ class Proto:
     def highSend(self, data):
         tmpTimeout = self._remoteSock.gettimeout()
         self._remoteSock.settimeout(self._opTimeout)
-        flag = True
-        chunks = [data[c:c+self._bufferSize] for c in range(0, len(data), self._bufferSize)]
-        for c in chunks:
-            if not self.sockSend(c) or not bool(self.sockRecv(1)):
-                flag = False
-                break
+        # flag = True
+        # chunks = [data[c:c+self._bufferSize] for c in range(0, len(data), self._bufferSize)]
+        lenghtSent = 0
+        #for c in chunks:
+        #    if not self.sockSend(c) or not bool(self.sockRecv(1)):
+        #        flag = False
+        #        break
         self._remoteSock.settimeout(tmpTimeout)
         return flag
         
@@ -72,20 +73,53 @@ class Proto:
             else:
                 break
         return b"".join(dataArray)
+    
+    ###########################################################################################################
+    def testSend(self, data):
+        lenghtMsg = bytes.fromhex(hex(len(data))[2:].zfill(8))
+        lenghtSent = self._remoteSock.send(lenghtMsg, socket.MSG_WAITALL)
+        if lenghtSent == len(data):
+            dataSent = 0
+            while dataSent < len(data):
+                chunk = self._remoteSock.send(data[dataSent:], socket.MSG_WAITALL)
+                if not bool(chunk): break
+                dataSent += chunk
+        return True if dataSent == len(data) else False
+        
+    def testRecv(self):
+        lenghtMsg = self._remoteSock.recv(4, socket.MSG_WAITALL)
+        if bool(lenghtMsg):
+            lenghtMsg = int(lenghtMsg.hex(), 16)
+            dataRecv = 0
+            dataArray = []
+            while dataRecv < lenghtMsg:
+                chunk = self._remoteSock.recv(min(lenghtMsg - dataRecv, self._bufferSize), socket.MSG_WAITALL)
+                if not bool(chunk): break
+                dataRecv += len(chunk)
+                dataArray.append(chunk)
+        return  b"".join(dataArray) if dataRecv == lenghtMsg else False
+    ###########################################################################################################
+
 
     def sender(self, data):
         #data must be already encoded in json
-        data = data.encode()
+        msgSent = self.testSend(data.encode)
+        if bool(msgSent): return True
+        else: 
+            self.sockClosure()
+            return False
+        
+
+        """
         dataLenght = hex(len(data))[2:].zfill(8)
         dataLenght = bytes.fromhex(dataLenght)
         dataSent = False
         if bool(self._remoteSock) and self.sockSend(dataLenght): #checks if remote sock is connected and sends the data lenght
-            """
+            
             if len(data) > self._bufferSize:
                 dataSent = self.highSend(data)
             else:
                 dataSent = self.sockSend(data)
-            """
             dataSent = self.highSend(data)
         else:
             dataSent = False
@@ -96,18 +130,25 @@ class Proto:
             #self._remoteSock = False
             self.sockClosure()
             return False
-    
+        """
+
     def receiver(self):
+        msgReceived = self.testRecv()
+        if bool(msgReceived): return msgReceived.decode()
+        else:
+            self.sockClosure()
+            return False
+        """
         #self._remoteSock.settimeout(30)
         dataLenght = self.sockRecv(4)
         if dataLenght:
             dataLenght = int(dataLenght.hex(), 16)
-            """
+            
             if dataLenght > self._bufferSize:
                 data = self.highRecv(dataLenght)
             else:
                 data = self.sockRecv(dataLenght)
-            """
+    
             data = self.highRecv(dataLenght)
         if dataLenght and data:
             return data.decode()
@@ -116,6 +157,7 @@ class Proto:
             #self._remoteSock = False
             self.sockClosure()
             return False
+        """
 
 class Client(Proto):
     def __init__(self):
