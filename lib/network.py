@@ -37,14 +37,14 @@ class Proto:
             msgSent = self._remoteSock.send(msg, socket.MSG_WAITALL)
         except (OSError, TimeoutError):
             msgSent = 0
-        return True if msgSent == len(msg) else False
+        return msgSent
     
     def sockRecv(self, size):
         try:
             msg = self._remoteSock.recv(int(size), socket.MSG_WAITALL)
         except (OSError, TimeoutError):
             msg = b""
-        return msg if len(msg) == int(size) else False
+        return msg
     #################################################
    
     
@@ -54,22 +54,15 @@ class Proto:
         #self._remoteSock.settimeout(self._opTimeout)
         
         lenghtMsg = bytes.fromhex(hex(len(data))[2:].zfill(8))
+        lenghtSent = self.sockSend(lenghtMsg)
 
-        try:
-            lengtSent = self._remoteSock.send(lenghtMsg, socket.MSG_WAITALL)
-        except (OSError, TimeoutError):
-            lengtSent = 0
-        
         dataSent = 0
-        if lengtSent == len(lenghtMsg):
+        if lenghtSent == len(lenghtMsg):
 
             while dataSent < len(data):
+                
+                chunk = self.sockSend(data[dataSent:])
 
-                try:
-                    chunk = self._remoteSock.send(data[dataSent:], socket.MSG_WAITALL)
-                except (OSError, TimeoutError):
-                    chunk = 0
-            
                 if not bool(chunk): break
                 dataSent += chunk
         
@@ -80,11 +73,8 @@ class Proto:
         #tmpTimeout = self._remoteSock.gettimeout()
         #self._remoteSock.settimeout(self._opTimeout)
 
-        try:
-            lenghtMsg = self._remoteSock.recv(4, socket.MSG_WAITALL)
-        except (OSError, TimeoutError):
-            lenghtMsg = 0
-        
+        lenghtMsg = self.sockRecv(4)
+
         dataRecv = 0
         if bool(lenghtMsg):
             lenghtMsg = int(lenghtMsg.hex(), 16)
@@ -92,10 +82,7 @@ class Proto:
             dataArray = []
             while dataRecv < lenghtMsg:
 
-                try:
-                    chunk = self._remoteSock.recv(min(lenghtMsg - dataRecv, self._bufferSize), socket.MSG_WAITALL)
-                except (OSError, TimeoutError):
-                    chunk = b""
+                chunk = self.sockRecv(min(lenghtMsg - dataRecv, self._bufferSize))
                 
                 if not bool(chunk): break
                 dataRecv += len(chunk)
@@ -104,7 +91,6 @@ class Proto:
         #self._remoteSock.settimeout(tmpTimeout)
         return  b"".join(dataArray) if dataRecv == lenghtMsg else False
     ###########################################################################################################
-
 
     def sender(self, data):
         #data must be already encoded in json
@@ -121,7 +107,9 @@ class Proto:
         else:
             self.sockClosure()
             return False
-        
+
+###########################################################################################################
+###########################################################################################################
 
 class Client(Proto):
     def __init__(self):
@@ -148,6 +136,8 @@ class Client(Proto):
         self.isConnected = False
         self.handshakeCode = False
 
+###########################################################################################################
+###########################################################################################################
 
 class Settings:
     def __init__(self, host = False, port = False):
@@ -184,7 +174,9 @@ class Server(Proto):
             self.sockClosure()
             self.handshakeCode = False
     
-    
+###########################################################################################################
+###########################################################################################################
+
 class Utils:
     @staticmethod
     def ssl_default_context():
