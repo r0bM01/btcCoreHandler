@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+#############################################################################
+# Copyright [2023] [R0BM01@pm.me]                                           #
+#                                                                           #
+# Licensed under the Apache License, Version 2.0 (the "License");           #
+# you may not use this file except in compliance with the License.          #
+# You may obtain a copy of the License at                                   #
+#                                                                           #
+# http://www.apache.org/licenses/LICENSE-2.0                                #
+#                                                                           #
+# Unless required by applicable law or agreed to in writing, software       #
+# distributed under the License is distributed on an "AS IS" BASIS,         #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  #
+# See the License for the specific language governing permissions and       #
+# limitations under the License.                                            #
+#############################################################################
+
+import threading
+import lib.server.server
+import lib.server.machine
+import lib.server.storage
+
+
+def main():
+    storage = lib.server.storage.Data()
+    storage.init_files()
+    saved_geodata = storage.load_geolocation()
+    logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
+    eventController = threading.Event()
+    SERVER = lib.server.server.Server(logger, saved_geodata, eventController)
+
+    logger.add("updating base cache data")
+    SERVER.updateCacheData()
+
+    logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
+    logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
+    logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
+    logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
+
+    logger.add("loaded geodata", len(saved_geodata))
+    
+    logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
+    SERVER.updateGeolocationData()
+
+    logger.add("starting network")
+    SERVER.start_network()
+    eventController.clear()
+
+    if SERVER.isOnline:
+
+        try:
+            SERVER.autoCache.start()
+            logger.verbose = False
+            SERVER.autoServing.start()
+            eventController.wait()
+        except KeyboardInterrupt:
+            logger.verbose = True
+            logger.add("Server stopped by keyboard interrupt")
+        finally:
+            storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
+            logger.verbose = True
+            SERVER.isServing = False
+            logger.add("Server stopped")
+    else:
+        logger.add("Server socket not working")
+
+if __name__ == '__main__':
+    main()

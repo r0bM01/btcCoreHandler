@@ -20,17 +20,23 @@ import lib.network
 import lib.server.machine
 import lib.server.storage
 import lib.server.protocol
+import lib.server.srpc
 
 
 class Server(lib.server.protocol.RequestHandler):
-    def __init__(self, logger, loadedGeodata):
+    def __init__(self, logger, loadedGeodata, eventController):
         lib.server.protocol.RequestHandler.__init__(self)
         #init procedure
         self.LOGGER = logger
         self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
+        netSrpc = lib.network.Server(lib.network.Settings(host = "127.0.0.1", port = 46001))
+        self.SRPC = lib.server.srpc.ServerRPC(netSrpc, eventController)
+        self.srpcT = threading.Thread(target = self.SRPC.waitForCall, daemon = True)
+        
 
         if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
 
+        self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
         self.isCached = False
         self.isServing = False
         self.isOnline = False
@@ -42,6 +48,7 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("bitcoind running", self.bitcoindRunning)
     
     def start_network(self):
+        self.srpcT.start()
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
         self.LOGGER.add("socket online", self.isOnline)
@@ -65,7 +72,8 @@ class Server(lib.server.protocol.RequestHandler):
         self.isServing = True
         self.LOGGER.add("server started")
         self.LOGGER.add("waiting for incoming connections")
-        while self.isServing:
+        while self.isServing and not self.SRPC.STOP:
+            self.LOGGER.add("srpc flag", self.SRPC.STOP)
          
             self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
@@ -110,8 +118,8 @@ def main():
     storage.init_files()
     saved_geodata = storage.load_geolocation()
     logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
-
-    SERVER = Server(logger, saved_geodata)
+    eventController = threading.Event()
+    SERVER = Server(logger, saved_geodata, eventController)
 
     logger.add("updating base cache data")
     SERVER.updateCacheData()
@@ -128,14 +136,19 @@ def main():
 
     logger.add("starting network")
     SERVER.start_network()
+    eventController.clear()
 
     if SERVER.isOnline:
 
         try:
             SERVER.autoCache.start()
             logger.verbose = False
-            SERVER.start_serving()
+            SERVER.autoServing.start()
+            eventController.wait()
         except KeyboardInterrupt:
+            logger.verbose = True
+            logger.add("Server stopped by keyboard interrupt")
+        finally:
             storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
             logger.verbose = True
             SERVER.isServing = False
