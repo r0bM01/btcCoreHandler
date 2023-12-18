@@ -70,11 +70,13 @@ class IPGeolocation:
         def __init__(self):
             self.GEODATA = list()
     
-        def updateData(self, peersInfo):
+        def updateData(self, peersInfo, LOGGER):
             nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
             for nodeip in nodeList:
                 if not self.isKnown(nodeip):
-                    self.GEODATA.append(json.loads(Utils.getGeolocation(nodeip)))
+                    geoData = json.loads(Utils.getGeolocation(nodeip))
+                    self.GEODATA.append(geoData)
+                    LOGGER.add("new peer found", nodeip, geoData['country_name'])
                 
         def isKnown(self, nodeip):
             return any(node['ip'] == nodeip for node in self.GEODATA)

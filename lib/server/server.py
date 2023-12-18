@@ -15,8 +15,9 @@
 
 
 
-import json, time, subprocess, threading, platform
+import json, time, subprocess, threading, platform, sys
 import lib.network
+import lib.crypto
 import lib.server.machine
 import lib.server.storage
 import lib.server.protocol
@@ -24,16 +25,18 @@ import lib.server.srpc
 
 
 class Server(lib.server.protocol.RequestHandler):
-    def __init__(self, logger, loadedGeodata, eventController):
+    def __init__(self, logger, storage):
         lib.server.protocol.RequestHandler.__init__(self)
         #init procedure
+        self.STORAGE = storage
         self.LOGGER = logger
         self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
-        netSrpc = lib.network.Server(lib.network.Settings(host = "127.0.0.1", port = 46001))
-        self.SRPC = lib.server.srpc.ServerRPC(netSrpc, eventController)
+
+        self.eventController = threading.Event()
+        self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
         self.srpcT = threading.Thread(target = self.SRPC.waitForCall, daemon = True)
         
-
+        loadedGeodata = self.STORAGE.load_geolocation()
         if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
 
         self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
@@ -47,7 +50,21 @@ class Server(lib.server.protocol.RequestHandler):
         
         self.LOGGER.add("bitcoind running", self.bitcoindRunning)
     
+
+    def start_all(self):
+        self.autoCache.start()
+        self.autoServing.start()
+        self.LOGGER.verbose = False
+        self.eventController.wait()
+        self.LOGGER.add("closing server called from thread")
+        self.isServing = False
+        self.autoCacheRun = False
+        self.LOGGER.add("saving geodata")
+        self.STORAGE.write_geolocation(self.GEO_DATA.GEODATA)
+        sys.exit()
+
     def start_network(self):
+        self.eventController.clear()
         self.srpcT.start()
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
@@ -63,7 +80,7 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoCacheRun = True
         while self.autoCacheRun and self.bitcoindRunning:
             self.updateCacheData()
-            self.updateGeolocationData()
+            self.updateGeolocationData(self.LOGGER)
             time.sleep(self.autoCacheRest)
         self.LOGGER.add("auto cache thread stopped")
             
@@ -73,7 +90,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("server started")
         self.LOGGER.add("waiting for incoming connections")
         while self.isServing and not self.SRPC.STOP:
-            self.LOGGER.add("srpc flag", self.SRPC.STOP)
          
             self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
@@ -85,11 +101,11 @@ class Server(lib.server.protocol.RequestHandler):
             while bool(self.NETWORK._remoteSock):
                 remoteCall = self.NETWORK.receiver()
                 self.LOGGER.add("##########################")
+                self.LOGGER.add("new call from client", self.NETWORK.remoteAddr)
                 self.LOGGER.add("encoded call: ", remoteCall)
 
                 if remoteCall:
                     callResult = self.handle_request(remoteCall, self.LOGGER)
-                    self.LOGGER.add("call handled", bool(callResult))
                     if callResult == "ADVANCEDCALLSERVICE":
                         jsonCall = json.loads(self.NETWORK.receiver())
                         self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])

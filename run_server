@@ -25,10 +25,9 @@ import lib.server.storage
 def main():
     storage = lib.server.storage.Data()
     storage.init_files()
-    saved_geodata = storage.load_geolocation()
+    # saved_geodata = storage.load_geolocation()
     logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
-    eventController = threading.Event()
-    SERVER = lib.server.server.Server(logger, saved_geodata, eventController)
+    SERVER = lib.server.server.Server(logger, storage)
 
     logger.add("updating base cache data")
     SERVER.updateCacheData()
@@ -38,22 +37,21 @@ def main():
     logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
     logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
 
-    logger.add("loaded geodata", len(saved_geodata))
+    
     
     logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
-    SERVER.updateGeolocationData()
+    SERVER.updateGeolocationData(logger)
 
     logger.add("starting network")
     SERVER.start_network()
-    eventController.clear()
 
     if SERVER.isOnline:
-
+        SERVER.start_all()
+        """
         try:
             SERVER.autoCache.start()
-            logger.verbose = False
             SERVER.autoServing.start()
-            eventController.wait()
+            logger.verbose = False
         except KeyboardInterrupt:
             logger.verbose = True
             logger.add("Server stopped by keyboard interrupt")
@@ -62,6 +60,7 @@ def main():
             logger.verbose = True
             SERVER.isServing = False
             logger.add("Server stopped")
+        """
     else:
         logger.add("Server socket not working")
 

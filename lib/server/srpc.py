@@ -1,34 +1,33 @@
 
 
 
+
+import lib.network
+import lib.crypto
+
 class ServerRPC:
-    def __init__(self, socketObject, eventController):
-        self.RPC = socketObject
-        self.RPC.openSocket()
-        self.rpcClient = None
+    def __init__(self, eventController):
         self.STOP = False
         self.eventController = eventController
-    
+        self.netConfig = lib.network.Settings(host = "127.0.0.1", port = 46001)
+        self.netServer = lib.network.Server(self.netConfig)
+
+
     def waitForCall(self):
+        self.netServer.openSocket()
         while not self.STOP:
-            try:
-                self.RPC.socket.settimeout(None)
-                self.rpcClient, addr = self.RPC.socket.accept()
-                self.rpcClient.settimeout(180)
-            except OSError:
-                self.STOP = True
-            
-            try:
-                command = self.rpcClient.recv(4)
-                if bool(command):
-                    print("rpc call to stop server")
+
+            self.netServer.receiveClient(lib.crypto.getRandomBytes(16).hex())
+            #self.netServer._remoteSock.settimeout(3)
+            # self.netServer.socket.settimeout(3)
+
+            if bool(self.netServer._remoteSock):
+                stopCall = self.netServer.receiver()
+                if bool(stopCall):
+                    # print("rpc call to stop server")
                     self.eventController.set()
                     self.STOP = True
-
-            except OSError:
-                print("SRPC ERROR!")
-                self.STOP = True
             
-        
+        # print("closing call received")
 
 

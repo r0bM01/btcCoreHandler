@@ -119,9 +119,9 @@ class RequestHandler:
             peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
             self.BITCOIN_DATA.peersInfo = json.loads(peersInfo)
     
-    def updateGeolocationData(self):
+    def updateGeolocationData(self, LOGGER):
         if self.BITCOIN_DATA.peersInfo:
-            self.GEO_DATA.updateData(self.BITCOIN_DATA.peersInfo)
+            self.GEO_DATA.updateData(self.BITCOIN_DATA.peersInfo, LOGGER)
 
 
 
