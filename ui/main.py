@@ -15,6 +15,7 @@
 
 
 import lib.client
+import ui.pages.alerts
 import ui.pages.left_menu
 import ui.pages.status
 import ui.pages.options
@@ -55,6 +56,7 @@ class MainWindow(QMainWindow):
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
 
+        self.ALERTS = ui.pages.alerts.Alerts()
         self.PAGES = {}
         self.init_pages()
         self.init_left_menu()
@@ -92,7 +94,9 @@ class MainWindow(QMainWindow):
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
-            self.CLIENT.initConnection(self.PAGES['OPTIONS'].hostEdit.text()) #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
+            IPaddress = self.PAGES['OPTIONS'].hostEdit.text()
+            if not IPaddress: self.ALERTS.missingIPaddress()
+            self.CLIENT.initConnection() #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
             self.commandEvent.set()
             self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
             self.refreshThread.start()
