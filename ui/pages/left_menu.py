@@ -41,22 +41,22 @@ class LeftMenu(QWidget):
         for key in self.PAGES:
             self.BUTTON[key] = QPushButton(str(key).capitalize())
         
-        for key in self.BUTTON:
-            self.BUTTON[key].clicked.connect(lambda x: self.menu_buttons(key))
+        
+        self.BUTTON['STATUS'].clicked.connect(lambda x: self.menu_buttons('STATUS'))
+        self.BUTTON['NETWORK'].clicked.connect(lambda x: self.menu_buttons('NETWORK'))
+        self.BUTTON['ADVANCED'].clicked.connect(lambda x: self.menu_buttons('ADVANCED'))
+        self.BUTTON['OPTIONS'].clicked.connect(lambda x: self.menu_buttons('OPTIONS'))
 
-        """
-        self.BUTTON['STATUS'] = QPushButton("Status")
-        self.BUTTON['NETWORK'] = QPushButton("Network")
-        self.BUTTON['ADVANCED'] = QPushButton("Advanced")
-        self.BUTTON['OPTIONS'] = QPushButton("Options")
-        """
 
         labels['version'] = QLabel()
         labels['version'].setText("0.0.1 Alpha")
         #labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
 
         layout.addWidget(labels['title'])
-        [layout.addWidget(self.BUTTON[key]) for key in self.BUTTON]
+        layout.addWidget(self.BUTTON['STATUS'])
+        layout.addWidget(self.BUTTON['NETWORK'])
+        layout.addWidget(self.BUTTON['ADVANCED'])
+        layout.addWidget(self.BUTTON['OPTIONS'])
         layout.addStretch(1)
         layout.addWidget(labels['version'])
         #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")

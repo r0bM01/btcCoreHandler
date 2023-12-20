@@ -131,8 +131,9 @@ class MainWindow(QMainWindow):
             self.PAGES['STATUS'].BUTTON['connect'].setText("Disconnect")
         else:
             self.PAGES['OPTIONS'].setEnabled(True)
-            self.PAGES['STATUS'].setStatusDefault()
             self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")
+            self.PAGES['STATUS'].setDefault()
+            self.PAGES['NETWORK'].setDefault()
 
 
     def writeStatusInfo(self):
