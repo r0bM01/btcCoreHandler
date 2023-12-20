@@ -116,7 +116,7 @@ class Client:
             #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
             self.network.sender(json.dumps({'call': call, 'arg': arg}))
             reply = self.network.receiver()
-            return reply
+            return json.loads(reply)
     """
     def getBitnodesInfo(self, extIP, port):
         # 300 requests per day only. For peers geolocation use "getPeersGeolocation"

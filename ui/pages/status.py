@@ -130,9 +130,8 @@ class Status(QWidget):
         #sets all result labels with default text " - "
         #self.setStatusDefault()
     
-    def setStatusDefault(self):
-        for key in self.RESULT:
-            self.RESULT[key].setText(" - ")
+    def setDefault(self):
+        [self.RESULT[key].setText(" - ") for key in self.RESULT]
 
     def write_result(self, statusInfo, systemInfo, peersGeolocation):
         #self.RESULT['nodeip']

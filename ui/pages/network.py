@@ -85,6 +85,9 @@ class Network(QWidget):
         
         self.setLayout(layout)
     
+    def setDefault(self):
+        [self.RESULT[key].setText(" - ") for key in self.RESULT]
+
     def write_result(self, statusInfo, peersGeolocation):
         self.RESULT['networkactive'].setText(str(statusInfo['networkactive']))
         self.RESULT['totalbytessent'].setText(utils.convertBytesSizes(statusInfo['totalbytessent']))
@@ -93,3 +96,6 @@ class Network(QWidget):
         self.RESULT['connections'].setText(str(statusInfo['connections']))
         self.RESULT['connections_out'].setText(str(statusInfo['connections_out']))
         self.RESULT['connections_in'].setText(str(statusInfo['connections_in']))
+    
+
+            

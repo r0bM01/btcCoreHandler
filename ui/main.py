@@ -15,10 +15,11 @@
 
 
 import lib.client
-#import ui.pages.advanced
+import ui.pages.left_menu
 import ui.pages.status
 import ui.pages.options
 import ui.pages.network
+import ui.pages.advanced
 import ui.utils as utils
 import sys, time, random, json, threading, queue
 from PySide6.QtCore import Qt, QSize 
@@ -46,8 +47,6 @@ QPushButton:hover {
 """
 
 
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -57,26 +56,39 @@ class MainWindow(QMainWindow):
         self.mainLayout = QHBoxLayout()
 
         self.PAGES = {}
-
+        self.init_pages()
         self.init_left_menu()
-        self.init_status()
-        self.init_network()
-        self.init_advanced()
-        self.init_options()
 
         self.mainLayout.addWidget(self.MENU)
-        self.mainLayout.addWidget(self.PAGES['STATUS'])
-        self.mainLayout.addWidget(self.PAGES['NETWORK'])
-        self.mainLayout.addWidget(self.PAGES['ADVANCED'])
-        self.mainLayout.addWidget(self.PAGES['OPTIONS'])
-        
+        [self.mainLayout.addWidget(self.PAGES[key]) for key in self.PAGES]
+
         container = QWidget()
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
         self.CLIENT = lib.client.Client()
-
         self.commandEvent = threading.Event()
+
+    def init_pages(self):
+        self.PAGES['STATUS'] = ui.pages.status.Status()
+        self.PAGES['STATUS'].BUTTON['connect'].clicked.connect(self.handle_connection)
+        self.PAGES['STATUS'].setVisible(True)
+    
+        self.PAGES['OPTIONS'] = ui.pages.options.Options()   
+        self.PAGES['OPTIONS'].setVisible(False)
+
+        self.PAGES['NETWORK'] = ui.pages.network.Network()
+        self.PAGES['NETWORK'].setVisible(False)
+
+        self.PAGES['ADVANCED'] = ui.pages.advanced.Advanced()
+        self.PAGES['ADVANCED'].BUTTON['command'].clicked.connect(self.send_advanced_command)
+        self.PAGES['ADVANCED'].setVisible(False)
+        #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
+
+    def init_left_menu(self):
+        self.MENU = ui.pages.left_menu.LeftMenu(self.PAGES)
+        self.MENU.setVisible(True)
+    
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
@@ -124,24 +136,13 @@ class MainWindow(QMainWindow):
 
 
     def writeStatusInfo(self):
-        # self.CLIENT.getStatusInfo()
-        # job = {'func': self.CLIENT.getStatusInfo, 'args': False}
-        # self.JOBS.put(job)
         if self.CLIENT.statusInfo:
             #adds the data to the status result
             self.PAGES['STATUS'].write_result(self.CLIENT.statusInfo, self.CLIENT.systemInfo, self.CLIENT.peersGeolocation)
             self.PAGES['NETWORK'].write_result(self.CLIENT.statusInfo, self.CLIENT.peersGeolocation)
         else:
-            self.PAGES['STATUS'].setStatusDefault()
+            self.PAGES['STATUS'].setDefault()
 
-    """
-    def refreshNetworkInfo(self):
-        self.CLIENT.getNetworkStats()
-        if self.CLIENT.networkStats:
-            self.lastUpdate = time.time()
-            for key, value in self.statsResult.items():
-                self.statsResult[key].setText(str(self.CLIENT.networkStats[key]))
-    """
 
     def writePeersInfo(self):
         # self.CLIENT.getPeersInfo()
@@ -159,102 +160,11 @@ class MainWindow(QMainWindow):
                 rowCounter += 1
             """
         else:
-            self.setNetworkDefault()
+            self.PAGES['NETWORK'].setDefault()
     
-
-    def init_status(self):
-        self.PAGES['STATUS'] = ui.pages.status.Status()
-        self.PAGES['STATUS'].BUTTON['connect'].clicked.connect(self.handle_connection)
-        self.PAGES['STATUS'].setVisible(True)
-    
-    def init_options(self):
-        self.PAGES['OPTIONS'] = ui.pages.options.Options()   
-        self.PAGES['OPTIONS'].setVisible(False)
-
-    def init_network(self):
-        self.PAGES['NETWORK'] = ui.pages.network.Network()
-        self.PAGES['NETWORK'].setVisible(False)
-
-
-
-    def init_left_menu(self):
-        self.MENU = QWidget()
-
-        MENUlayout = QVBoxLayout()
-        labelTitle = QLabel()
-        labelTitle.setPixmap(QPixmap("ui/assets/bitcoin_64.png"))
-        labelTitle.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
-
-        self.btSTATUS = QPushButton("Status")
-        self.btSTATUS.clicked.connect(lambda x: self.menu_buttons("STATUS"))
-        self.btNETWORK = QPushButton("Network")
-        self.btNETWORK.clicked.connect(lambda x: self.menu_buttons("NETWORK"))
-        self.btADVANCED = QPushButton("Advanced")
-        self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("ADVANCED"))
-        self.btOPTIONS = QPushButton("Options")
-        self.btOPTIONS.clicked.connect(lambda x: self.menu_buttons("OPTIONS"))
-
-        labelVersion = QLabel()
-        labelVersion.setText("0.0.1 Alpha")
-        #labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
-
-        MENUlayout.addWidget(labelTitle)
-        MENUlayout.addWidget(self.btSTATUS)
-        MENUlayout.addWidget(self.btNETWORK)
-        MENUlayout.addWidget(self.btADVANCED)
-        MENUlayout.addWidget(self.btOPTIONS)
-        MENUlayout.addStretch(1)
-        MENUlayout.addWidget(labelVersion)
-        #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")
-        
-
-        self.MENU.setLayout(MENUlayout)
-        self.MENU.setStyleSheet("QPushButton { font: bold 18px; height: 40px; }")
-        self.MENU.setFixedWidth(200)
-
-
-
-    def init_advanced(self):
-        self.PAGES['ADVANCED'] = QWidget()
-
-        
-        ADVANCEDlayout = QVBoxLayout()
-
-        commandForm = QHBoxLayout()
-        #commandLabel = QLabel("command: ")
-        commandLabel = QLabel("command:")
-        self.commandLine = QLineEdit()
-        self.commandButton = QPushButton()
-        self.commandButton.setIcon(QPixmap("ui/assets/play_32.png"))
-        self.commandButton.setFixedWidth(35)
-        self.commandButton.clicked.connect(self.send_advanced_command)
-        
-        commandForm.addWidget(commandLabel)
-        commandForm.addWidget(self.commandLine)
-        commandForm.addWidget(self.commandButton)
-
-        self.debugLog = QTextEdit()
-        self.debugLog.setReadOnly(True)
-
-        ADVANCEDlayout.addLayout(commandForm)
-        ADVANCEDlayout.addWidget(self.debugLog)
-
-        self.PAGES['ADVANCED'].setLayout(ADVANCEDlayout)
-        self.PAGES['ADVANCED'].setVisible(False)
-        #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
-    
-    
-    def setNetworkDefault(self):
-        for key, value in self.statsResult.items():
-            self.statsResult[key].setText(" - ")
-
-    def menu_buttons(self, button):
-        for key, value in self.PAGES.items():
-            self.PAGES[key].setVisible(True) if key == button else self.PAGES[key].setVisible(False)
-        
 
     def send_advanced_command(self):
-        insertedCommand = self.commandLine.text()
+        insertedCommand = self.PAGES['ADVANCED'].edit['command'].text()
         fullCommand = insertedCommand.lower().split(" ", 1)
         command = fullCommand[0]
         if command != "start" and command != "stop":
@@ -262,9 +172,9 @@ class MainWindow(QMainWindow):
             self.commandEvent.clear() #blocks the updater until advanced commmand has sent a request and received an answer
             reply = self.CLIENT.advancedCall(command, arg)
             self.commandEvent.set() # updater can now restart
-            self.debugLog.append(utils.convertToPrintable(reply))
+            self.PAGES['ADVANCED'].RESULT['command'].append(utils.convertToPrintable(reply))
         else:
-            self.debugLog.append("error: control commands not allowed")
+            self.PAGES['ADVANCED'].RESULT['command'].append("error: control commands not allowed")
 
         
         

@@ -1,4 +1,17 @@
-
+# Copyright [2023] [R0BM01@pm.me]                                           #
+#                                                                           #
+# Licensed under the Apache License, Version 2.0 (the "License");           #
+# you may not use this file except in compliance with the License.          #
+# You may obtain a copy of the License at                                   #
+#                                                                           #
+# http://www.apache.org/licenses/LICENSE-2.0                                #
+#                                                                           #
+# Unless required by applicable law or agreed to in writing, software       #
+# distributed under the License is distributed on an "AS IS" BASIS,         #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  #
+# See the License for the specific language governing permissions and       #
+# limitations under the License.                                            #
+#############################################################################
 
 import ui.utils as utils
 
@@ -14,25 +27,29 @@ class Advanced(QWidget):
     def __init__(self):
         super().__init__()
 
-        ADVANCEDlayout = QVBoxLayout()
+        self.RESULT = {}
+        self.BUTTON = {}
+        self.edit = {}
+        labels = {}
 
-        commandForm = QHBoxLayout()
-        #commandLabel = QLabel("command: ")
-        commandLabel = QLabel("command:")
-        self.commandLine = QLineEdit()
-        self.commandButton = QPushButton()
-        self.commandButton.setIcon(QPixmap("ui/assets/play_32.png"))
-        self.commandButton.setFixedWidth(35)
-        self.commandButton.clicked.connect(self.send_advanced_command)
+        layout = QVBoxLayout()
+
+        consoleForm = QHBoxLayout()
+        labels['command'] = QLabel("command:")
+        self.edit['command'] = QLineEdit()
+        self.BUTTON['command'] = QPushButton()
+        self.BUTTON['command'].setIcon(QPixmap("ui/assets/play_32.png"))
+        self.BUTTON['command'].setFixedWidth(35)
         
-        commandForm.addWidget(commandLabel)
-        commandForm.addWidget(self.commandLine)
-        commandForm.addWidget(self.commandButton)
+        
+        consoleForm.addWidget(labels['command'])
+        consoleForm.addWidget(self.edit['command'])
+        consoleForm.addWidget(self.BUTTON['command'])
 
-        self.debugLog = QTextEdit()
-        self.debugLog.setReadOnly(True)
+        self.RESULT['command'] = QTextEdit()
+        self.RESULT['command'].setReadOnly(True)
 
-        ADVANCEDlayout.addLayout(commandForm)
-        ADVANCEDlayout.addWidget(self.debugLog)
+        layout.addLayout(consoleForm)
+        layout.addWidget(self.RESULT['command'])
 
-        self.setLayout(ADVANCEDlayout)
+        self.setLayout(layout)
