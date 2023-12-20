@@ -15,6 +15,10 @@
 
 
 import lib.client
+#import ui.pages.advanced
+import ui.pages.status
+import ui.pages.options
+import ui.pages.network
 import ui.utils as utils
 import sys, time, random, json, threading, queue
 from PySide6.QtCore import Qt, QSize 
@@ -41,6 +45,9 @@ QPushButton:hover {
 
 """
 
+
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -55,11 +62,13 @@ class MainWindow(QMainWindow):
         self.init_status()
         self.init_network()
         self.init_advanced()
+        self.init_options()
 
         self.mainLayout.addWidget(self.MENU)
         self.mainLayout.addWidget(self.PAGES['STATUS'])
         self.mainLayout.addWidget(self.PAGES['NETWORK'])
         self.mainLayout.addWidget(self.PAGES['ADVANCED'])
+        self.mainLayout.addWidget(self.PAGES['OPTIONS'])
         
         container = QWidget()
         container.setLayout(self.mainLayout)
@@ -71,7 +80,7 @@ class MainWindow(QMainWindow):
 
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
-            self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
+            self.CLIENT.initConnection(self.PAGES['OPTIONS'].hostEdit.text()) #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
             self.commandEvent.set()
             self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
             self.refreshThread.start()
@@ -105,14 +114,13 @@ class MainWindow(QMainWindow):
 
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
-            self.groupConnLEdit.setEnabled(False)
-            self.groupNodeStatus.setEnabled(True)
-            self.groupConnButton.setText("Disconnect")
+            self.PAGES['OPTIONS'].setEnabled(False)
+            self.PAGES['STATUS'].RESULT['nodeip'].setText(self.PAGES['OPTIONS'].hostEdit.text())
+            self.PAGES['STATUS'].BUTTON['connect'].setText("Disconnect")
         else:
-            self.groupConnLEdit.setEnabled(True)
-            self.groupNodeStatus.setEnabled(False)
-            self.groupConnButton.setText("Connect")
-
+            self.PAGES['OPTIONS'].setEnabled(True)
+            self.PAGES['STATUS'].setStatusDefault()
+            self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")
 
 
     def writeStatusInfo(self):
@@ -121,20 +129,10 @@ class MainWindow(QMainWindow):
         # self.JOBS.put(job)
         if self.CLIENT.statusInfo:
             #adds the data to the status result
-            for key, value in self.statusResult.items():
-                if key == 'uptime': self.statusResult[key].setText(utils.convertElapsedTime(self.CLIENT.statusInfo[key]))
-                elif key == 'verificationprogress': self.statusResult[key].setText(utils.convertPercentage(self.CLIENT.statusInfo[key]))
-                elif key == 'size_on_disk': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                elif key == 'bytes': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                elif key == 'usage': self.statusResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                else: self.statusResult[key].setText(str(self.CLIENT.statusInfo[key]))
-
-            for key, value in self.statsResult.items():
-                if key == 'totalbytesrecv': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                elif key == 'totalbytessent': self.statsResult[key].setText(utils.convertBytesSizes(self.CLIENT.statusInfo[key]))
-                else: self.statsResult[key].setText(str(self.CLIENT.statusInfo[key]))
+            self.PAGES['STATUS'].write_result(self.CLIENT.statusInfo, self.CLIENT.systemInfo, self.CLIENT.peersGeolocation)
+            self.PAGES['NETWORK'].write_result(self.CLIENT.statusInfo, self.CLIENT.peersGeolocation)
         else:
-            self.setStatusDefault()
+            self.PAGES['STATUS'].setStatusDefault()
 
     """
     def refreshNetworkInfo(self):
@@ -148,6 +146,8 @@ class MainWindow(QMainWindow):
     def writePeersInfo(self):
         # self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
+            pass
+            """
             self.peersTable.setRowCount(len(self.CLIENT.peersInfo))
             rowCounter = 0
             for peer in self.CLIENT.peersInfo:
@@ -157,10 +157,26 @@ class MainWindow(QMainWindow):
                 self.peersTable.setItem(rowCounter, 2, QTableWidgetItem(typeC))
                 #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
                 rowCounter += 1
+            """
         else:
             self.setNetworkDefault()
-                
     
+
+    def init_status(self):
+        self.PAGES['STATUS'] = ui.pages.status.Status()
+        self.PAGES['STATUS'].BUTTON['connect'].clicked.connect(self.handle_connection)
+        self.PAGES['STATUS'].setVisible(True)
+    
+    def init_options(self):
+        self.PAGES['OPTIONS'] = ui.pages.options.Options()   
+        self.PAGES['OPTIONS'].setVisible(False)
+
+    def init_network(self):
+        self.PAGES['NETWORK'] = ui.pages.network.Network()
+        self.PAGES['NETWORK'].setVisible(False)
+
+
+
     def init_left_menu(self):
         self.MENU = QWidget()
 
@@ -176,6 +192,7 @@ class MainWindow(QMainWindow):
         self.btADVANCED = QPushButton("Advanced")
         self.btADVANCED.clicked.connect(lambda x: self.menu_buttons("ADVANCED"))
         self.btOPTIONS = QPushButton("Options")
+        self.btOPTIONS.clicked.connect(lambda x: self.menu_buttons("OPTIONS"))
 
         labelVersion = QLabel()
         labelVersion.setText("0.0.1 Alpha")
@@ -195,120 +212,12 @@ class MainWindow(QMainWindow):
         self.MENU.setStyleSheet("QPushButton { font: bold 18px; height: 40px; }")
         self.MENU.setFixedWidth(200)
 
-    def init_status(self):
-        self.PAGES['STATUS'] = QWidget()
-        self.statusResult = {}
-        statusLabel = {}
-        STATUSlayout = QVBoxLayout()
-       
-        groupConn = QGroupBox("Node Connection")
-        groupConnLayout = QHBoxLayout()
-        groupConnLabel = QLabel("node IP:")
-        self.groupConnLEdit = QLineEdit("") 
-        self.groupConnButton = QPushButton("Connect")
-        self.groupConnButton.setFixedWidth(80)
-        self.groupConnButton.clicked.connect(self.handle_connection)
-        groupConnLayout.addWidget(groupConnLabel)
-        groupConnLayout.addWidget(self.groupConnLEdit)
-        groupConnLayout.addWidget(self.groupConnButton)
-        groupConn.setLayout(groupConnLayout)
 
-        self.groupNodeStatus = QGroupBox("Node Status")
-        groupNodeStatusLayout = QFormLayout()
-        statusLabel['uptime'] = QLabel("Uptime:")
-        statusLabel['chain'] = QLabel("Chain:")
-        statusLabel['blocks'] = QLabel("Blocks:")
-        statusLabel['headers'] = QLabel("Headers:")
-        statusLabel['verificationprogress'] = QLabel("Verification:")
-        statusLabel['pruned'] = QLabel("Pruned:")
-        statusLabel['size_on_disk'] = QLabel("Size:")
-
-        statusLabel['version'] = QLabel("Version:")
-        statusLabel['subversion'] = QLabel("Agent:")
-        statusLabel['protocolversion'] = QLabel("Protocol:")
-        statusLabel['connections'] = QLabel("Connections:")
-        #statusLabel['relayfee'] = QLabel("Relay Fee:")
-
-        statusLabel['size'] = QLabel("Transactions:")
-        #statusLabel['bytes'] = QLabel("Tot. Size:")
-        statusLabel['usage'] = QLabel("Memory Usage:")
-        statusLabel['mempoolminfee'] = QLabel("Min. Fee:")
-        statusLabel['fullrbf'] = QLabel("Full RBF:")
-
-        #creates a result label for each of statusLabel
-        for key, value in statusLabel.items():
-            self.statusResult[key] = QLabel() 
-            self.statusResult[key].setAlignment(Qt.AlignCenter)
-        
-        #sets all result labels with default text " - "
-        self.setStatusDefault()
-        self.groupNodeStatus.setEnabled(False)
-
-        #creates the formlayout
-        for key, value in statusLabel.items():
-            groupNodeStatusLayout.addRow(statusLabel[key], self.statusResult[key])
-
-        self.groupNodeStatus.setLayout(groupNodeStatusLayout)
-        
-
-        STATUSlayout.addWidget(groupConn)
-        STATUSlayout.addWidget(self.groupNodeStatus)
-        STATUSlayout.addStretch()
-
-        self.PAGES['STATUS'].setLayout(STATUSlayout)
-    
-    def init_network(self):
-        self.PAGES['NETWORK'] = QWidget()
-
-        statsLabel = {}
-        self.statsResult = {}
-
-        NETWORKlayout = QVBoxLayout()
-
-        groupStats = QGroupBox("Network Stats")
-        groupStatsLayout = QHBoxLayout()
-        groupStatsForm1 = QFormLayout()
-        groupStatsForm2 = QFormLayout()
-        statsLabel['networkactive'] = QLabel("Network Active:")
-        statsLabel['totalbytessent'] = QLabel("Bytes Sent:")
-        statsLabel['totalbytesrecv'] = QLabel("Bytes Received:")
-        statsLabel['connections'] = QLabel("Connections:")
-        statsLabel['connections_in'] = QLabel("Inbound:")
-        statsLabel['connections_out'] = QLabel("Outbound:")
-        for key, value in statsLabel.items():
-            self.statsResult[key] = QLabel(" - ")
-            self.statsResult[key].setAlignment(Qt.AlignCenter)
-        groupStatsForm1.addRow(statsLabel['networkactive'], self.statsResult['networkactive'])
-        groupStatsForm1.addRow(statsLabel['totalbytessent'], self.statsResult['totalbytessent'])
-        groupStatsForm1.addRow(statsLabel['totalbytesrecv'], self.statsResult['totalbytesrecv'])
-        groupStatsForm2.addRow(statsLabel['connections'], self.statsResult['connections'])
-        groupStatsForm2.addRow(statsLabel['connections_out'], self.statsResult['connections_out'])
-        groupStatsForm2.addRow(statsLabel['connections_in'], self.statsResult['connections_in'])
-        groupStatsLayout.addLayout(groupStatsForm1)
-        groupStatsLayout.addLayout(groupStatsForm2)
-        groupStats.setLayout(groupStatsLayout)
-
-        groupTable = QGroupBox("Connected Peers")
-        groupTableLayout = QVBoxLayout()
-        self.peersTable = QTableWidget()
-        self.peersTable.setColumnCount(3)
-        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE'])
-        peersHeader = self.peersTable.horizontalHeader()
-        peersHeader.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        peersHeader.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        peersHeader.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        groupTableLayout.addWidget(self.peersTable)
-        groupTable.setLayout(groupTableLayout)
-
-        NETWORKlayout.addWidget(groupStats)
-        NETWORKlayout.addWidget(groupTable)
-        
-        self.PAGES['NETWORK'].setLayout(NETWORKlayout)
-        self.PAGES['NETWORK'].setVisible(False)
 
     def init_advanced(self):
         self.PAGES['ADVANCED'] = QWidget()
 
+        
         ADVANCEDlayout = QVBoxLayout()
 
         commandForm = QHBoxLayout()
@@ -334,9 +243,6 @@ class MainWindow(QMainWindow):
         self.PAGES['ADVANCED'].setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
     
-    def setStatusDefault(self):
-        for key, value in self.statusResult.items():
-            self.statusResult[key].setText(" - ")
     
     def setNetworkDefault(self):
         for key, value in self.statsResult.items():

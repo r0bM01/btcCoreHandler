@@ -14,12 +14,19 @@
 #############################################################################
 
 import time
+from collections import Counter
 
 
 def uptimeSince(uptime):
     timeNow = time.time()
     upSince = str(time.ctime(timeNow - int(uptime)))
     return upSince
+
+def printSystem(systemInfo):
+    printable = str()
+    for key, value in systemInfo.items():
+        printable += str(value) + " "
+    return printable
 
 def convertBytesSizes(numBytes):
     size = {}
@@ -56,9 +63,16 @@ def convertElapsedTime(numSeconds):
 def convertPercentage(num):
     num = float(num)
     if num < 100:
-        return str(f"{int(num * 100)}%")
+        return str(f"{(num * 100):.2f} %")
     else:
         return num
+
+def countriesStatsList(peersGeolocation):
+    return [{c[0]: c[1]} for c in Counter([node[1] for node in peersGeolocation]).items()]
+
+def countriesStatsCount(peersGeolocation):
+    return len(countriesStatsList(peersGeolocation))
+
 
 def convertToPrintable(data):
     def prtList(dataL):

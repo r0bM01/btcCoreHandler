@@ -68,6 +68,8 @@ class Client:
         if self.network.isConnected:
             self.network.disconnectServer()
             self.calls = False
+            self.systemInfo = False
+            self.statusInfo = False
         
     def keepAlive(self):
         if self.network.isConnected and self.network.sender(self.calls['keepalive']):

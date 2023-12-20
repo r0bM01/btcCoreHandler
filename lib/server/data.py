@@ -47,7 +47,7 @@ class Bitcoin:
         message['connections'] = self.networkInfo['connections']
         message['connections_in'] = self.networkInfo['connections_in']
         message['connections_out'] = self.networkInfo['connections_out']
-        message['networkactive'] = self.networkInfo['networkactive']
+        message['localservicesnames'] = self.networkInfo['localservicesnames']
         message['relayfee'] = self.networkInfo['relayfee']
 
         message['totalbytessent'] = self.nettotalsInfo['totalbytessent']
