@@ -56,7 +56,8 @@ class MainWindow(QMainWindow):
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
 
-        self.ALERTS = ui.pages.alerts.Alerts()
+        self.alerts = ui.pages.alerts.Alerts()
+        
         self.PAGES = {}
         self.init_pages()
         self.init_left_menu()
@@ -95,13 +96,16 @@ class MainWindow(QMainWindow):
     def handle_connection(self):
         if not self.CLIENT.network.isConnected: 
             IPaddress = self.PAGES['OPTIONS'].hostEdit.text()
-            if not IPaddress: self.ALERTS.missingIPaddress()
-            self.CLIENT.initConnection() #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
-            self.commandEvent.set()
-            self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
-            self.refreshThread.start()
+            if IPaddress: 
+                self.CLIENT.initConnection(IPaddress) #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
+                self.commandEvent.set()
+                self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
+                self.refreshThread.start()
+            else:
+                self.alerts.missingIPAddress()
         else:
             self.CLIENT.closeConnection()
+            self.alerts.disconnectedNode()
             # self.refreshThread.join()
         self.refreshConnectionStatus()
         self.writeStatusInfo()
@@ -138,6 +142,7 @@ class MainWindow(QMainWindow):
             self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")
             self.PAGES['STATUS'].setDefault()
             self.PAGES['NETWORK'].setDefault()
+            
 
 
     def writeStatusInfo(self):
@@ -182,9 +187,6 @@ class MainWindow(QMainWindow):
             self.PAGES['ADVANCED'].RESULT['command'].append("error: control commands not allowed")
 
         
-        
-        
-
 
 app = QApplication(sys.argv)
 app.setStyleSheet(ALL_CSS)

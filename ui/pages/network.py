@@ -29,15 +29,16 @@ class Network(QWidget):
 
         self.RESULT = {}
         self.BUTTON = {}
+        self.edit = {}
         labels = {}
 
         layout = QVBoxLayout()
 
-        networkStats = QGroupBox("Network Stats")
+        networkStats = QGroupBox("Informations")
         networkStatsLayout = QHBoxLayout()
 
         leftForm = QFormLayout()
-        labels['networkactive'] = QLabel("Network Active:")
+        labels['subversion'] = QLabel("Node Agent:")
         labels['totalbytessent'] = QLabel("Bytes Sent:")
         labels['totalbytesrecv'] = QLabel("Bytes Received:")
 
@@ -52,7 +53,7 @@ class Network(QWidget):
             self.RESULT[key].setAlignment(Qt.AlignCenter)
 
 
-        leftForm.addRow(labels['networkactive'], self.RESULT['networkactive'])
+        leftForm.addRow(labels['subversion'], self.RESULT['subversion'])
         leftForm.addRow(labels['totalbytessent'], self.RESULT['totalbytessent'])
         leftForm.addRow(labels['totalbytesrecv'], self.RESULT['totalbytesrecv'])
 
@@ -64,6 +65,28 @@ class Network(QWidget):
         networkStatsLayout.addLayout(rightForm)
 
         networkStats.setLayout(networkStatsLayout)
+
+
+        openList = QGroupBox("Open")
+        openListLayout = QHBoxLayout()
+        self.BUTTON['peerslist'] = QPushButton("Peers")
+        self.BUTTON['addedlist'] = QPushButton("Added")
+        openListLayout.addWidget(self.BUTTON['peerslist']) 
+        openListLayout.addWidget(self.BUTTON['addedlist'])
+        openList.setLayout(openListLayout)
+
+
+        addNode = QGroupBox("Addnode")
+        addNodeLayout = QFormLayout()
+        self.edit['addnode'] = QLineEdit("Figa")
+        self.BUTTON['addnode'] = QPushButton("Add")
+        addNodeLayout.addRow(self.edit['addnode'])
+        addNode.setLayout(addNodeLayout)
+
+        centralWidgets = QHBoxLayout()
+        centralWidgets.addWidget(openList)
+        centralWidgets.addWidget(addNode)
+
 
         """
         groupTable = QGroupBox("Connected Peers")
@@ -80,6 +103,7 @@ class Network(QWidget):
         """
 
         layout.addWidget(networkStats)
+        layout.addLayout(centralWidgets)
         layout.addStretch()
         #NETWORKlayout.addWidget(groupTable)
         
@@ -89,7 +113,7 @@ class Network(QWidget):
         [self.RESULT[key].setText(" - ") for key in self.RESULT]
 
     def write_result(self, statusInfo, peersGeolocation):
-        self.RESULT['networkactive'].setText(str(statusInfo['networkactive']))
+        self.RESULT['subversion'].setText(str(statusInfo['subversion']))
         self.RESULT['totalbytessent'].setText(utils.convertBytesSizes(statusInfo['totalbytessent']))
         self.RESULT['totalbytesrecv'].setText(utils.convertBytesSizes(statusInfo['totalbytesrecv']))
 

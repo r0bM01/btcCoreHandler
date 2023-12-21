@@ -22,13 +22,36 @@ from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QSta
                             QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem )
 
 
-class Alerts(QMessageBox):
+class Test(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setText = "empty"
+        layout = QVBoxLayout()
+        
+        label = QLabel("Pistelly pussy super hot")
 
-    def missingIPaddress(self):
-        self.setIcon("Critical")
-        self.setText("You have to insert the node's IP address")
+        layout.addWidget(label)
+        self.setLayout(layout)
+        self.modal(True)
+        #self.setWindowModality(Qt.ApplicationModal)
+
+        #
+        #self.setVisible(False)
+
+class Alerts(QMessageBox):
+    def __init__(self):
+        super().__init__()
+        self.setText("none")
+
+    def missingIPAddress(self):
+        self.setWindowTitle("Address Missing")
+        self.setText("You have to insert the node's address to connect to.")
+        self.setInformativeText("You can check the connection settings in 'options' page.")
         self.exec()
+
+    def disconnectedNode(self):
+        self.setWindowTitle("Disconnected")
+        self.setText("The connection to the node has been closed.")
+        self.exec()
+        
+        

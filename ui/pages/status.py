@@ -150,7 +150,7 @@ class Status(QWidget):
         self.RESULT['mempoolminfee'].setText(str(statusInfo['mempoolminfee']))
         self.RESULT['fullrbf'].setText(str(statusInfo['fullrbf']))
         # network
-        #self.RESULT['localservicesnames']
+        self.RESULT['localservicesnames'].setText(str(statusInfo['localservicesnames']))
         self.RESULT['connections'].setText(str(statusInfo['connections']))
         self.RESULT['countries'].setText(str(utils.countriesStatsCount(peersGeolocation)))
         self.RESULT['totaldata'].setText(utils.convertBytesSizes(int(statusInfo['totalbytesrecv']) + int(statusInfo['totalbytessent'])))
