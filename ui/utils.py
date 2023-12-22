@@ -29,16 +29,18 @@ def printSystem(systemInfo):
     return printable
 
 def convertBytesSizes(numBytes):
+    
     size = {}
     size['KiB'] = 1024
     size['MiB'] = size['KiB'] * 1024
     size['GiB'] = size['MiB'] * 1024
     size['TiB'] = size['GiB'] * 1024
 
+    if int(numBytes) < size['KiB']: return str(f"{numBytes} Bytes")
     for key, value in size.items():
         if int(numBytes) > value:
             resValue = int(numBytes) / value
-            resSize = str(key) 
+            resSize = str(key)
     return str(f"{resValue:.2f} {resSize}")
 
 def convertElapsedTime(numSeconds):

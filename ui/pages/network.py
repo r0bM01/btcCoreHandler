@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-
+import ui.pages.peers_list
 import ui.utils as utils
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
@@ -88,19 +88,6 @@ class Network(QWidget):
         centralWidgets.addWidget(addNode)
 
 
-        """
-        groupTable = QGroupBox("Connected Peers")
-        groupTableLayout = QVBoxLayout()
-        self.peersTable = QTableWidget()
-        self.peersTable.setColumnCount(3)
-        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE'])
-        peersHeader = self.peersTable.horizontalHeader()
-        peersHeader.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        peersHeader.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        peersHeader.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        groupTableLayout.addWidget(self.peersTable)
-        groupTable.setLayout(groupTableLayout)
-        """
 
         layout.addWidget(networkStats)
         layout.addLayout(centralWidgets)
@@ -121,5 +108,6 @@ class Network(QWidget):
         self.RESULT['connections_out'].setText(str(statusInfo['connections_out']))
         self.RESULT['connections_in'].setText(str(statusInfo['connections_in']))
     
-
-            
+    def open_peers_list(self, peersInfo, peersGeolocation):
+        self.PEERSLIST = ui.pages.peers_list.PeersTable(peersInfo, peersGeolocation)
+        self.PEERSLIST.setVisible(True)

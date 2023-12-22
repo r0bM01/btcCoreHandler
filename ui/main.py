@@ -81,6 +81,7 @@ class MainWindow(QMainWindow):
         self.PAGES['OPTIONS'].setVisible(False)
 
         self.PAGES['NETWORK'] = ui.pages.network.Network()
+        self.PAGES['NETWORK'].BUTTON['peerslist'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_peers_list(self.CLIENT.peersInfo, self.CLIENT.peersGeolocation))
         self.PAGES['NETWORK'].setVisible(False)
 
         self.PAGES['ADVANCED'] = ui.pages.advanced.Advanced()
@@ -158,17 +159,7 @@ class MainWindow(QMainWindow):
         # self.CLIENT.getPeersInfo()
         if self.CLIENT.peersInfo:
             pass
-            """
-            self.peersTable.setRowCount(len(self.CLIENT.peersInfo))
-            rowCounter = 0
-            for peer in self.CLIENT.peersInfo:
-                typeC = 'Inbound' if peer['inbound'] else 'Outbound'
-                self.peersTable.setItem(rowCounter, 0, QTableWidgetItem(str(peer['id'])))
-                self.peersTable.setItem(rowCounter, 1, QTableWidgetItem(str(peer['addr'])))
-                self.peersTable.setItem(rowCounter, 2, QTableWidgetItem(typeC))
-                #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
-                rowCounter += 1
-            """
+
         else:
             self.PAGES['NETWORK'].setDefault()
     
