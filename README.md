@@ -1,6 +1,11 @@
 # BitcoinCore Handler
+## Status
 <p align = "center">
-  <img src = "https://github.com/r0bM01/btcCoreHandler/blob/0.1.0-Alpha/status_page.png" alt = "screenshot">
+  <img src = "https://github.com/r0bM01/btcCoreHandler/blob/main/status_page.png" alt = "Status">
+</p>
+## Network
+<p align = "center">
+  <img src = "https://github.com/r0bM01/btcCoreHandler/blob/main/network_page.png" alt = "Network">
 </p>
 Simple GUI tool to handle bitcoincore (server setup) by remote.
 Coded in pure Python using the standard library only with the exception for QT bindings (PySide6).
