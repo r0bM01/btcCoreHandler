@@ -94,21 +94,23 @@ class Server(lib.server.protocol.RequestHandler):
             self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
                 self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
-                self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
-            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK.remoteAddr)
-            else: self.LOGGER.add("no incoming connection detected")
+                # self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
+            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK.remoteAddr, f"handshake: {self.NETWORK.handshakeCode}")
+            # else: self.LOGGER.add("no incoming connection detected")
 
             while bool(self.NETWORK._remoteSock):
                 remoteCall = self.NETWORK.receiver()
-                self.LOGGER.add("##########################")
-                self.LOGGER.add("new call from client", self.NETWORK.remoteAddr)
-                self.LOGGER.add("encoded call: ", remoteCall)
+                # self.LOGGER.add("##########################")
+                # self.LOGGER.add("new call from client", self.NETWORK.remoteAddr)
+                # self.LOGGER.add("encoded call: ", remoteCall)
+
+                
 
                 if remoteCall:
                     callResult = self.handle_request(remoteCall, self.LOGGER)
                     if callResult == "ADVANCEDCALLSERVICE":
                         jsonCall = json.loads(self.NETWORK.receiver())
-                        self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
+                        # self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
                         reply = self.directCall(jsonCall)
                     else:
                         reply = callResult
@@ -117,11 +119,12 @@ class Server(lib.server.protocol.RequestHandler):
                     reply = False
                 ######################################################
                 if bool(reply) and bool(self.NETWORK._remoteSock):
-                    self.LOGGER.add("reply content size", len(reply.encode()))
+                    # self.LOGGER.add("reply content size", len(reply.encode()))
                     replySent = self.NETWORK.sender(reply) #returns True or False
-                    self.LOGGER.add("reply sent", replySent)
+                    # self.LOGGER.add("reply sent", replySent)
+                    self.LOGGER.add("new call by", self.NETWORK.remoteAddr, remoteCall, f"succesfull: {replySent}")
                 else:
-                    self.LOGGER.add("remote socket active", self.NETWORK._remoteSock)
+                    # self.LOGGER.add("remote socket active", self.NETWORK._remoteSock)
                     self.LOGGER.add("connection closed")
                 #######################################################
         self.LOGGER.add("serving loop exit")

@@ -43,6 +43,23 @@ def convertBytesSizes(numBytes):
             resSize = str(key)
     return str(f"{resValue:.2f} {resSize}")
 
+def convertBigSizes(bigNum):
+    size = {}
+    size['M'] = 1000000
+    size['G'] = size['M'] * 1000
+    size['T'] = size['G'] * 1000
+    size['P'] = size['T'] * 1000
+    size['E'] = size['P'] * 1000
+    size['Z'] = size['E'] * 1000
+
+    for key, value in size.items():
+        if int(bigNum) > value:
+            resValue = int(bigNum) / value
+            resSize = str(key)
+    return str(f"{resValue:.2f} {resSize}")
+
+    
+
 def convertElapsedTime(numSeconds):
     numSeconds = int(numSeconds)
     result = []

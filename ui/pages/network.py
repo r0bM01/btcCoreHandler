@@ -17,7 +17,7 @@ import ui.pages.peers_list
 import ui.utils as utils
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
-from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
+from PySide6.QtWidgets import ( QApplication, QMainWindow, QFrame, QPushButton,
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout, QHeaderView,
                             QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem )
 
@@ -67,30 +67,89 @@ class Network(QWidget):
         networkStats.setLayout(networkStatsLayout)
 
 
-        openList = QGroupBox("Open")
-        openListLayout = QHBoxLayout()
-        self.BUTTON['peerslist'] = QPushButton("Peers")
-        self.BUTTON['addedlist'] = QPushButton("Added")
-        openListLayout.addWidget(self.BUTTON['peerslist']) 
-        openListLayout.addWidget(self.BUTTON['addedlist'])
-        openList.setLayout(openListLayout)
+        
 
-
+        """
         addNode = QGroupBox("Addnode")
         addNodeLayout = QFormLayout()
         self.edit['addnode'] = QLineEdit("Figa")
         self.BUTTON['addnode'] = QPushButton("Add")
         addNodeLayout.addRow(self.edit['addnode'])
         addNode.setLayout(addNodeLayout)
+        """
+
+        nodeVersion = QGroupBox("Node Version")
+        nodeVersionLayout = QVBoxLayout()
+        self.RESULT['version'] = QLabel(" - ")
+        self.RESULT['version'].setAlignment(Qt.AlignCenter)
+        nodeVersionLayout.addWidget(self.RESULT['version'])
+        nodeVersion.setLayout(nodeVersionLayout)
+
+        protocol = QGroupBox("Protocol")
+        protocolLayout = QVBoxLayout()
+        self.RESULT['protocolversion'] = QLabel(" - ")
+        self.RESULT['protocolversion'].setAlignment(Qt.AlignCenter)
+        protocolLayout.addWidget(self.RESULT['protocolversion'])
+        protocol.setLayout(protocolLayout)
+
+
+        hashrate = QGroupBox("Hashrate")
+        hashrateLayout = QVBoxLayout()
+        self.RESULT['networkhashps'] = QLabel(" - ")
+        self.RESULT['networkhashps'].setAlignment(Qt.AlignCenter)
+        hashrateLayout.addWidget(self.RESULT['networkhashps'])
+        hashrate.setLayout(hashrateLayout)
+
+        difficulty = QGroupBox("Difficulty")
+        difficultyLayout = QVBoxLayout()
+        self.RESULT['difficulty'] = QLabel(" - ")
+        self.RESULT['difficulty'].setAlignment(Qt.AlignCenter)
+        difficultyLayout.addWidget(self.RESULT['difficulty'])
+        difficulty.setLayout(difficultyLayout)
 
         centralWidgets = QHBoxLayout()
-        centralWidgets.addWidget(openList)
-        centralWidgets.addWidget(addNode)
+        centralWidgets.addWidget(nodeVersion)
+        centralWidgets.addWidget(protocol)
+        centralWidgets.addWidget(hashrate)
+        centralWidgets.addWidget(difficulty)
 
 
+
+        networksList = QGroupBox("Networks")
+        networksListLayout = QFormLayout()
+        netLabels = {}
+        netLabels['ipv4'] = QLabel("IPv4")
+        netLabels['ipv6'] = QLabel("IPv6")
+        netLabels['onion'] = QLabel("ToR")
+        netLabels['i2p'] = QLabel("I2P")
+        netLabels['cjdns'] = QLabel("CJDNS")
+
+        for g in netLabels:
+            self.RESULT[g] = QLabel(" - ")
+            self.RESULT[g].setAlignment(Qt.AlignCenter)
+            # self.RESULT[g].setFrameStyle(QFrame.Panel | QFrame.Raised)
+            networksListLayout.addRow(netLabels[g], self.RESULT[g])
+        
+        networksList.setLayout(networksListLayout)
+
+        openList = QGroupBox("Manage")
+        openListLayout = QVBoxLayout()
+        self.BUTTON['peerslist'] = QPushButton("Peers")
+        self.BUTTON['bannedlist'] = QPushButton("Banned")
+        self.BUTTON['addnodes'] = QPushButton("Add Nodes")
+        openListLayout.addWidget(self.BUTTON['peerslist']) 
+        openListLayout.addWidget(self.BUTTON['bannedlist'])
+        openListLayout.addWidget(self.BUTTON['addnodes'])
+        openList.setLayout(openListLayout)
+
+        bottomCentralWidgets = QHBoxLayout()
+        bottomCentralWidgets.addWidget(networksList)
+        bottomCentralWidgets.addWidget(openList)
 
         layout.addWidget(networkStats)
         layout.addLayout(centralWidgets)
+        layout.addLayout(bottomCentralWidgets)
+        
         layout.addStretch()
         #NETWORKlayout.addWidget(groupTable)
         
@@ -107,7 +166,19 @@ class Network(QWidget):
         self.RESULT['connections'].setText(str(statusInfo['connections']))
         self.RESULT['connections_out'].setText(str(statusInfo['connections_out']))
         self.RESULT['connections_in'].setText(str(statusInfo['connections_in']))
+
+        self.RESULT['version'].setText(str(statusInfo['version']))
+        self.RESULT['protocolversion'].setText(str(statusInfo['protocolversion']))
+
+        for n in statusInfo['networks']:
+            self.RESULT[n["name"]].setText("Reachable" if bool(n["reachable"]) else "False")
+
+        self.RESULT['networkhashps'].setText(utils.convertBigSizes(statusInfo['networkhashps']) + "H/s")
+        self.RESULT['difficulty'].setText(utils.convertBigSizes(statusInfo['difficulty']))
     
     def open_peers_list(self, peersInfo, peersGeolocation):
         self.PEERSLIST = ui.pages.peers_list.PeersTable(peersInfo, peersGeolocation)
         self.PEERSLIST.setVisible(True)
+
+
+

@@ -62,7 +62,7 @@ class RequestHandler:
     def handle_request(self, remoteCall, LOGGER):
         if not self.CONTROL.check(remoteCall): return json.dumps({"error": "invalid command"})
         request = self.CONTROL.encodedCalls[remoteCall]
-        LOGGER.add("call", request)
+        # LOGGER.add("call", request)
         if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
         elif not self.bitcoindRunning and request == "start": self.startbitcoind()
         elif self.bitcoindRunning and request == "stop": self.stopbitcoind()

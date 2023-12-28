@@ -48,13 +48,17 @@ class Bitcoin:
         message['connections_in'] = self.networkInfo['connections_in']
         message['connections_out'] = self.networkInfo['connections_out']
         message['localservicesnames'] = self.networkInfo['localservicesnames']
+        message['networks'] = self.networkInfo['networks']
         message['relayfee'] = self.networkInfo['relayfee']
 
         message['totalbytessent'] = self.nettotalsInfo['totalbytessent']
         message['totalbytesrecv'] = self.nettotalsInfo['totalbytesrecv']
 
+        message['difficulty'] = self.miningInfo['difficulty']
+        message['networkhashps'] = self.miningInfo['networkhashps']
+
         message['size'] = self.mempoolInfo['size']
-        message['bytes'] = self.mempoolInfo['bytes']
+        # message['bytes'] = self.mempoolInfo['bytes']
         message['usage'] = self.mempoolInfo['usage']
         message['mempoolminfee'] = self.mempoolInfo['mempoolminfee']
         message['fullrbf'] = self.mempoolInfo['fullrbf']

@@ -15,6 +15,7 @@
 
 
 import lib.client
+import ui.assets.css
 import ui.pages.alerts
 import ui.pages.left_menu
 import ui.pages.status
@@ -29,23 +30,8 @@ from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QSta
                             QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout, QHeaderView,
                             QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem )
 
-#import lib.network
 
 
-ALL_CSS = """
-.left-menu {
-    /*border-radius: 4px;*/
-    /*border: 1px solid white;*/
-    /*background-color: #3396ff;*/
-    font: bold 18px;
-    height: 40px;
-}
-/*
-QPushButton:hover {
-    background-color: #33acff;
-}*/
-
-"""
 
 
 class MainWindow(QMainWindow):
@@ -55,6 +41,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Bitcoin Core Handler")
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
+        #self.setStyleSheet("background-color: #2c3746;")
 
         self.alerts = ui.pages.alerts.Alerts()
         
@@ -119,6 +106,7 @@ class MainWindow(QMainWindow):
             if (timeNow - self.CLIENT.lastPeersUpdate) > 120:
                 self.commandEvent.wait(10)
                 self.CLIENT.getPeersInfo()
+                self.CLIENT.getPeersGeolocation()
                 self.writePeersInfo()
             
             if (timeNow - self.CLIENT.lastStatusUpdate) > 60:
@@ -177,13 +165,18 @@ class MainWindow(QMainWindow):
         else:
             self.PAGES['ADVANCED'].RESULT['command'].append("error: control commands not allowed")
 
-        
+
+
+#
+
+
+
 
 app = QApplication(sys.argv)
-app.setStyleSheet(ALL_CSS)
+app.setStyleSheet(ui.assets.css.ALL_CSS)
 
 window = MainWindow()
 window.show()
+sys.exit(app.exec_())
 
-app.exec_()
 
