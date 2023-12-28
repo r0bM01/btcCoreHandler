@@ -14,8 +14,8 @@
 #############################################################################
 
 
-import lib.network
-import lib.crypto
+import lib.shared.network
+import lib.shared.crypto
 import json, threading, time, queue
 from collections import Counter
 
@@ -29,7 +29,7 @@ class Commands:
 class Client:
     def __init__(self):
 
-        self.network = lib.network.Client()
+        self.network = lib.shared.network.Client()
         self.certificate = "fefa" # temporary certificate
         self.calls = False
         
@@ -49,7 +49,7 @@ class Client:
     
     def initHashedCalls(self):
         if self.network.isConnected:
-            self.calls = {call : lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in Commands.calls}
+            self.calls = {call : lib.shared.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in Commands.calls}
         else:
             self.calls = False
 

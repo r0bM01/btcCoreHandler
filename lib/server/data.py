@@ -15,7 +15,7 @@
 
 import platform, json
 from collections import Counter
-from lib.network import Utils
+from lib.shared.network import Utils
 
 class Bitcoin:
     def __init__(self):

@@ -16,44 +16,22 @@
 
 
 import subprocess, json, time, threading
-import lib.crypto
+import lib.shared.crypto
+import lib.shared.commands
 import lib.server.data
 import lib.server.machine
 
 from lib.server.storage import Logger
-from lib.network import Utils
-
-class Control:
-    def __init__(self):
-        
-        self.cachedCalls = {'getsysteminfo', 'getstatusinfo', 'getgeolocationinfo'}
-        self.bitcoinCalls = {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals'}
-        self.controlCalls = {'start', 'stop', 'keepalive', 'advancedcall'}
-
-        self.calls = set()
-        self.calls.update(self.cachedCalls)
-        self.calls.update(self.bitcoinCalls)
-        self.calls.update(self.controlCalls)
+from lib.shared.network import Utils
 
 
-        self.encodedCalls = False
-
-        # self.LEVELS = {"blocked": 0, "user": 1, "admin": 2} not implemented yet
-     
-
-    def encodeCalls(self, hexCertificate, handshakeCode):
-        self.encodedCalls = {lib.crypto.getHashedCommand(call, hexCertificate, handshakeCode) : call for call in self.calls}
-
-    def check(self, call):
-        return call in self.encodedCalls
-                  
         
 class RequestHandler:
     def __init__(self):
         #must be inherited by server class
         #do not instantiate directly
         
-        self.CONTROL = Control()
+        self.CONTROL = lib.shared.commands.Control()
         self.BITCOIN_DATA = lib.server.data.Bitcoin()
         self.GEO_DATA = lib.server.data.IPGeolocation()
 

@@ -16,8 +16,8 @@
 
 
 import json, time, subprocess, threading, platform, sys
-import lib.network
-import lib.crypto
+import lib.shared.network
+import lib.shared.crypto
 import lib.server.machine
 import lib.server.storage
 import lib.server.protocol
@@ -30,7 +30,7 @@ class Server(lib.server.protocol.RequestHandler):
         #init procedure
         self.STORAGE = storage
         self.LOGGER = logger
-        self.NETWORK = lib.network.Server(lib.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
+        self.NETWORK = lib.shared.network.Server(lib.shared.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
 
         self.eventController = threading.Event()
         self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
@@ -92,7 +92,7 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("waiting for incoming connections")
         while self.isServing and not self.SRPC.STOP:
          
-            self.NETWORK.receiveClient(lib.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
+            self.NETWORK.receiveClient(lib.shared.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
                 self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
                 # self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)

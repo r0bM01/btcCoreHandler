@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import lib.client
+import lib.client.client
 import ui.assets.css
 import ui.pages.alerts
 import ui.pages.left_menu
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
-        self.CLIENT = lib.client.Client()
+        self.CLIENT = lib.client.client.Client()
         self.commandEvent = threading.Event()
 
     def init_pages(self):

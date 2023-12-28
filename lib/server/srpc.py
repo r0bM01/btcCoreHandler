@@ -2,22 +2,22 @@
 
 
 
-import lib.network
-import lib.crypto
+import lib.shared.network
+import lib.shared.crypto
 
 class ServerRPC:
     def __init__(self, eventController):
         self.STOP = False
         self.eventController = eventController
-        self.netConfig = lib.network.Settings(host = "127.0.0.1", port = 46001)
-        self.netServer = lib.network.Server(self.netConfig)
+        self.netConfig = lib.shared.network.Settings(host = "127.0.0.1", port = 46001)
+        self.netServer = lib.shared.network.Server(self.netConfig)
 
 
     def waitForCall(self):
         self.netServer.openSocket()
         while not self.STOP:
 
-            self.netServer.receiveClient(lib.crypto.getRandomBytes(16).hex())
+            self.netServer.receiveClient(lib.shared.crypto.getRandomBytes(16).hex())
             #self.netServer._remoteSock.settimeout(3)
             # self.netServer.socket.settimeout(3)
 

@@ -15,8 +15,8 @@
 
 
 import os, pathlib, time, json
-import lib.settings
-import lib.crypto
+import lib.shared.settings
+import lib.shared.crypto
 
 
 class Data:
@@ -52,13 +52,13 @@ class Data:
 
     def create_certificate(self):
         with open(self.fileCert, "wb") as F:
-            dataBytes = lib.crypto.getRandomBytes(lib.settings.CERT_SIZE)
+            dataBytes = lib.shared.crypto.getRandomBytes(lib.settings.CERT_SIZE)
             F.write(dataBytes)
         
     def load_certificate(self):
         with open(self.fileCert, "rb") as F:
             tmpBytes = F.read()
-            self.certificate = lib.crypto.getHash(tmpBytes.hex())
+            self.certificate = lib.shared.crypto.getHash(tmpBytes.hex())
 
     def check_certificate(self):
         if os.path.exists(self.fileCert):
