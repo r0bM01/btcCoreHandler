@@ -42,6 +42,11 @@ class Alerts(QMessageBox):
     def __init__(self):
         super().__init__()
         self.setText("none")
+    
+    def showRelease(self):
+        self.setWindowTitle("Software Release")
+        self.setText("Bitcoin Core Handler 0.1.0-Alpha coded by R0BM01")
+        self.exec()
 
     def missingIPAddress(self):
         self.setWindowTitle("Address Missing")

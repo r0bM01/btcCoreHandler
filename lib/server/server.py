@@ -68,8 +68,9 @@ class Server(lib.server.protocol.RequestHandler):
         self.srpcT.start()
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
-        self.LOGGER.add("socket online", self.isOnline)
-        self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
+        self.LOGGER.add("SERVER", f"socket online: {self.isOnline}", f"bind to ip: {self.NETWORK.settings.host}")
+        #self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
+        self.LOGGER.add("server succesfully started")
 
     def checkCacheData(self):
         self.isCached = bool(self.BITCOIN_DATA.uptime)
@@ -104,7 +105,6 @@ class Server(lib.server.protocol.RequestHandler):
                 # self.LOGGER.add("new call from client", self.NETWORK.remoteAddr)
                 # self.LOGGER.add("encoded call: ", remoteCall)
 
-                
 
                 if remoteCall:
                     callResult = self.handle_request(remoteCall, self.LOGGER)

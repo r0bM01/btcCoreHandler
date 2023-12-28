@@ -78,6 +78,7 @@ class MainWindow(QMainWindow):
 
     def init_left_menu(self):
         self.MENU = ui.pages.left_menu.LeftMenu(self.PAGES)
+        self.MENU.BUTTON['version'].clicked.connect(self.alerts.showRelease)
         self.MENU.setVisible(True)
     
 
@@ -131,6 +132,7 @@ class MainWindow(QMainWindow):
             self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")
             self.PAGES['STATUS'].setDefault()
             self.PAGES['NETWORK'].setDefault()
+            self.PAGES['NETWORK'].openList.setEnabled(False)
             
 
 

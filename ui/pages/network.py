@@ -118,11 +118,11 @@ class Network(QWidget):
         networksList = QGroupBox("Networks")
         networksListLayout = QFormLayout()
         netLabels = {}
-        netLabels['ipv4'] = QLabel("IPv4")
-        netLabels['ipv6'] = QLabel("IPv6")
-        netLabels['onion'] = QLabel("ToR")
-        netLabels['i2p'] = QLabel("I2P")
-        netLabels['cjdns'] = QLabel("CJDNS")
+        netLabels['ipv4'] = QLabel("IPv4:")
+        netLabels['ipv6'] = QLabel("IPv6:")
+        netLabels['onion'] = QLabel("ToR:")
+        netLabels['i2p'] = QLabel("I2P:")
+        netLabels['cjdns'] = QLabel("CJDNS:")
 
         for g in netLabels:
             self.RESULT[g] = QLabel(" - ")
@@ -132,7 +132,7 @@ class Network(QWidget):
         
         networksList.setLayout(networksListLayout)
 
-        openList = QGroupBox("Manage")
+        self.openList = QGroupBox("Manage")
         openListLayout = QVBoxLayout()
         self.BUTTON['peerslist'] = QPushButton("Peers")
         self.BUTTON['bannedlist'] = QPushButton("Banned")
@@ -140,11 +140,11 @@ class Network(QWidget):
         openListLayout.addWidget(self.BUTTON['peerslist']) 
         openListLayout.addWidget(self.BUTTON['bannedlist'])
         openListLayout.addWidget(self.BUTTON['addnodes'])
-        openList.setLayout(openListLayout)
+        self.openList.setLayout(openListLayout)
 
         bottomCentralWidgets = QHBoxLayout()
         bottomCentralWidgets.addWidget(networksList)
-        bottomCentralWidgets.addWidget(openList)
+        bottomCentralWidgets.addWidget(self.openList)
 
         layout.addWidget(networkStats)
         layout.addLayout(centralWidgets)

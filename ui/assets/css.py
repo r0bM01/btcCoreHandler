@@ -27,6 +27,10 @@ ALL_CSS = """
     QPushButton:pressed.left-menu {
         background-color: #2c3746;
     }
+
+    QPushButton.version-label {
+        border: 0px;
+    }
 """
 #76d7c4
 #2874a6 dark azul

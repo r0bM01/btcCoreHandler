@@ -34,13 +34,25 @@ class Advanced(QWidget):
 
         layout = QVBoxLayout()
 
+        controller = QGroupBox("Bitcoin Daemon")
+        controller.setCheckable(True)
+        controller.setChecked(False)
+
+        controllerLayout = QHBoxLayout()
+        self.BUTTON['start'] = QPushButton("Start")
+        self.BUTTON['stop'] = QPushButton("Stop")
+        controllerLayout.addWidget(self.BUTTON['start'])
+        controllerLayout.addWidget(self.BUTTON['stop'])
+        
+
+        controller.setLayout(controllerLayout)
+
         consoleForm = QHBoxLayout()
         labels['command'] = QLabel("command:")
         self.edit['command'] = QLineEdit()
         self.BUTTON['command'] = QPushButton()
         self.BUTTON['command'].setIcon(QPixmap("ui/assets/play_32.png"))
         self.BUTTON['command'].setFixedWidth(35)
-        
         
         consoleForm.addWidget(labels['command'])
         consoleForm.addWidget(self.edit['command'])
@@ -49,6 +61,7 @@ class Advanced(QWidget):
         self.RESULT['command'] = QTextEdit()
         self.RESULT['command'].setReadOnly(True)
 
+        layout.addWidget(controller)
         layout.addLayout(consoleForm)
         layout.addWidget(self.RESULT['command'])
 

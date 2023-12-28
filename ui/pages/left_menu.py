@@ -51,8 +51,8 @@ class LeftMenu(QWidget):
             self.BUTTON[b].setProperty("class", "left-menu")
 
 
-        labels['version'] = QLabel()
-        labels['version'].setText("0.0.1 Alpha")
+        self.BUTTON['version'] = QPushButton("0.1.0 Alpha")
+        self.BUTTON['version'].setProperty("class", "version-label")
         #labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
 
         layout.addWidget(labels['title'])
@@ -61,7 +61,7 @@ class LeftMenu(QWidget):
         layout.addWidget(self.BUTTON['ADVANCED'])
         layout.addWidget(self.BUTTON['OPTIONS'])
         layout.addStretch(1)
-        layout.addWidget(labels['version'])
+        layout.addWidget(self.BUTTON['version'])
         #self.setStyleSheet("QPushButton:hover { background-color: #a9b0b6; border: 1px solid }")
         
         self.setLayout(layout)
