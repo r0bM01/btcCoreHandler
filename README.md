@@ -1,10 +1,8 @@
 # BitcoinCore Handler
-## Status
 <p align = "center">
+  Status
   <img src = "https://github.com/r0bM01/btcCoreHandler/blob/main/status_page.png" alt = "Status">
-</p>
-## Network
-<p align = "center">
+  Network
   <img src = "https://github.com/r0bM01/btcCoreHandler/blob/main/network_page.png" alt = "Network">
 </p>
 Simple GUI tool to handle bitcoincore (server setup) by remote.
