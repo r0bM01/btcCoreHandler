@@ -26,8 +26,17 @@ def getHashedCommand(command, key, salt):
 		return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest()
 
 
+def getEncrypted(data, key, salt):
+	alpha = [chr(n) for n in range(32, 127)]
+	crypt = {l : hashlib.blake2b((l).encode(), digest_size = 2, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() for l in alpha}
 
+	encryptedMsg = [crypt[l] for l in data]
+	return "".join(encryptedMsg)
 
+def getDecrypted(msg, key, salt):
+	alpha = [chr(n) for n in range(32, 127)]
+	crypt = {hashlib.blake2b((l).encode(), digest_size = 2, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() : l for l in alpha}
 
-
-
+	chunks = [msg[c:c+4] for c in range(0, len(msg), 4)]
+	data = [crypt[l] for l in chunks]
+	return "".join(data)

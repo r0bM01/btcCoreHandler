@@ -20,7 +20,7 @@ class Control:
         
         self.cachedCalls = {'getsysteminfo', 'getstatusinfo', 'getgeolocationinfo'}
         self.bitcoinCalls = {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals'}
-        self.controlCalls = {'start', 'stop', 'keepalive', 'advancedcall', 'bitcoindrunning'}
+        self.controlCalls = {'start', 'stop', 'keepalive', 'advancedcall', 'bitcoindrunning', 'getserverlogs', 'test'}
 
         self.calls = set()
         self.calls.update(self.cachedCalls)

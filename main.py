@@ -14,7 +14,7 @@
 #############################################################################
 
 import lib.server.server
-import lib.client
+import lib.client.terminal
 
 print("[1] - start server")
 print("[2] - start client")
@@ -24,7 +24,7 @@ print("[4] - subprocess server")
 c = int(input(">> "))
 
 if c == 1: lib.server.server.main()
-if c == 2: lib.client.clientTerminal()
+if c == 2: lib.client.terminal.clientTerminal()
 if c == 3: import ui.main
 if c == 4:
     import subprocess

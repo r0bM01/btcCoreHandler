@@ -21,15 +21,15 @@ import lib.shared.crypto
 
 class Data:
     def __init__(self):
-        self.fileCert = lib.settings.BASE_DIR.joinpath("cert.rob")
-        self.fileLogs = lib.settings.BASE_DIR.joinpath(f"debug_{int(time.time())}.log")
+        self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
+        self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{int(time.time())}.log")
 
-        self.geolocationFile = lib.settings.BASE_DIR.joinpath("geolocation.rob")
+        self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
 
         self.certificate = False
     
     def init_files(self):
-        if not os.path.exists(lib.settings.BASE_DIR): os.mkdir(lib.settings.BASE_DIR)
+        if not os.path.exists(lib.shared.settings.BASE_DIR): os.mkdir(lib.shared.settings.BASE_DIR)
         F = open(self.fileCert, "wb")
         F.close()
         F = open(self.fileLogs, "w")
@@ -52,7 +52,7 @@ class Data:
 
     def create_certificate(self):
         with open(self.fileCert, "wb") as F:
-            dataBytes = lib.shared.crypto.getRandomBytes(lib.settings.CERT_SIZE)
+            dataBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
             F.write(dataBytes)
         
     def load_certificate(self):
@@ -63,7 +63,7 @@ class Data:
     def check_certificate(self):
         if os.path.exists(self.fileCert):
             self.load_certificate()
-            result = True if len(self.certificate) == lib.settings.CERT_SIZE else False
+            result = True if len(self.certificate) == lib.shared.settings.CERT_SIZE else False
         else:
             result = False
         return result

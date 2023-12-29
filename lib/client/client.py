@@ -13,21 +13,17 @@
 # limitations under the License.                                            #
 #############################################################################
 
-
+import lib.shared.commands
 import lib.shared.network
 import lib.shared.crypto
 import json, threading, time, queue
-from collections import Counter
 
-class Commands:
-    
-    calls = {'uptime', 'start', 'stop', 'keepalive',
-            'getstatusinfo', 'getblockchaininfo', 'getnetworkinfo', 
-            'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-            'advancedcall', 'getsysteminfo', 'getgeolocationinfo'}
+
 
 class Client:
     def __init__(self):
+
+        self.control = lib.shared.commands.Control()
 
         self.network = lib.shared.network.Client()
         self.certificate = "fefa" # temporary certificate
@@ -49,7 +45,7 @@ class Client:
     
     def initHashedCalls(self):
         if self.network.isConnected:
-            self.calls = {call : lib.shared.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in Commands.calls}
+            self.calls = {call : lib.shared.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in self.control.calls}
         else:
             self.calls = False
 
@@ -112,9 +108,11 @@ class Client:
             self.peersGeolocation = json.loads(self.network.receiver())
     
     def advancedCall(self, call, arg = False):
-        if self.network.isConnected and self.network.sender(self.calls['advancedcall']):
-            #encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
-            self.network.sender(json.dumps({'call': call, 'arg': arg}))
+        msg = str(self.calls['advancedcall']) + str(self.calls[call])
+        if bool(arg): msg += str(arg)
+        if self.network.isConnected and self.network.sender(msg):
+            # encodedCall = lib.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode)
+            # self.network.sender(json.dumps({'call': call, 'arg': arg}))
             reply = self.network.receiver()
             return json.loads(reply)
     """
@@ -131,64 +129,3 @@ class Client:
             
 
 
-def clientTerminal():
-    def keepConnAlive():
-        while remoteConn.network.isConnected:
-            eventThread.wait()
-            remoteConn.keepAlive()
-            time.sleep(10)
-        print("\nconnection terminated")
-
-    remoteConn = Client()
-    eventThread = threading.Event()
-    keepAliveThread = threading.Thread(target = keepConnAlive, daemon = True)
-
-    print("Bitcoin Core Handler terminal")
-    ipAddr = input("insert server ip: \n>> ")
-    input("\nPress enter to connect\n")
-    remoteConn.initConnection(ipAddr)
-    
-    print(f"Handshake code: {remoteConn.network.handshakeCode} \n")
-    print("receiving info from server...")
-    time.sleep(0.5)
-    print(f"connected to server: {remoteConn.network.isConnected}\n")
-
-    if remoteConn.network.isConnected:
-        eventThread.set()
-        keepAliveThread.start()
-        print("keep alive thread started")
-        
-    try:
-
-        while True and remoteConn.network.isConnected:
-            print("[1] - remote server info")
-            print("[2] - bitcoin node status info")
-            print("[3] - print all peers geolocation")
-            print("[4] - print contries stats")
-            print("[5] - send advanced call")
-            print("[0] - quit terminal")
-            command = int(input(">> "))
-            if not bool(command): command = 0
-            if command == 0: break
-            elif command == 1: print(remoteConn.systemInfo)
-            elif command == 2: print(remoteConn.statusInfo)
-            elif command == 3: [print(node) for node in remoteConn.peersGeolocation]
-            elif command == 4: [print(f"{c[0]} : {c[1]}") for c in Counter([node[1] for node in remoteConn.peersGeolocation]).items()]
-            elif command == 5: 
-                insertedCommand = input("\ninsert call: ")
-                fullCommand = insertedCommand.lower().split(" ", 1)
-                command = fullCommand[0]
-                if command != "start" and command != "stop":
-                    arg = fullCommand[1] if len(fullCommand) > 1 else False
-                    eventThread.clear()
-                    remoteReply = remoteConn.advancedCall(command, arg)
-                    eventThread.set()
-                    print(remoteReply)
-                else:
-                    print("control commands not allowed")
-            print("\n")
-        remoteConn.closeConnection()
-
-    except KeyboardInterrupt:
-        remoteConn.closeConnection()
-        print("closing")

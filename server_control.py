@@ -1,6 +1,6 @@
-import lib.network
+import lib.shared.network
 
-C = lib.network.Client()
+C = lib.shared.network.Client()
 C.remoteHost = "127.0.0.1"
 C.remotePort = 46001
 

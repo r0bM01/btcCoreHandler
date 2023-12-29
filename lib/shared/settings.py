@@ -17,6 +17,10 @@
 
 import os, pathlib
 
+#[VERSION]
+VERSION = "0.2.0-Alpha"
+
+
 #[HOME DIRECTORY]
 HOME = pathlib.Path.home()
 BASE_DIR = HOME.joinpath("handler")
@@ -24,3 +28,4 @@ BASE_DIR = HOME.joinpath("handler")
 #[CERTIFICATE]
 CERT_SIZE = 512 #bytes
 #CERT_VALIDITY = 60 * 60 * 24 
+

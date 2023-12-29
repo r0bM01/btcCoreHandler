@@ -32,6 +32,8 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER = logger
         self.NETWORK = lib.shared.network.Server(lib.shared.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
 
+        self.maxCallSize = 256 #bytes 
+
         self.eventController = threading.Event()
         self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
         self.srpcT = threading.Thread(target = self.SRPC.waitForCall, daemon = True)
@@ -100,10 +102,7 @@ class Server(lib.server.protocol.RequestHandler):
             # else: self.LOGGER.add("no incoming connection detected")
 
             while bool(self.NETWORK._remoteSock):
-                remoteCall = self.NETWORK.receiver()
-                # self.LOGGER.add("##########################")
-                # self.LOGGER.add("new call from client", self.NETWORK.remoteAddr)
-                # self.LOGGER.add("encoded call: ", remoteCall)
+                remoteCall = self.NETWORK.receiver(self.maxCallSize)
 
 
                 if remoteCall:
@@ -112,6 +111,8 @@ class Server(lib.server.protocol.RequestHandler):
                         jsonCall = json.loads(self.NETWORK.receiver())
                         # self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
                         reply = self.directCall(jsonCall)
+                    elif callResult == "TESTENCRYPTSERVICE":
+                        reply = lib.shared.crypto.getEncrypted(json.dumps(self.BITCOIN_DATA.getStatusInfo()), "fefa", self.NETWORK.handshakeCode)
                     else:
                         reply = callResult
                 else:

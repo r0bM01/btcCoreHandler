@@ -21,6 +21,7 @@ import urllib.request
 class Proto:
     _remoteSock = False
     _bufferSize = 2048
+    _msgMaxSize = 2097152 # 2 MiB
     _opTimeout = 5
     _header = 4
 
@@ -72,24 +73,24 @@ class Proto:
         #self._remoteSock.settimeout(tmpTimeout)
         return True if dataSent == len(data) else False
         
-    def dataRecv(self):
+    def dataRecv(self, maxSize = False):
         #tmpTimeout = self._remoteSock.gettimeout()
         #self._remoteSock.settimeout(self._opTimeout)
-
+        msgMaxSize = int(maxSize) if bool(maxSize) else self._msgMaxSize
         lenghtMsg = self.sockRecv(self._header)
 
         dataRecv = 0
         if bool(lenghtMsg):
             lenghtMsg = int(lenghtMsg.hex(), 16)
-            
-            dataArray = []
-            while dataRecv < lenghtMsg:
+            if lenghtMsg <= msgMaxSize:
+                dataArray = []
+                while dataRecv < lenghtMsg:
 
-                chunk = self.sockRecv(min(lenghtMsg - dataRecv, self._bufferSize))
-                
-                if not bool(chunk): break
-                dataRecv += len(chunk)
-                dataArray.append(chunk)
+                    chunk = self.sockRecv(min(lenghtMsg - dataRecv, self._bufferSize))
+                    
+                    if not bool(chunk): break
+                    dataRecv += len(chunk)
+                    dataArray.append(chunk)
         
         #self._remoteSock.settimeout(tmpTimeout)
         return  b"".join(dataArray) if dataRecv == lenghtMsg else False
@@ -103,8 +104,8 @@ class Proto:
             self.sockClosure()
             return False
     
-    def receiver(self):
-        msgReceived = self.dataRecv()
+    def receiver(self, maxSize = False):
+        msgReceived = self.dataRecv(maxSize)
         if bool(msgReceived): return msgReceived.decode('utf-8')
         else:
             self.sockClosure()
@@ -117,7 +118,7 @@ class Client(Proto):
     def __init__(self):
         self.remoteHost = None # has to be given by UI  
         self.remotePort = 4600 # default port
-        self.timeout = None
+        self.timeout = self._opTimeout
         self.isConnected = False
         self.handshakeCode = False
 

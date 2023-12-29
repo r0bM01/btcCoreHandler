@@ -38,8 +38,10 @@ class RequestHandler:
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
         
     def handle_request(self, remoteCall, LOGGER):
-        if not self.CONTROL.check(remoteCall): return json.dumps({"error": "invalid command"})
-        request = self.CONTROL.encodedCalls[remoteCall]
+        call = remoteCall[:16]
+        args = remoteCall[16:]
+        if not self.CONTROL.check(call): return json.dumps({"error": "invalid command"})
+        request = self.CONTROL.encodedCalls[call]
         # LOGGER.add("call", request)
         if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
         elif not self.bitcoindRunning and request == "start": self.startbitcoind()
@@ -50,7 +52,9 @@ class RequestHandler:
         elif request == "getstatusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
         elif request == "getpeerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
         elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
-        elif request == "advancedcall": return "ADVANCEDCALLSERVICE"
+        elif request == "getserverlogs": return json.dumps(LOGGER.SESSION)
+        elif request == "test": return "TESTENCRYPTSERVICE"
+        elif request == "advancedcall": return self.directCall(args)
 
     def startbitcoind(self):
         if not bool(self.bitcoindRunning):
@@ -64,7 +68,12 @@ class RequestHandler:
         else:
             return json.dumps({"error": "bitcoind already stopped"})
     
-    def directCall(self, jsonCall):
+    def directCall(self, remoteArgs):
+        call = remoteArgs[:16]
+        args = remoteArgs[16:]
+        jsonCall = {}
+        jsonCall['call'] = self.CONTROL.encodedCalls[call]
+        jsonCall['arg'] = args
         if jsonCall['call'] in self.CONTROL.bitcoinCalls:
             if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
                 result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
