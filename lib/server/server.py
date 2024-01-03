@@ -94,16 +94,17 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("waiting for incoming connections")
         while self.isServing and not self.SRPC.STOP:
          
-            self.NETWORK.receiveClient(lib.shared.crypto.getRandomBytes(16).hex()) # creates an handshake random code when receiving a new client
+            self.NETWORK.receiveClient() # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
                 self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
                 # self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
-            if bool(self.NETWORK._remoteSock): self.LOGGER.add("connected by", self.NETWORK.remoteAddr, f"handshake: {self.NETWORK.handshakeCode}")
+            if bool(self.NETWORK._remoteSock): 
+                self.LOGGER.add("connected by", self.NETWORK.remoteAddr, f"handshake: {self.NETWORK.handshakeCode}", 
+                                f"timeout: {self.NETWORK._remoteSock.gettimeout()}")
             # else: self.LOGGER.add("no incoming connection detected")
 
             while bool(self.NETWORK._remoteSock):
                 remoteCall = self.NETWORK.receiver(self.maxCallSize)
-
 
                 if remoteCall:
                     callResult = self.handle_request(remoteCall, self.LOGGER)
@@ -123,7 +124,7 @@ class Server(lib.server.protocol.RequestHandler):
                     # self.LOGGER.add("reply content size", len(reply.encode()))
                     replySent = self.NETWORK.sender(reply) #returns True or False
                     # self.LOGGER.add("reply sent", replySent)
-                    self.LOGGER.add("new call by", self.NETWORK.remoteAddr, remoteCall, f"succesfull: {replySent}")
+                    self.LOGGER.add("new call by", self.NETWORK.remoteAddr, remoteCall, self.CONTROL.encodedCalls.get(remoteCall), f"succesfull: {replySent}")
                 else:
                     # self.LOGGER.add("remote socket active", self.NETWORK._remoteSock)
                     self.LOGGER.add("connection closed")

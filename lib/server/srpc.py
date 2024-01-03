@@ -17,7 +17,7 @@ class ServerRPC:
         self.netServer.openSocket()
         while not self.STOP:
 
-            self.netServer.receiveClient(lib.shared.crypto.getRandomBytes(16).hex())
+            self.netServer.receiveClient()
             #self.netServer._remoteSock.settimeout(3)
             # self.netServer.socket.settimeout(3)
 

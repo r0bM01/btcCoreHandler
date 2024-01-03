@@ -14,16 +14,16 @@
 #############################################################################
 
 
-
-import socket, threading, ssl, time
+import lib.shared.crypto
+import socket, ssl, time
 import urllib.request
 
 class Proto:
     _remoteSock = False
-    _bufferSize = 2048
+    _bufferSize = 2048 # bytes
     _msgMaxSize = 2097152 # 2 MiB
-    _opTimeout = 5
-    _header = 4
+    _opTimeout = 5 # seconds
+    _header = 4 # number of hex digits ex. 00ff
 
     #################################################
         # LOW LEVEL SOCKET SEND/RECEIVE
@@ -54,8 +54,8 @@ class Proto:
     ###########################################################################################################
         # MESSAGE SEND/RECEIVE WITH CONFIRM
     def dataSend(self, data):
-        #tmpTimeout = self._remoteSock.gettimeout()
-        #self._remoteSock.settimeout(self._opTimeout)
+        tmpTimeout = self._remoteSock.gettimeout()
+        self._remoteSock.settimeout(self._opTimeout)
         
         lenghtMsg = bytes.fromhex(hex(len(data))[2:].zfill(self._header*2))
         lenghtSent = self.sockSend(lenghtMsg)
@@ -70,14 +70,16 @@ class Proto:
                 if not bool(chunk): break
                 dataSent += chunk
         
-        #self._remoteSock.settimeout(tmpTimeout)
+        self._remoteSock.settimeout(tmpTimeout)
         return True if dataSent == len(data) else False
         
     def dataRecv(self, maxSize = False):
-        #tmpTimeout = self._remoteSock.gettimeout()
-        #self._remoteSock.settimeout(self._opTimeout)
+
         msgMaxSize = int(maxSize) if bool(maxSize) else self._msgMaxSize
         lenghtMsg = self.sockRecv(self._header)
+
+        tmpTimeout = self._remoteSock.gettimeout()
+        self._remoteSock.settimeout(self._opTimeout)
 
         dataRecv = 0
         if bool(lenghtMsg):
@@ -92,8 +94,8 @@ class Proto:
                     dataRecv += len(chunk)
                     dataArray.append(chunk)
         
-        #self._remoteSock.settimeout(tmpTimeout)
-        return  b"".join(dataArray) if dataRecv == lenghtMsg else False
+        self._remoteSock.settimeout(tmpTimeout)
+        return  b"".join(dataArray) if dataRecv == lenghtMsg else b"" # False
     ###########################################################################################################
         # HIGH LEVEL INTERFACE SENDING/RECEIVING MESSAGES WITH SOCKET CLOSURE
     def sender(self, data):
@@ -118,19 +120,22 @@ class Client(Proto):
     def __init__(self):
         self.remoteHost = None # has to be given by UI  
         self.remotePort = 4600 # default port
-        self.timeout = self._opTimeout
+        self.timeout = 120
         self.isConnected = False
         self.handshakeCode = False
 
     def connectToServer(self):
         try:
-            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self.timeout)
+            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
             #self._remoteSock.settimeout(10)
-            self.handshakeCode = self.receiver()
-            self.isConnected = True if len(self.handshakeCode) == 32 else False
+            # self.handshakeCode = self.receiver()
+            # self.isConnected = True if len(self.handshakeCode) == 32 else False
         except (OSError, TimeoutError):
             self.isConnected = False
             self._remoteSock = False
+        
+        if bool(self._remoteSock): 
+            self.handshakeProcess()
 
     def disconnectServer(self):
         #self._remoteSock.close()
@@ -138,6 +143,18 @@ class Client(Proto):
         self.sockClosure()
         self.isConnected = False
         self.handshakeCode = False
+    
+    def handshakeProcess(self):
+        clientRandom = lib.shared.crypto.getRandomBytes(16)
+        serverRandom = self.dataRecv(16) if self.dataSend(clientRandom) else False
+        if bool(serverRandom):
+            clientHandshake = lib.shared.crypto.getHandshakeCode("fefa", clientRandom, serverRandom)
+            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", "fefa", clientHandshake)
+            if self.dataSend(bytes.fromhex(clientHandshake)) and self.dataRecv(8) == bytes.fromhex(confirm):
+                self.handshakeCode = clientHandshake
+                self.isConnected = True
+                self._remoteSock.settimeout(self.timeout)
+        if not bool(self.handshakeCode): self.sockClosure() 
 
 ###########################################################################################################
 ###########################################################################################################
@@ -168,16 +185,31 @@ class Server(Proto):
         except OSError:
             self.socket = False
 
-    def receiveClient(self, handshakeCode):
+    def receiveClient(self):
         try:
             self._remoteSock, self.remoteAddr = self.socket.accept()
-            self._remoteSock.settimeout(self.settings.remoteSockTimeout)
-            self.sender(handshakeCode)
-            self.handshakeCode = handshakeCode
+            self._remoteSock.settimeout(self._opTimeout)
+            # self.sender(handshakeCode)
+            # self.handshakeCode = handshakeCode
         except OSError:
             self.sockClosure()
             self.handshakeCode = False
+        if bool(self._remoteSock): self.handshakeProcess()
+        if bool(self.handshakeCode): self._remoteSock.settimeout(self.settings.remoteSockTimeout)
     
+    def handshakeProcess(self):
+        clientRandom = self.dataRecv(16)
+        serverRandom = lib.shared.crypto.getRandomBytes(16)
+        if bool(clientRandom) and self.dataSend(serverRandom):
+            serverHandshake = lib.shared.crypto.getHandshakeCode("fefa", clientRandom, serverRandom)
+            clientHandshake = self.dataRecv(16)
+            if clientHandshake.hex() == serverHandshake:
+                confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", "fefa", serverHandshake)
+                self.handshakeCode = serverHandshake if self.dataSend(bytes.fromhex(confirm)) else False
+        if not bool(self.handshakeCode): self.sockClosure()
+        
+            
+        
 ###########################################################################################################
 ###########################################################################################################
 

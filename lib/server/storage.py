@@ -22,7 +22,7 @@ import lib.shared.crypto
 class Data:
     def __init__(self):
         self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
-        self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{int(time.time())}.log")
+        self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
 
         self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
 

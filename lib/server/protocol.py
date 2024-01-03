@@ -72,7 +72,7 @@ class RequestHandler:
         call = remoteArgs[:16]
         args = remoteArgs[16:]
         jsonCall = {}
-        jsonCall['call'] = self.CONTROL.encodedCalls[call]
+        jsonCall['call'] = self.CONTROL.encodedCalls.get(call)
         jsonCall['arg'] = args
         if jsonCall['call'] in self.CONTROL.bitcoinCalls:
             if jsonCall['call'] != "start" and jsonCall['call'] != "stop":

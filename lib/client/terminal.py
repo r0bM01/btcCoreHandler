@@ -53,7 +53,26 @@ def clientTerminal():
     try:
 
         while True and remoteConn.network.isConnected:
-            print("[1] - remote server info")
+            print("\nInsert a call or 'quit' to close the terminal; ")
+            c = str(input("\n>> ")).lower()
+            if c == 'quit': break
+            encodedCall = lib.shared.crypto.getHashedCommand(c, remoteConn.certificate, remoteConn.network.handshakeCode)
+            message = str(remoteConn.calls['advancedcall']) + str(encodedCall)
+            eventThread.clear()
+            if remoteConn.network.sender(message): reply = remoteConn.network.receiver()
+            eventThread.set()
+
+            print(f"\nCall sent: {c}: {encodedCall}")
+            print(f"reply: \n{reply}")
+        remoteConn.closeConnection()
+
+    except KeyboardInterrupt:
+        remoteConn.closeConnection()
+        print("closing")
+
+
+"""
+print("[1] - remote server info")
             print("[2] - bitcoin node status info")
             print("[3] - print all peers geolocation")
             print("[4] - print contries stats")
@@ -94,8 +113,4 @@ def clientTerminal():
                 msg = lib.shared.crypto.getDecrypted(reply, "fefa", remoteConn.network.handshakeCode)
                 print(msg)
             print("\n")
-        remoteConn.closeConnection()
-
-    except KeyboardInterrupt:
-        remoteConn.closeConnection()
-        print("closing")
+"""

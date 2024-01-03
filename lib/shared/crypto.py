@@ -25,6 +25,8 @@ def getHash(data):
 def getHashedCommand(command, key, salt):
 		return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest()
 
+def getHandshakeCode(certificate, clientRandom, serverRandom):
+		return hashlib.blake2b(certificate.encode(), key = clientRandom, salt = serverRandom, digest_size = 16).hexdigest()
 
 def getEncrypted(data, key, salt):
 	alpha = [chr(n) for n in range(32, 127)]
