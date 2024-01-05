@@ -51,7 +51,7 @@ class LeftMenu(QWidget):
             self.BUTTON[b].setProperty("class", "left-menu")
 
 
-        self.BUTTON['version'] = QPushButton("0.1.0 Alpha")
+        self.BUTTON['version'] = QPushButton()
         self.BUTTON['version'].setProperty("class", "version-label")
         #labelVersion.clicked.connect(QMessageBox.information(self, "Info", "Version 0.0.1 coded by R0bm01"))
 

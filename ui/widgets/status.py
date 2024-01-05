@@ -38,8 +38,8 @@ class Status(QWidget):
         ## NODE CONNECTION GROUP 1 ROW
         nodeConnection = QGroupBox("Node Connection")
         nodeConnectionLayout = QHBoxLayout()
-        labels['nodeip'] = QLabel("node IP:")
-        self.RESULT['nodeip'] = QLabel(" - ") 
+        # labels['node'] = QLabel("node IP:")
+        self.RESULT['node'] = QLabel(" - ") 
         self.BUTTON['connect'] = QPushButton("Connect")
         self.BUTTON['connect'].setFixedWidth(80)
 
@@ -85,8 +85,8 @@ class Status(QWidget):
 
         # adding result fields to each group
         # node connection
-        nodeConnectionLayout.addWidget(labels['nodeip'])
-        nodeConnectionLayout.addWidget(self.RESULT['nodeip'])
+        # nodeConnectionLayout.addWidget(labels['nodeip'])
+        nodeConnectionLayout.addWidget(self.RESULT['node'])
         nodeConnectionLayout.addWidget(self.BUTTON['connect'])
         # node status
         nodeStatusLayout.addRow(labels['upsince'], self.RESULT['upsince'])

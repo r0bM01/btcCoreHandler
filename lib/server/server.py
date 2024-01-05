@@ -19,7 +19,6 @@ import json, time, subprocess, threading, platform, sys
 import lib.shared.network
 import lib.shared.crypto
 import lib.server.machine
-import lib.server.storage
 import lib.server.protocol
 import lib.server.srpc
 
@@ -94,9 +93,9 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("waiting for incoming connections")
         while self.isServing and not self.SRPC.STOP:
          
-            self.NETWORK.receiveClient() # creates an handshake random code when receiving a new client
+            self.NETWORK.receiveClient(self.STORAGE.certificate) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
-                self.CONTROL.encodeCalls("fefa", self.NETWORK.handshakeCode) # temporary certificate "fefa"
+                self.CONTROL.encodeCalls(self.STORAGE.certificate, self.NETWORK.handshakeCode) # temporary certificate "fefa"
                 # self.LOGGER.add("handshake code generated", self.NETWORK.handshakeCode)
             if bool(self.NETWORK._remoteSock): 
                 self.LOGGER.add("connected by", self.NETWORK.remoteAddr, f"handshake: {self.NETWORK.handshakeCode}", 
@@ -113,7 +112,7 @@ class Server(lib.server.protocol.RequestHandler):
                         # self.LOGGER.add("Advanced call", jsonCall['call'], jsonCall['arg'])
                         reply = self.directCall(jsonCall)
                     elif callResult == "TESTENCRYPTSERVICE":
-                        reply = lib.shared.crypto.getEncrypted(json.dumps(self.BITCOIN_DATA.getStatusInfo()), "fefa", self.NETWORK.handshakeCode)
+                        reply = lib.shared.crypto.getEncrypted(json.dumps(self.BITCOIN_DATA.getStatusInfo()), self.STORAGE.certificate, self.NETWORK.handshakeCode)
                     else:
                         reply = callResult
                 else:

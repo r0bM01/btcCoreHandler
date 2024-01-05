@@ -21,10 +21,14 @@ import lib.shared.commands
 import lib.server.data
 import lib.server.machine
 
-from lib.server.storage import Logger
 from lib.shared.network import Utils
 
+class BaseRequest:
+    _maxLenght = 256
 
+    def deserialize(self, fullRequest):
+        self.baseCall = fullRequest[:16]
+        self.params = fullRequest[16:].split(":")
         
 class RequestHandler:
     def __init__(self):
@@ -55,6 +59,7 @@ class RequestHandler:
         elif request == "getserverlogs": return json.dumps(LOGGER.SESSION)
         elif request == "test": return "TESTENCRYPTSERVICE"
         elif request == "advancedcall": return self.directCall(args)
+        elif request in self.CONTROL.bitcoinCalls: return lib.server.machine.MachineInterface.runBitcoindCall(request)
 
     def startbitcoind(self):
         if not bool(self.bitcoindRunning):
@@ -70,13 +75,12 @@ class RequestHandler:
     
     def directCall(self, remoteArgs):
         call = remoteArgs[:16]
-        args = remoteArgs[16:]
+        args = remoteArgs[16:].split(" ") if bool(remoteArgs[16:]) else False
         jsonCall = {}
         jsonCall['call'] = self.CONTROL.encodedCalls.get(call)
-        jsonCall['arg'] = args
         if jsonCall['call'] in self.CONTROL.bitcoinCalls:
             if jsonCall['call'] != "start" and jsonCall['call'] != "stop":
-                result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], jsonCall['arg'])
+                result = lib.server.machine.MachineInterface.runBitcoindCall(jsonCall['call'], args)
                 return json.dumps(result)
             else:
                 return json.dumps({"error": "command not authorized"})

@@ -40,6 +40,8 @@ class MachineInterface:
             subprocess.run(["bitcoind"])
             call = json.dumps({"start": bool(self.checkDaemon())})
         else:
-            caller = ["bitcoin-cli", command, arg] if arg else ["bitcoin-cli", command]
+            caller = ["bitcoin-cli", command] 
+            if bool(arg): caller.extend(arg)
             call = subprocess.run(caller, capture_output = True).stdout.decode()
+            if not bool(call): call = {command: "True"}
         return call

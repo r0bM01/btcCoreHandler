@@ -13,7 +13,8 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import ui.pages.peers_list
+import ui.widgets.peers_list
+import ui.widgets.added_list
 import ui.utils as utils
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
@@ -177,8 +178,10 @@ class Network(QWidget):
         self.RESULT['difficulty'].setText(utils.convertBigSizes(statusInfo['difficulty']))
     
     def open_peers_list(self, peersInfo, peersGeolocation):
-        self.PEERSLIST = ui.pages.peers_list.PeersTable(peersInfo, peersGeolocation)
+        self.PEERSLIST = ui.widgets.peers_list.PeersTable(peersInfo, peersGeolocation)
         self.PEERSLIST.setVisible(True)
 
-
+    def open_added_list(self, clientGeneralCall, clientAddnodeCommand):
+        self.ADDEDLIST = ui.widgets.added_list.AddedNodes(clientGeneralCall, clientAddnodeCommand)
+        self.ADDEDLIST.setVisible(True)
 

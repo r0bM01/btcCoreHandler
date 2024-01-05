@@ -19,7 +19,8 @@ class Control:
     def __init__(self):
         
         self.cachedCalls = {'getsysteminfo', 'getstatusinfo', 'getgeolocationinfo'}
-        self.bitcoinCalls = {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals'}
+        self.bitcoinCalls = {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+                             'addnode', 'getaddednodeinfo'}
         self.controlCalls = {'start', 'stop', 'keepalive', 'advancedcall', 'bitcoindrunning', 'getserverlogs', 'test'}
 
         self.calls = set()

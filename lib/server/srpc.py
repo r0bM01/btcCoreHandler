@@ -9,8 +9,7 @@ class ServerRPC:
     def __init__(self, eventController):
         self.STOP = False
         self.eventController = eventController
-        self.netConfig = lib.shared.network.Settings(host = "127.0.0.1", port = 46001)
-        self.netServer = lib.shared.network.Server(self.netConfig)
+        self.netServer = lib.shared.network.ServerRPC()
 
 
     def waitForCall(self):

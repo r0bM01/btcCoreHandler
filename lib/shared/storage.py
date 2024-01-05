@@ -19,7 +19,7 @@ import lib.shared.settings
 import lib.shared.crypto
 
 
-class Data:
+class Server:
     def __init__(self):
         self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
         self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
@@ -30,8 +30,10 @@ class Data:
     
     def init_files(self):
         if not os.path.exists(lib.shared.settings.BASE_DIR): os.mkdir(lib.shared.settings.BASE_DIR)
-        F = open(self.fileCert, "wb")
-        F.close()
+        if not os.path.exists(self.fileCert): self.create_certificate()
+        else: self.load_certificate()
+            #F = open(self.fileCert, "wb")
+            #F.close()
         F = open(self.fileLogs, "w")
         F.close()
 
@@ -54,11 +56,14 @@ class Data:
         with open(self.fileCert, "wb") as F:
             dataBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
             F.write(dataBytes)
+        self.certificate = dataBytes.hex()
         
     def load_certificate(self):
         with open(self.fileCert, "rb") as F:
-            tmpBytes = F.read()
-            self.certificate = lib.shared.crypto.getHash(tmpBytes.hex())
+            dataBytes = F.read()
+            # self.certificate = lib.shared.crypto.getHash(tmpBytes.hex())
+        self.certificate = dataBytes.hex()
+        
 
     def check_certificate(self):
         if os.path.exists(self.fileCert):

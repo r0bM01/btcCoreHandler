@@ -22,7 +22,7 @@ class Proto:
     _remoteSock = False
     _bufferSize = 2048 # bytes
     _msgMaxSize = 2097152 # 2 MiB
-    _opTimeout = 5 # seconds
+    _opTimeout = 3 # seconds
     _header = 4 # number of hex digits ex. 00ff
 
     #################################################
@@ -123,8 +123,9 @@ class Client(Proto):
         self.timeout = 120
         self.isConnected = False
         self.handshakeCode = False
+        
 
-    def connectToServer(self):
+    def connectToServer(self, certificate):
         try:
             self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
             #self._remoteSock.settimeout(10)
@@ -135,7 +136,7 @@ class Client(Proto):
             self._remoteSock = False
         
         if bool(self._remoteSock): 
-            self.handshakeProcess()
+            self.handshakeProcess(certificate)
 
     def disconnectServer(self):
         #self._remoteSock.close()
@@ -144,14 +145,16 @@ class Client(Proto):
         self.isConnected = False
         self.handshakeCode = False
     
-    def handshakeProcess(self):
+    def handshakeProcess(self, certificate):
         clientRandom = lib.shared.crypto.getRandomBytes(16)
         serverRandom = self.dataRecv(16) if self.dataSend(clientRandom) else False
+        entropy = clientRandom + serverRandom
         if bool(serverRandom):
-            clientHandshake = lib.shared.crypto.getHandshakeCode("fefa", clientRandom, serverRandom)
-            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", "fefa", clientHandshake)
-            if self.dataSend(bytes.fromhex(clientHandshake)) and self.dataRecv(8) == bytes.fromhex(confirm):
-                self.handshakeCode = clientHandshake
+            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
+            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
+            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
+            if self.dataSend(bytes.fromhex(request)) and self.dataRecv(8) == bytes.fromhex(confirm):
+                self.handshakeCode = handshakeCode
                 self.isConnected = True
                 self._remoteSock.settimeout(self.timeout)
         if not bool(self.handshakeCode): self.sockClosure() 
@@ -176,12 +179,55 @@ class Server(Proto):
         self.socket = False
         self.remoteAddr = None
         self.handshakeCode = False
+        
 
     def openSocket(self):
         try:
             self.socket = socket.create_server((self.settings.host, self.settings.port), family = socket.AF_INET,
                                                backlog = self.settings.backlog, reuse_port = True)
             self.socket.settimeout(self.settings.socketTimeout)
+        except OSError:
+            self.socket = False
+
+    def receiveClient(self, certificate):
+        try:
+            self._remoteSock, self.remoteAddr = self.socket.accept()
+            self._remoteSock.settimeout(self._opTimeout)
+            # self.sender(handshakeCode)
+            # self.handshakeCode = handshakeCode
+        except OSError:
+            self.sockClosure()
+            self.handshakeCode = False
+        if bool(self._remoteSock): self.handshakeProcess(certificate)
+        if bool(self.handshakeCode): self._remoteSock.settimeout(self.settings.remoteSockTimeout)
+    
+    def handshakeProcess(self, certificate):
+        clientRandom = self.dataRecv(16)
+        serverRandom = lib.shared.crypto.getRandomBytes(16)
+        entropy = clientRandom + serverRandom
+        if bool(clientRandom) and self.dataSend(serverRandom):
+            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
+            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
+            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
+            if self.dataRecv(16) == bytes.fromhex(request):
+                self.handshakeCode = handshakeCode if self.dataSend(bytes.fromhex(confirm)) else False
+        if not bool(self.handshakeCode): self.sockClosure()
+        
+            
+        
+###########################################################################################################
+###########################################################################################################
+
+class ServerRPC(Proto):
+    def __init__(self, port = 46001):
+        self.host = "127.0.0.1"
+        self.port = int(port)
+
+    def openSocket(self):
+        try:
+            self.socket = socket.create_server((self.host, self.port), family = socket.AF_INET,
+                                                backlog = 1, reuse_port = True)
+            self.socket.settimeout(self._opTimeout)
         except OSError:
             self.socket = False
 
@@ -193,23 +239,25 @@ class Server(Proto):
             # self.handshakeCode = handshakeCode
         except OSError:
             self.sockClosure()
-            self.handshakeCode = False
-        if bool(self._remoteSock): self.handshakeProcess()
-        if bool(self.handshakeCode): self._remoteSock.settimeout(self.settings.remoteSockTimeout)
-    
-    def handshakeProcess(self):
-        clientRandom = self.dataRecv(16)
-        serverRandom = lib.shared.crypto.getRandomBytes(16)
-        if bool(clientRandom) and self.dataSend(serverRandom):
-            serverHandshake = lib.shared.crypto.getHandshakeCode("fefa", clientRandom, serverRandom)
-            clientHandshake = self.dataRecv(16)
-            if clientHandshake.hex() == serverHandshake:
-                confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", "fefa", serverHandshake)
-                self.handshakeCode = serverHandshake if self.dataSend(bytes.fromhex(confirm)) else False
-        if not bool(self.handshakeCode): self.sockClosure()
-        
             
+
+class ClientRPC(Proto):
+    def __init__(self, port = 46001):
+        self.host = "127.0.0.1"
+        self.port = int(port)
+    
+    def connect(self):
+        try:
+            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
+            #self._remoteSock.settimeout(10)
+            # self.handshakeCode = self.receiver()
+            # self.isConnected = True if len(self.handshakeCode) == 32 else False
+        except (OSError, TimeoutError):
+            self.isConnected = False
+            self._remoteSock = False
         
+        return bool(self._remoteSock)
+
 ###########################################################################################################
 ###########################################################################################################
 

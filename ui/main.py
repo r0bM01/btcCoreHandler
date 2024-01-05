@@ -16,12 +16,12 @@
 
 import lib.client.client
 import ui.assets.css
-import ui.pages.alerts
-import ui.pages.left_menu
-import ui.pages.status
-import ui.pages.options
-import ui.pages.network
-import ui.pages.advanced
+import ui.widgets.alerts
+import ui.widgets.left_menu
+import ui.widgets.status
+import ui.widgets.options
+import ui.widgets.network
+import ui.widgets.advanced
 import ui.utils as utils
 import sys, time, random, json, threading, queue
 from PySide6.QtCore import Qt, QSize 
@@ -38,12 +38,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.CLIENT = lib.client.client.Client()
+
         self.setWindowTitle("Bitcoin Core Handler")
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
         #self.setStyleSheet("background-color: #2c3746;")
 
-        self.alerts = ui.pages.alerts.Alerts()
+        self.alerts = ui.widgets.alerts.Alerts()
         
         self.PAGES = {}
         self.init_pages()
@@ -56,28 +58,31 @@ class MainWindow(QMainWindow):
         container.setLayout(self.mainLayout)
         self.setCentralWidget(container)
 
-        self.CLIENT = lib.client.client.Client()
+        
         self.commandEvent = threading.Event()
 
     def init_pages(self):
-        self.PAGES['STATUS'] = ui.pages.status.Status()
+        self.PAGES['STATUS'] = ui.widgets.status.Status()
         self.PAGES['STATUS'].BUTTON['connect'].clicked.connect(self.handle_connection)
         self.PAGES['STATUS'].setVisible(True)
     
-        self.PAGES['OPTIONS'] = ui.pages.options.Options()   
+        self.PAGES['OPTIONS'] = ui.widgets.options.Options()   
         self.PAGES['OPTIONS'].setVisible(False)
 
-        self.PAGES['NETWORK'] = ui.pages.network.Network()
+        self.PAGES['NETWORK'] = ui.widgets.network.Network()
         self.PAGES['NETWORK'].BUTTON['peerslist'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_peers_list(self.CLIENT.peersInfo, self.CLIENT.peersGeolocation))
+        self.PAGES['NETWORK'].BUTTON['addnodes'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_added_list(self.CLIENT.getGeneralCall, self.CLIENT.addnodeCall))
+                                                                 
         self.PAGES['NETWORK'].setVisible(False)
 
-        self.PAGES['ADVANCED'] = ui.pages.advanced.Advanced()
+        self.PAGES['ADVANCED'] = ui.widgets.advanced.Advanced()
         self.PAGES['ADVANCED'].BUTTON['command'].clicked.connect(self.send_advanced_command)
         self.PAGES['ADVANCED'].setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
 
     def init_left_menu(self):
-        self.MENU = ui.pages.left_menu.LeftMenu(self.PAGES)
+        self.MENU = ui.widgets.left_menu.LeftMenu(self.PAGES)
+        self.MENU.BUTTON['version'].setText(self.CLIENT.version)
         self.MENU.BUTTON['version'].clicked.connect(self.alerts.showRelease)
         self.MENU.setVisible(True)
     
@@ -125,12 +130,13 @@ class MainWindow(QMainWindow):
     def refreshConnectionStatus(self):
         if self.CLIENT.network.isConnected:
             self.PAGES['OPTIONS'].setEnabled(False)
-            self.PAGES['STATUS'].RESULT['nodeip'].setText(self.PAGES['OPTIONS'].hostEdit.text())
+            self.PAGES['STATUS'].RESULT['node'].setText("succesfully connected") # self.PAGES['OPTIONS'].hostEdit.text()
             self.PAGES['STATUS'].BUTTON['connect'].setText("Disconnect")
         else:
             self.PAGES['OPTIONS'].setEnabled(True)
             self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")
             self.PAGES['STATUS'].setDefault()
+            self.PAGES['STATUS'].RESULT['node'].setText("not connected")
             self.PAGES['NETWORK'].setDefault()
             self.PAGES['NETWORK'].openList.setEnabled(False)
             

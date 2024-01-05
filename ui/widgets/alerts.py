@@ -15,6 +15,8 @@
 
 import ui.utils as utils
 
+import lib.shared.settings
+
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -44,8 +46,9 @@ class Alerts(QMessageBox):
         self.setText("none")
     
     def showRelease(self):
+        version = lib.shared.settings.VERSION
         self.setWindowTitle("Software Release")
-        self.setText("Bitcoin Core Handler 0.1.0-Alpha coded by R0BM01")
+        self.setText(f"Bitcoin Core Handler {version} coded by R0BM01")
         self.exec()
 
     def missingIPAddress(self):

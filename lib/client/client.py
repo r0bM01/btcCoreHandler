@@ -14,19 +14,22 @@
 #############################################################################
 
 import lib.shared.commands
-import lib.shared.network
 import lib.shared.crypto
-import json, threading, time, queue
+import lib.shared.network
+import lib.shared.settings
+import json, threading, time, queue, pathlib
 
 
 
 class Client:
     def __init__(self):
 
+        self.version = lib.shared.settings.VERSION
+
         self.control = lib.shared.commands.Control()
 
         self.network = lib.shared.network.Client()
-        self.certificate = "fefa" # temporary certificate
+        self.certificate = self.load_certificate()
         self.calls = False
         
         self.systemInfo = False
@@ -42,7 +45,13 @@ class Client:
         self.lastPeersUpdate = False
         self.lastConnCheck = False
         
-    
+    def load_certificate(self):
+        cwd = pathlib.Path.cwd()
+        path = cwd.joinpath("lib/client/cert.rob")
+        with open(path, "rb") as F:
+            dataBytes = F.read()
+        return dataBytes.hex()
+
     def initHashedCalls(self):
         if self.network.isConnected:
             self.calls = {call : lib.shared.crypto.getHashedCommand(call, self.certificate, self.network.handshakeCode) for call in self.control.calls}
@@ -52,7 +61,7 @@ class Client:
     def initConnection(self, host, port = False):
         if not self.network.isConnected: 
             self.network.remoteHost = str(host)
-            self.network.connectToServer()
+            self.network.connectToServer(self.certificate)
         if self.network.isConnected:
             self.initHashedCalls()
             self.getSystemInfo()
@@ -107,6 +116,17 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls["getgeolocationinfo"]):
             self.peersGeolocation = json.loads(self.network.receiver())
     
+    def getGeneralCall(self, call):
+        if self.network.isConnected and self.network.sender(self.calls[call]):
+            return json.loads(self.network.receiver())
+
+    def addnodeCall(self, nodeAddress, nodeCommand):
+        if not bool(nodeAddress) or not bool(nodeCommand): return {"error": "node host and command required"}
+        if nodeCommand in ['add', 'remove', 'onetry']:
+            args = nodeAddress + str(" ") + nodeCommand
+            reply = self.advancedCall("addnode", args)
+            return reply
+
     def advancedCall(self, call, arg = False):
         msg = str(self.calls['advancedcall']) + str(self.calls[call])
         if bool(arg): msg += str(arg)

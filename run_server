@@ -19,11 +19,11 @@
 import threading
 import lib.server.server
 import lib.server.machine
-import lib.server.storage
+import lib.shared.storage
 
 
 def main():
-    storage = lib.server.storage.Data()
+    storage = lib.server.storage.Server()
     storage.init_files()
     # saved_geodata = storage.load_geolocation()
     logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
