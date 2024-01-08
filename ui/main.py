@@ -77,6 +77,7 @@ class MainWindow(QMainWindow):
 
         self.PAGES['ADVANCED'] = ui.widgets.advanced.Advanced()
         self.PAGES['ADVANCED'].BUTTON['command'].clicked.connect(self.send_advanced_command)
+        self.PAGES['ADVANCED'].BUTTON['clear'].clicked.connect(lambda x: self.PAGES['ADVANCED'].RESULT['command'].clear())
         self.PAGES['ADVANCED'].setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
 
@@ -132,6 +133,7 @@ class MainWindow(QMainWindow):
             self.PAGES['OPTIONS'].setEnabled(False)
             self.PAGES['STATUS'].RESULT['node'].setText("succesfully connected") # self.PAGES['OPTIONS'].hostEdit.text()
             self.PAGES['STATUS'].BUTTON['connect'].setText("Disconnect")
+            self.PAGES['NETWORK'].openList.setEnabled(True)
         else:
             self.PAGES['OPTIONS'].setEnabled(True)
             self.PAGES['STATUS'].BUTTON['connect'].setText("Connect")

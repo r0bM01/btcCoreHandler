@@ -53,10 +53,14 @@ class Advanced(QWidget):
         self.BUTTON['command'] = QPushButton()
         self.BUTTON['command'].setIcon(QPixmap("ui/assets/play_32.png"))
         self.BUTTON['command'].setFixedWidth(35)
+        self.BUTTON['clear'] = QPushButton()
+        self.BUTTON['clear'].setIcon(QPixmap("ui/assets/recycling_32.png"))
+        self.BUTTON['clear'].setFixedWidth(35)
         
         consoleForm.addWidget(labels['command'])
         consoleForm.addWidget(self.edit['command'])
         consoleForm.addWidget(self.BUTTON['command'])
+        consoleForm.addWidget(self.BUTTON['clear'])
 
         self.RESULT['command'] = QTextEdit()
         self.RESULT['command'].setReadOnly(True)

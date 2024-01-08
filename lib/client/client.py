@@ -128,6 +128,7 @@ class Client:
             return reply
 
     def advancedCall(self, call, arg = False):
+        if call not in self.calls: return {"error": "invalid command"}
         msg = str(self.calls['advancedcall']) + str(self.calls[call])
         if bool(arg): msg += str(arg)
         if self.network.isConnected and self.network.sender(msg):

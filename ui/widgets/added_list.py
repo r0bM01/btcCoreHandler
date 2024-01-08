@@ -14,7 +14,7 @@
 #############################################################################
 
 import ui.utils as utils
-import time
+import lib.shared.crypto
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -29,6 +29,9 @@ class AddedNodes(QWidget):
         super().__init__()
 
         self.clientAddnodeCommand = clientAddnodeCommand
+        self.clientGeneralCall = clientGeneralCall
+
+        self.nodeList = self.updateList()
 
         self.setWindowTitle("Added Nodes")
         self.setFixedSize(640, 500)
@@ -53,19 +56,63 @@ class AddedNodes(QWidget):
 
         addNode.setLayout(addNodeLayout)
 
-        self.nodeList = AddedNodeList(clientGeneralCall, clientAddnodeCommand)
-        self.nodeList.updateList()
+        
+        nodeListGroup = QGroupBox("Added Nodes List")
+        self.nodeListGroupLayout = QVBoxLayout()
+
+        for node in self.nodeList:
+            nodeListGroupLayout.addLayout(self.createNodeLine(node))
+      
+        nodeListGroup.setLayout(self.nodeListGroupLayout)
 
         layout.addWidget(addNode)
-        layout.addWidget(self.nodeList)
+        layout.addWidget(nodeListGroup)
         layout.addStretch()
 
         self.setLayout(layout)
+
+
+    def updateList(self):
+        return self.clientGeneralCall('getaddednodeinfo')
+
+    def createNodeLine(self, nodeDict):
+        nodeLine = QHBoxLayout()
+        
+        host = QLineEdit(nodeDict['addednode'])
+        host.setAlignment(Qt.AlignCenter)
+        host.setReadOnly(True)
+        
+        connected = nodeDict['connected']
+        connected.setAlignment(Qt.AlignCenter)
+        connected.setReadOnly(True)
+
+        self.BUTTON[node['addednode']] = QPushButton("Remove")
+        self.BUTTON[node['addednode']].clicked.connect(lambda x: self.removeNode(nodeDict['addednode']))
+
+        nodeLine.addWidget(QLabel("host: "))
+        nodeLine.addWidget(host)
+        nodeLine.addStretch()
+        nodeLine.addWidget(QLabel("Connected: "))
+        nodeLine.addWidget(connected)
+        nodeLine.addStretch()
+        nodeLine.addWidget(self.BUTTON[node['addednode']])
+
+        return nodeLine
 
     def addNode(self):
         nodeAddress = str(self.edit['nodehost'].text()) + str(":") + str(self.edit['nodeport'].text())
         result = self.clientAddnodeCommand(nodeAddress, 'add')
         self.nodeList.updateList()
+
+    def removeNode(self, node):
+        result = self.clientAddnodeCommand(node, 'remove')
+        self.nodeList.updateList()
+
+
+
+
+
+
 
 
 
@@ -86,8 +133,10 @@ class AddedNodeList(QGroupBox):
 
 
     def updateList(self):
-        
         self.addednodeInfo = self.clientGeneralCall('getaddednodeinfo')
+        updatedList = [n['addednode'] for n in self.addednodeInfo]
+        [self.removeFromList(node) not in updatedList for node in self.NODES]
+            
         if bool(self.addednodeInfo):
             for node in self.addednodeInfo:
                 if node['addednode'] not in self.NODES:
@@ -102,14 +151,16 @@ class AddedNodeList(QGroupBox):
                     self.NODES[node['addednode']].addWidget(QLabel(str(node['addresses'])))
                     self.NODES[node['addednode']].addStretch()
                     self.BUTTON[node['addednode']] = QPushButton("Remove")
-                    self.BUTTON[node['addednode']].clicked.connect(lambda x: self.removeNode(node['addednode']))
+                    # self.BUTTON[node['addednode']].clicked.connect(lambda x: self.removeNode(node['addednode']))
                     self.NODES[node['addednode']].addWidget(self.BUTTON[node['addednode']])
 
                     self.nodeListLayout.addLayout(self.NODES[node['addednode']])
         else:
-            self.nodeListLayout.addWidget(QLabel("HERE THE ADDED NODES"))
+            [self.NODES[node].deleteLater() for node in self.NODES]
+            [self.NODES.pop(node) for node in self.NODES]
+            self.nodeListLayout.addWidget(QLabel("You haven't added any node yet."))
 
-    def removeNode(self, nodeAddress):
-        result = self.clientAddnodeCommand(nodeAddress, 'remove')
+    def removeFromList(self, nodeAddress):
+        # result = self.clientAddnodeCommand(nodeAddress, 'remove')
         self.NODES[nodeAddress].deleteLater()
         self.BUTTON[nodeAddress].deleteLater()

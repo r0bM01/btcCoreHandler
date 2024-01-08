@@ -22,6 +22,9 @@ def getRandomBytes(size):
 def getHash(data):
 		return hashlib.blake2b(data.encode()).hexdigest()
 
+def getMiniHash(data):
+		return hashlib.blake2b(data.encode(), digest_size = 2).hexdigest()
+
 def getHashedCommand(command, certificate, handshakeCode):
 		return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(certificate), salt = bytes.fromhex(handshakeCode)).hexdigest()
 
