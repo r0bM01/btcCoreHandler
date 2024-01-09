@@ -14,7 +14,7 @@
 #############################################################################
 
 import ui.utils as utils
-import lib.shared.crypto
+from lib.shared.crypto import getMiniHash
 from PySide6.QtCore import Qt, QSize 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
@@ -31,7 +31,7 @@ class AddedNodes(QWidget):
         self.clientAddnodeCommand = clientAddnodeCommand
         self.clientGeneralCall = clientGeneralCall
 
-        self.nodeList = self.updateList()
+        self.updateList()
 
         self.setWindowTitle("Added Nodes")
         self.setFixedSize(640, 500)
@@ -60,8 +60,12 @@ class AddedNodes(QWidget):
         nodeListGroup = QGroupBox("Added Nodes List")
         self.nodeListGroupLayout = QVBoxLayout()
 
+        self.nodeListObjects = []
         for node in self.nodeList:
-            nodeListGroupLayout.addLayout(self.createNodeLine(node))
+            nodeID = getMiniHash(node['addednode'])
+            nodeObject = self.createNodeLine(node)
+            self.nodeListObjects.append((nodeID, nodeObject))
+            self.nodeListGroupLayout.addLayout(nodeObject)
       
         nodeListGroup.setLayout(self.nodeListGroupLayout)
 
@@ -73,7 +77,7 @@ class AddedNodes(QWidget):
 
 
     def updateList(self):
-        return self.clientGeneralCall('getaddednodeinfo')
+        self.nodeList = self.clientGeneralCall('getaddednodeinfo')
 
     def createNodeLine(self, nodeDict):
         nodeLine = QHBoxLayout()
@@ -102,11 +106,27 @@ class AddedNodes(QWidget):
     def addNode(self):
         nodeAddress = str(self.edit['nodehost'].text()) + str(":") + str(self.edit['nodeport'].text())
         result = self.clientAddnodeCommand(nodeAddress, 'add')
-        self.nodeList.updateList()
+        self.updateList()
+        for n in self.nodeList:
+            if n['addednode'] == nodeAddress:
+                nodeID = getMiniHash(n['addednode'])
+                nodeObject = self.createNodeLine(n)
+                self.nodeListObjects.append((nodeID, nodeObject))
+                self.nodeListGroupLayout.addLayout(nodeObject)
+
+        # self.nodeList.updateList()
 
     def removeNode(self, node):
         result = self.clientAddnodeCommand(node, 'remove')
-        self.nodeList.updateList()
+        nodeID = getMiniHash(node)
+        for n in self.nodeListObjects:
+            if nodeID == n[0]:
+                self.BUTTON[node].deleteLater()
+                self.BUTTON.pop(node)
+                n[1].deleteLater() 
+                self.nodeListObjects.remove(n)
+        
+        # self.nodeList.updateList()
 
 
 
