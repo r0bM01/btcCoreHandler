@@ -83,23 +83,26 @@ class AddedNodes(QWidget):
         nodeLine = QHBoxLayout()
         
         host = QLineEdit(nodeDict['addednode'])
+        host.setFixedWidth(150)
         host.setAlignment(Qt.AlignCenter)
         host.setReadOnly(True)
         
-        connected = nodeDict['connected']
+        connected = QLineEdit(str(nodeDict['connected']))
+        #connected.setFixedWidth(100)
         connected.setAlignment(Qt.AlignCenter)
         connected.setReadOnly(True)
 
-        self.BUTTON[node['addednode']] = QPushButton("Remove")
-        self.BUTTON[node['addednode']].clicked.connect(lambda x: self.removeNode(nodeDict['addednode']))
+        self.BUTTON[nodeDict['addednode']] = QPushButton("Remove")
+        self.BUTTON[nodeDict['addednode']].clicked.connect(lambda x: self.removeNode(nodeDict['addednode']))
 
-        nodeLine.addWidget(QLabel("host: "))
+        #nodeLine.addWidget(QLabel("Host: "))
         nodeLine.addWidget(host)
-        nodeLine.addStretch()
         nodeLine.addWidget(QLabel("Connected: "))
         nodeLine.addWidget(connected)
-        nodeLine.addStretch()
-        nodeLine.addWidget(self.BUTTON[node['addednode']])
+        # nodeLine.addStretch()
+        nodeLine.addWidget(QPushButton("Connect"))
+        nodeLine.addWidget(QPushButton("Get info"))
+        nodeLine.addWidget(self.BUTTON[nodeDict['addednode']])
 
         return nodeLine
 
