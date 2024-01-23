@@ -77,6 +77,7 @@ class MainWindow(QMainWindow):
 
         self.PAGES['ADVANCED'] = ui.widgets.advanced.Advanced()
         self.PAGES['ADVANCED'].BUTTON['command'].clicked.connect(self.send_advanced_command)
+        self.PAGES['ADVANCED'].edit['command'].returnPressed.connect(self.send_advanced_command)
         self.PAGES['ADVANCED'].BUTTON['clear'].clicked.connect(lambda x: self.PAGES['ADVANCED'].RESULT['command'].clear())
         self.PAGES['ADVANCED'].setVisible(False)
         #self.ADVANCED.setStyleSheet("QPushButton { border: 0px; }")
@@ -174,11 +175,6 @@ class MainWindow(QMainWindow):
             self.PAGES['ADVANCED'].RESULT['command'].append(utils.convertToPrintable(reply))
         else:
             self.PAGES['ADVANCED'].RESULT['command'].append("error: control commands not allowed")
-
-
-
-#
-
 
 
 

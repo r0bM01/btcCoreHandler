@@ -50,6 +50,7 @@ class Advanced(QWidget):
         consoleForm = QHBoxLayout()
         labels['command'] = QLabel("command:")
         self.edit['command'] = QLineEdit()
+        self.edit['command'].mousePressEvent = self.clearLine
         self.BUTTON['command'] = QPushButton()
         self.BUTTON['command'].setIcon(QPixmap("ui/assets/play_32.png"))
         self.BUTTON['command'].setFixedWidth(35)
@@ -70,3 +71,7 @@ class Advanced(QWidget):
         layout.addWidget(self.RESULT['command'])
 
         self.setLayout(layout)
+
+    def clearLine(self, mouseEvent):
+        if bool(self.edit['command'].text()):
+            self.edit['command'].clear()

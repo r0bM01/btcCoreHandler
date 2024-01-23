@@ -40,6 +40,7 @@ class LeftMenu(QWidget):
 
         for key in self.PAGES:
             self.BUTTON[key] = QPushButton(str(key).capitalize())
+        self.BUTTON['STATISTICS'] = QPushButton("Statistics") #manually added // widget to be created
         
         
         self.BUTTON['STATUS'].clicked.connect(lambda x: self.menu_buttons('STATUS'))
@@ -59,6 +60,7 @@ class LeftMenu(QWidget):
         layout.addWidget(self.BUTTON['STATUS'])
         layout.addWidget(self.BUTTON['NETWORK'])
         layout.addWidget(self.BUTTON['ADVANCED'])
+        layout.addWidget(self.BUTTON['STATISTICS'])
         layout.addWidget(self.BUTTON['OPTIONS'])
         layout.addStretch(1)
         layout.addWidget(self.BUTTON['version'])

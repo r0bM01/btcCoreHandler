@@ -68,16 +68,6 @@ class Network(QWidget):
         networkStats.setLayout(networkStatsLayout)
 
 
-        
-
-        """
-        addNode = QGroupBox("Addnode")
-        addNodeLayout = QFormLayout()
-        self.edit['addnode'] = QLineEdit("Figa")
-        self.BUTTON['addnode'] = QPushButton("Add")
-        addNodeLayout.addRow(self.edit['addnode'])
-        addNode.setLayout(addNodeLayout)
-        """
 
         nodeVersion = QGroupBox("Node Version")
         nodeVersionLayout = QVBoxLayout()

@@ -62,6 +62,15 @@ class PeersTable(QWidget):
         self.setFixedSize(800, 500)
         layout = QVBoxLayout()
         
+
+        searchNode = QGroupBox("Search")
+        searchNodeLayout = QVBoxLayout()
+        self.searchNodeLineEdit = QLineEdit()
+        self.searchNodeLineEdit.textChanged.connect(self.search)
+        searchNodeLayout.addWidget(self.searchNodeLineEdit)
+        searchNode.setLayout(searchNodeLayout)
+
+
         self.peersTable = QTableWidget()
         self.peersTable.setColumnCount(4)
         self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'COUNTRY'])
@@ -105,6 +114,7 @@ class PeersTable(QWidget):
             rowCounter += 1
         
         self.peersTable.itemDoubleClicked.connect(lambda x: self.open_peer_detail(self.peersTable.currentRow()))
+        layout.addWidget(searchNode)
         layout.addWidget(self.peersTable)
         self.setLayout(layout)
     
@@ -138,6 +148,16 @@ class PeersTable(QWidget):
         
         #detail = PeerDetail(peer.text())
         #detail.setVisible(True)
+
+    def search(self):
+        self.peersTable.setCurrentItem(None)
+        #if not text: return
+
+        matching_items = self.peersTable.findItems(self.searchNodeLineEdit.text(), Qt.MatchContains)
+        if matching_items:
+            # we have found something
+            item = matching_items[0]  # take the first
+            self.peersTable.setCurrentItem(item)
 
 
 class PeerDetail(QWidget):
