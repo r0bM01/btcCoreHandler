@@ -25,11 +25,10 @@ from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QSta
 
 
 class AddedNodes(QWidget):
-    def __init__(self, clientGeneralCall, clientAddnodeCommand):
+    def __init__(self, clientAddnodeCommand):
         super().__init__()
 
         self.clientAddnodeCommand = clientAddnodeCommand
-        self.clientGeneralCall = clientGeneralCall
 
         self.updateList()
 
@@ -77,7 +76,7 @@ class AddedNodes(QWidget):
 
 
     def updateList(self):
-        self.nodeList = self.clientGeneralCall('getaddednodeinfo')
+        self.nodeList = self.clientAddnodeCommand(False, 'getaddednodeinfo')
 
     def createNodeLine(self, nodeDict):
         nodeLine = QHBoxLayout()

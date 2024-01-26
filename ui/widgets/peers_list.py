@@ -73,7 +73,7 @@ class PeersTable(QWidget):
 
         self.peersTable = QTableWidget()
         self.peersTable.setColumnCount(4)
-        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'COUNTRY'])
+        self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'DATA', 'COUNTRY'])
         self.peersTable.verticalHeader().setVisible(False)
 
         peersHeader = self.peersTable.horizontalHeader()
@@ -81,6 +81,7 @@ class PeersTable(QWidget):
         peersHeader.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         peersHeader.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         peersHeader.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        peersHeader.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
 
         self.peersTable.setRowCount(len(self.peersInfo))
         self.peersTable.setSelectionBehavior(QTableWidget.SelectRows)
@@ -92,23 +93,27 @@ class PeersTable(QWidget):
         for peer in self.peersInfo:
             ID = QTableWidgetItem(str(peer['id']))
             ADDR = QTableWidgetItem(str(peer['addr']))
-            TYPE= QTableWidgetItem(str('Inbound' if peer['inbound'] else 'Outbound'))
-            COUNTRY= QTableWidgetItem(str(peer['country_name']))
+            TYPE = QTableWidgetItem(str('Inbound' if peer['inbound'] else 'Outbound'))
+            DATA = QTableWidgetItem(utils.convertBytesSizes(int(peer['bytessent']) + int(peer['bytesrecv'])))
+            COUNTRY = QTableWidgetItem(str(peer['country_name']))
 
             ID.setTextAlignment(Qt.AlignCenter)
             ADDR.setTextAlignment(Qt.AlignCenter)
             TYPE.setTextAlignment(Qt.AlignCenter)
+            DATA.setTextAlignment(Qt.AlignCenter)
             COUNTRY.setTextAlignment(Qt.AlignCenter)
             
             ID.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             ADDR.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             TYPE.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            DATA.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             COUNTRY.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                             
             self.peersTable.setItem(rowCounter, 0, ID)
             self.peersTable.setItem(rowCounter, 1, ADDR)
             self.peersTable.setItem(rowCounter, 2, TYPE)
-            self.peersTable.setItem(rowCounter, 3, COUNTRY)
+            self.peersTable.setItem(rowCounter, 3, DATA)
+            self.peersTable.setItem(rowCounter, 4, COUNTRY)
 
             #self.peersTable.setItem(rowCounter, 3, QTableWidgetItem(peer['subversion']))
             rowCounter += 1

@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
 
         self.PAGES['NETWORK'] = ui.widgets.network.Network()
         self.PAGES['NETWORK'].BUTTON['peerslist'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_peers_list(self.CLIENT.connectedInfo))
-        self.PAGES['NETWORK'].BUTTON['addnodes'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_added_list(self.CLIENT.getGeneralCall, self.CLIENT.addnodeCall))
+        self.PAGES['NETWORK'].BUTTON['addnodes'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_added_list(self.send_addednode_call))
                                                                  
         self.PAGES['NETWORK'].setVisible(False)
 
@@ -94,9 +94,12 @@ class MainWindow(QMainWindow):
             IPaddress = self.PAGES['OPTIONS'].hostEdit.text()
             if IPaddress: 
                 self.CLIENT.initConnection(IPaddress) #self.CLIENT.initConnection(self.groupConnLEdit.text()) # gets ip address from line edit in status
-                self.commandEvent.set()
-                self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
-                self.refreshThread.start()
+                if self.CLIENT.network.isConnected:
+                    self.commandEvent.set()
+                    self.refreshThread = threading.Thread(target = self.refreshAll, daemon = True)
+                    self.refreshThread.start()
+                else:
+                    self.alerts.connectionFailed()
             else:
                 self.alerts.missingIPAddress()
         else:
@@ -105,10 +108,9 @@ class MainWindow(QMainWindow):
             # self.refreshThread.join()
         self.refreshConnectionStatus()
         self.writeStatusInfo()
-        #self.writePeersInfo()
             
     def refreshAll(self):
-        while self.CLIENT.network.isConnected:
+        while self.CLIENT.network.isConnected and self.CLIENT.bitcoindRunning:
             self.refreshConnectionStatus() #always check the connection status
             timeNow = time.time()
             if (timeNow - self.CLIENT.lastPeersUpdate) > 120:
@@ -116,7 +118,6 @@ class MainWindow(QMainWindow):
                 # self.CLIENT.getPeersInfo()
                 # self.CLIENT.getPeersGeolocation()
                 self.CLIENT.getConnectedInfo()
-                #self.writePeersInfo()
             
             if (timeNow - self.CLIENT.lastStatusUpdate) > 60:
                 self.commandEvent.wait(10)
@@ -147,22 +148,21 @@ class MainWindow(QMainWindow):
 
 
     def writeStatusInfo(self):
-        if self.CLIENT.statusInfo:
+        if not self.CLIENT.bitcoindRunning: self.alerts.bitcoindFailed()
+        if self.CLIENT.bitcoindRunning and self.CLIENT.statusInfo:
             #adds the data to the status result
             self.PAGES['STATUS'].write_result(self.CLIENT.statusInfo, self.CLIENT.systemInfo, self.CLIENT.connectedInfo)
             self.PAGES['NETWORK'].write_result(self.CLIENT.statusInfo)
         else:
             self.PAGES['STATUS'].setDefault()
-
-
-    def writePeersInfo(self):
-        # self.CLIENT.getPeersInfo()
-        if self.CLIENT.peersInfo:
-            pass
-
-        else:
             self.PAGES['NETWORK'].setDefault()
-    
+            
+    def send_addednode_call(self, nodeAddress, nodeCommand):
+        self.commandEvent.clear()
+        reply = self.CLIENT.addnodeCall(nodeAddress, nodeCommand)
+        self.commandEvent.set()
+        return reply
+
 
     def send_advanced_command(self):
         insertedCommand = self.PAGES['ADVANCED'].edit['command'].text()

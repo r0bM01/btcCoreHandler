@@ -61,5 +61,15 @@ class Alerts(QMessageBox):
         self.setWindowTitle("Disconnected")
         self.setText("The connection to the node has been closed.")
         self.exec()
+    
+    def connectionFailed(self):
+        self.setWindowTitle("Connection Failed")
+        self.setText("Connection failed! Please check if btcCoreHandler server is on!")
+        self.exec()
+    
+    def bitcoindFailed(self):
+        self.setWindowTitle("Bitcoin Daemon")
+        self.setText("Check bitcoin daemon (bitcoind): it seems it's not running!")
+        self.exec()
         
         

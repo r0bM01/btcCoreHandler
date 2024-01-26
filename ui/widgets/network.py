@@ -83,7 +83,6 @@ class Network(QWidget):
         protocolLayout.addWidget(self.RESULT['protocolversion'])
         protocol.setLayout(protocolLayout)
 
-
         hashrate = QGroupBox("Hashrate")
         hashrateLayout = QVBoxLayout()
         self.RESULT['networkhashps'] = QLabel(" - ")
@@ -172,7 +171,7 @@ class Network(QWidget):
         self.PEERSLIST = ui.widgets.peers_list.PeersTable(connectedInfo)
         self.PEERSLIST.setVisible(True)
 
-    def open_added_list(self, clientGeneralCall, clientAddnodeCommand):
-        self.ADDEDLIST = ui.widgets.added_list.AddedNodes(clientGeneralCall, clientAddnodeCommand)
+    def open_added_list(self, clientAddnodeCommand):
+        self.ADDEDLIST = ui.widgets.added_list.AddedNodes(clientAddnodeCommand)
         self.ADDEDLIST.setVisible(True)
 
