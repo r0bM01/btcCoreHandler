@@ -47,6 +47,7 @@ class RequestHandler:
         if not self.CONTROL.check(call): return json.dumps({"error": "invalid command"})
         request = self.CONTROL.encodedCalls[call]
         # LOGGER.add("call", request)
+        if not self.bitcoindRunning and request == "getstatusinfo": return json.dumps({"uptime": 0})
         if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
         elif not self.bitcoindRunning and request == "start": self.startbitcoind()
         elif self.bitcoindRunning and request == "stop": self.stopbitcoind()

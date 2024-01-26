@@ -42,6 +42,7 @@ class Client:
 
         self.peersGeolocation = False
         
+        self.bitcoindRunning = False
         self.lastStatusUpdate = False
         self.lastPeersUpdate = False
         self.lastConnCheck = False
@@ -93,6 +94,7 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls['getstatusinfo']):
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
+            self.bitcoindRunning = bool(self.statusInfo['uptime'])
             self.lastStatusUpdate = time.time()
             self.lastConnCheck = time.time()
     
@@ -110,17 +112,6 @@ class Client:
             self.lastPeersUpdate = time.time()
             self.lastConnCheck = time.time()
         
-    def getAllNetworkInfo(self):
-        if self.network.isConnected and self.network.sender(self.calls['getnettotals']):
-            reply = self.network.receiver()
-            self.nettotalsInfo = json.loads(reply)
-        if self.network.isConnected and self.network.sender(self.calls['getnetworkinfo']):
-            reply = self.network.receiver()
-            self.networkInfo = json.load(reply)
-        if self.network.isConnected and self.network.sender(self.calls['getpeerinfo']):
-            reply = self.network.receiver()
-            self.peersInfo = json.loads(reply)
-
     def getPeersGeolocation(self):
         if self.network.isConnected and self.network.sender(self.calls["getgeolocationinfo"]):
             self.peersGeolocation = json.loads(self.network.receiver())
@@ -129,7 +120,8 @@ class Client:
         if self.network.isConnected and self.network.sender(self.calls[call]):
             return json.loads(self.network.receiver())
 
-    def addnodeCall(self, nodeAddress, nodeCommand):
+    def addnodeCall(self, nodeAddress = False, nodeCommand = 'getaddednodeinfo'):
+        if nodeCommand == 'getaddednodeinfo': return self.getGeneralCall(nodeCommand)
         if not bool(nodeAddress) or not bool(nodeCommand): return {"error": "node host and command required"}
         if nodeCommand in ['add', 'remove', 'onetry']:
             args = nodeAddress + str(" ") + nodeCommand
