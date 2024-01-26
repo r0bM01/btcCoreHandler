@@ -86,11 +86,18 @@ def convertPercentage(num):
     else:
         return num
 
-def countriesStatsList(peersGeolocation):
-    return [{c[0]: c[1]} for c in Counter([node[1] for node in peersGeolocation]).items()]
+def countriesStatsList(connectedInfo):
+    countries = {}
+    for peer in connectedInfo:
+        if peer['country_name'] in countries:
+            countries[peer['country_name']] += 1  
+        else:
+            countries[peer['country_name']] = 1
+    return countries
 
-def countriesStatsCount(peersGeolocation):
-    return len(countriesStatsList(peersGeolocation))
+def countriesStatsCount(connectedInfo):
+    countries = self.countriesStatsList(connectedInfo)
+    return len(countries)
 
 
 def convertToPrintable(data):

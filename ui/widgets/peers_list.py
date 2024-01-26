@@ -23,10 +23,10 @@ from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QSta
 
 
 class PeersList(QWidget):
-    def __init__(self, peersInfo):
+    def __init__(self, connectedInfo):
         super().__init__()
 
-        self.PEERS = peersInfo
+        self.PEERS = connectedInfo
 
         self.RESULT = {}
         self.BUTTON = {}
@@ -40,7 +40,7 @@ class PeersList(QWidget):
         layout = QVBoxLayout()
 
         
-        peersTable = PeersTable(peersInfo)
+        peersTable = PeersTable(connectedInfo)
 
 
         layout.addWidget(peersTable)
@@ -51,12 +51,12 @@ class PeersList(QWidget):
 
 
 class PeersTable(QWidget):
-    def __init__(self, peersInfo, peersGeolocation):
+    def __init__(self, connectedInfo):
         super().__init__()
 
-        self.peersInfo = peersInfo
+        self.peersInfo = connectedInfo
 
-        self.peers_view = self.create_peers_view(peersInfo, peersGeolocation)
+        # self.peers_view = self.create_peers_view(connectedinfo)
 
         self.setWindowTitle("Connected Peers")
         self.setFixedSize(800, 500)
@@ -89,11 +89,11 @@ class PeersTable(QWidget):
         rowCounter = 0
 
         tableItem = {}
-        for peer in self.peers_view:
+        for peer in self.peersInfo:
             ID = QTableWidgetItem(str(peer['id']))
             ADDR = QTableWidgetItem(str(peer['addr']))
-            TYPE= QTableWidgetItem(str(peer['type']))
-            COUNTRY= QTableWidgetItem(str(peer['country']))
+            TYPE= QTableWidgetItem(str('Inbound' if peer['inbound'] else 'Outbound'))
+            COUNTRY= QTableWidgetItem(str(peer['country_code']))
 
             ID.setTextAlignment(Qt.AlignCenter)
             ADDR.setTextAlignment(Qt.AlignCenter)
@@ -118,6 +118,7 @@ class PeersTable(QWidget):
         layout.addWidget(self.peersTable)
         self.setLayout(layout)
     
+    """
     def create_peers_view(self, peersInfo, peersGeolocation):
         peersData = []
         
@@ -130,6 +131,7 @@ class PeersTable(QWidget):
             peersData.append(pData)
 
         return peersData
+    """
     
     def open_peer_detail(self, row):
 
@@ -138,12 +140,12 @@ class PeersTable(QWidget):
         for peer in self.peersInfo:
             if str(peer['id']) == str(peerID.text()):
                 selectedPeer = peer
-        
+        """
         for peer in self.peers_view:
             if str(peer['id']) == str(peerID.text()):
                 selectedCountry = peer['country']
-        
-        self.detailedView = PeerDetail(selectedPeer, selectedCountry)
+        """
+        self.detailedView = PeerDetail(selectedPeer)
         self.detailedView.setVisible(True)
         
         #detail = PeerDetail(peer.text())
@@ -161,7 +163,7 @@ class PeersTable(QWidget):
 
 
 class PeerDetail(QWidget):
-    def __init__(self, peerData, selectedCountry):
+    def __init__(self, peerData):
         super().__init__()
 
         # 'mapped_as' 'pingwait',
@@ -181,7 +183,7 @@ class PeerDetail(QWidget):
         layout = QFormLayout()
 
         labels['country'] = QLabel("Country:")
-        self.RESULT['country'] = QLineEdit(str(selectedCountry))
+        self.RESULT['country'] = QLineEdit(str(peerData['country_name']))
         self.RESULT['country'].setAlignment(Qt.AlignCenter)
         self.RESULT['country'].setReadOnly(True)
 

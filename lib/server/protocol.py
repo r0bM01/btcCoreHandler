@@ -54,6 +54,7 @@ class RequestHandler:
         if request == "keepalive": return json.dumps({"confirm": "alive"})
         elif request == "getsysteminfo": return json.dumps(lib.server.data.Machine.dataInfo) 
         elif request == "getstatusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
+        elif request == "getconnectedinfo": return json.dumps(self.BITCOIN_DATA.connectedInfo)
         elif request == "getpeerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
         elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
         elif request == "getserverlogs": return json.dumps(LOGGER.SESSION)
@@ -113,6 +114,7 @@ class RequestHandler:
     def updateGeolocationData(self, LOGGER):
         if self.BITCOIN_DATA.peersInfo:
             self.GEO_DATA.updateData(self.BITCOIN_DATA.peersInfo, LOGGER)
+            self.BITCOIN_DATA.connectedInfo = self.GEO_DATA.getConnectedInfo(self.BITCOIN_DATA.peersInfo)
 
 
 

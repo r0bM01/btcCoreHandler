@@ -149,7 +149,7 @@ class Network(QWidget):
     def setDefault(self):
         [self.RESULT[key].setText(" - ") for key in self.RESULT]
 
-    def write_result(self, statusInfo, peersGeolocation):
+    def write_result(self, statusInfo):
         self.RESULT['subversion'].setText(str(statusInfo['subversion']))
         self.RESULT['totalbytessent'].setText(utils.convertBytesSizes(statusInfo['totalbytessent']))
         self.RESULT['totalbytesrecv'].setText(utils.convertBytesSizes(statusInfo['totalbytesrecv']))
@@ -167,8 +167,8 @@ class Network(QWidget):
         self.RESULT['networkhashps'].setText(utils.convertBigSizes(statusInfo['networkhashps']) + "H/s")
         self.RESULT['difficulty'].setText(utils.convertBigSizes(statusInfo['difficulty']))
     
-    def open_peers_list(self, peersInfo, peersGeolocation):
-        self.PEERSLIST = ui.widgets.peers_list.PeersTable(peersInfo, peersGeolocation)
+    def open_peers_list(self, connectedInfo):
+        self.PEERSLIST = ui.widgets.peers_list.PeersTable(connectedInfo)
         self.PEERSLIST.setVisible(True)
 
     def open_added_list(self, clientGeneralCall, clientAddnodeCommand):

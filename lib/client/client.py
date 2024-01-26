@@ -34,6 +34,7 @@ class Client:
         
         self.systemInfo = False
         self.statusInfo = False
+        self.connectedInfo = False
 
         self.nettotalsInfo = False
         self.networkInfo = False
@@ -66,8 +67,9 @@ class Client:
             self.initHashedCalls()
             self.getSystemInfo()
             self.getStatusInfo()
-            self.getPeersInfo()
-            self.getPeersGeolocation()
+            # self.getPeersInfo()
+            # self.getPeersGeolocation()
+            self.getConnectedInfo()
             
     def closeConnection(self):
         if self.network.isConnected:
@@ -92,6 +94,13 @@ class Client:
             reply = self.network.receiver()
             self.statusInfo = json.loads(reply) if bool(reply) else False
             self.lastStatusUpdate = time.time()
+            self.lastConnCheck = time.time()
+    
+    def getConnectedInfo(self):
+        if self.network.isConnected and self.network.sender(self.calls['getconnectedinfo']):
+            reply = self.network.receiver()
+            self.connectedInfo = json.loads(reply) if bool(reply) else False
+            self.lastPeersUpdate = time.time()
             self.lastConnCheck = time.time()
     
     def getPeersInfo(self):

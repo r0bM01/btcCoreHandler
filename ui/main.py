@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
         self.PAGES['OPTIONS'].setVisible(False)
 
         self.PAGES['NETWORK'] = ui.widgets.network.Network()
-        self.PAGES['NETWORK'].BUTTON['peerslist'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_peers_list(self.CLIENT.peersInfo, self.CLIENT.peersGeolocation))
+        self.PAGES['NETWORK'].BUTTON['peerslist'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_peers_list(self.CLIENT.connectedInfo))
         self.PAGES['NETWORK'].BUTTON['addnodes'].clicked.connect(lambda x: self.PAGES['NETWORK'].open_added_list(self.CLIENT.getGeneralCall, self.CLIENT.addnodeCall))
                                                                  
         self.PAGES['NETWORK'].setVisible(False)
@@ -113,8 +113,9 @@ class MainWindow(QMainWindow):
             timeNow = time.time()
             if (timeNow - self.CLIENT.lastPeersUpdate) > 120:
                 self.commandEvent.wait(10)
-                self.CLIENT.getPeersInfo()
-                self.CLIENT.getPeersGeolocation()
+                # self.CLIENT.getPeersInfo()
+                # self.CLIENT.getPeersGeolocation()
+                self.CLIENT.getConnectedInfo()
                 self.writePeersInfo()
             
             if (timeNow - self.CLIENT.lastStatusUpdate) > 60:
@@ -148,8 +149,8 @@ class MainWindow(QMainWindow):
     def writeStatusInfo(self):
         if self.CLIENT.statusInfo:
             #adds the data to the status result
-            self.PAGES['STATUS'].write_result(self.CLIENT.statusInfo, self.CLIENT.systemInfo, self.CLIENT.peersGeolocation)
-            self.PAGES['NETWORK'].write_result(self.CLIENT.statusInfo, self.CLIENT.peersGeolocation)
+            self.PAGES['STATUS'].write_result(self.CLIENT.statusInfo, self.CLIENT.systemInfo, self.CLIENT.connectedInfo)
+            self.PAGES['NETWORK'].write_result(self.CLIENT.statusInfo)
         else:
             self.PAGES['STATUS'].setDefault()
 

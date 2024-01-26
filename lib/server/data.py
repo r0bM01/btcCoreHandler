@@ -29,6 +29,7 @@ class Bitcoin:
         self.miningInfo = None
         self.nettotalsInfo = None
         self.peersInfo = None
+        self.connectedInfo = None # peersInfo + geolocation
 
     def getStatusInfo(self):
         message = {}
@@ -107,6 +108,15 @@ class IPGeolocation:
         def getCountriesStats(self, peersInfo):
             countryList = self.getCountryList(peersInfo)
             return {c[0] : c[1] for c in Counter(countryList).items()}
+
+        def getConnectedInfo(self, peersInfo):
+            for peer in peersInfo:
+                geoData = self.getRawData(peer['addr'].split(":")[0])
+                peer['country_name'] = geoData['country_name']
+                peer['country_code'] = geoData['country_code2']
+                peer['isp'] = geoData['isp']
+            return peersInfo
+
 
 
 class Machine:

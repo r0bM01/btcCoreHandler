@@ -133,7 +133,7 @@ class Status(QWidget):
     def setDefault(self):
         [self.RESULT[key].setText(" - ") for key in self.RESULT]
 
-    def write_result(self, statusInfo, systemInfo, peersGeolocation):
+    def write_result(self, statusInfo, systemInfo, connectedInfo):
         #self.RESULT['nodeip']
         # node status
         self.RESULT['upsince'].setText(utils.uptimeSince(statusInfo['uptime']))
@@ -152,7 +152,7 @@ class Status(QWidget):
         # network
         self.RESULT['localservicesnames'].setText(str(statusInfo['localservicesnames']))
         self.RESULT['connections'].setText(str(statusInfo['connections']))
-        self.RESULT['countries'].setText(str(utils.countriesStatsCount(peersGeolocation)))
+        self.RESULT['countries'].setText(str(utils.countriesStatsCount(connectedInfo)))
         self.RESULT['totaldata'].setText(utils.convertBytesSizes(int(statusInfo['totalbytesrecv']) + int(statusInfo['totalbytessent'])))
         
         
