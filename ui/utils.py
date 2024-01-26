@@ -96,7 +96,7 @@ def countriesStatsList(connectedInfo):
     return countries
 
 def countriesStatsCount(connectedInfo):
-    countries = self.countriesStatsList(connectedInfo)
+    countries = countriesStatsList(connectedInfo)
     return len(countries)
 
 

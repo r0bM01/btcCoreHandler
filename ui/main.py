@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
             # self.refreshThread.join()
         self.refreshConnectionStatus()
         self.writeStatusInfo()
-        self.writePeersInfo()
+        #self.writePeersInfo()
             
     def refreshAll(self):
         while self.CLIENT.network.isConnected:
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
                 # self.CLIENT.getPeersInfo()
                 # self.CLIENT.getPeersGeolocation()
                 self.CLIENT.getConnectedInfo()
-                self.writePeersInfo()
+                #self.writePeersInfo()
             
             if (timeNow - self.CLIENT.lastStatusUpdate) > 60:
                 self.commandEvent.wait(10)

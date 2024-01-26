@@ -23,10 +23,10 @@ import lib.shared.storage
 
 
 def main():
-    storage = lib.server.storage.Server()
+    storage = lib.shared.storage.Server()
     storage.init_files()
     # saved_geodata = storage.load_geolocation()
-    logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
+    logger = lib.shared.storage.Logger(filePath = storage.fileLogs, verbose = True)
     SERVER = lib.server.server.Server(logger, storage)
 
     logger.add("updating base cache data")

@@ -82,7 +82,7 @@ class PeersTable(QWidget):
         peersHeader.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         peersHeader.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
-        self.peersTable.setRowCount(len(peersInfo))
+        self.peersTable.setRowCount(len(self.peersInfo))
         self.peersTable.setSelectionBehavior(QTableWidget.SelectRows)
         
         
@@ -93,7 +93,7 @@ class PeersTable(QWidget):
             ID = QTableWidgetItem(str(peer['id']))
             ADDR = QTableWidgetItem(str(peer['addr']))
             TYPE= QTableWidgetItem(str('Inbound' if peer['inbound'] else 'Outbound'))
-            COUNTRY= QTableWidgetItem(str(peer['country_code']))
+            COUNTRY= QTableWidgetItem(str(peer['country_name']))
 
             ID.setTextAlignment(Qt.AlignCenter)
             ADDR.setTextAlignment(Qt.AlignCenter)

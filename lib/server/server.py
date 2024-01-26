@@ -132,7 +132,7 @@ class Server(lib.server.protocol.RequestHandler):
 
         
 
-
+"""
 def main():
     storage = lib.server.storage.Data()
     storage.init_files()
@@ -175,6 +175,7 @@ def main():
             logger.add("Server stopped")
     else:
         logger.add("Server socket not working")
+"""
 
 
 

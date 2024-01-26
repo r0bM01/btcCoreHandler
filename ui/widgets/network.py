@@ -166,6 +166,7 @@ class Network(QWidget):
 
         self.RESULT['networkhashps'].setText(utils.convertBigSizes(statusInfo['networkhashps']) + "H/s")
         self.RESULT['difficulty'].setText(utils.convertBigSizes(statusInfo['difficulty']))
+        
     
     def open_peers_list(self, connectedInfo):
         self.PEERSLIST = ui.widgets.peers_list.PeersTable(connectedInfo)
