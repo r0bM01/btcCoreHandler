@@ -17,30 +17,33 @@ import hmac, hashlib, secrets
 
 
 def getRandomBytes(size):
-		return secrets.token_bytes(int(size))
+	return secrets.token_bytes(int(size))
 
 def getHash(data):
-		return hashlib.blake2b(data.encode()).hexdigest()
+	return hashlib.blake2b(data.encode()).hexdigest()
 
 def getMiniHash(data):
-		return hashlib.blake2b(data.encode(), digest_size = 2).hexdigest()
+	return hashlib.blake2b(data.encode(), digest_size = 2).hexdigest()
+
+def getSingleByteHash(singleByte, certificate):
+	return hashlib.blake2b(singleByte.encode(), digest_size = 1, key = bytes.fromhex(certificate)).hexdigest()
 
 def getHashedCommand(command, certificate, handshakeCode):
-		return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(certificate), salt = bytes.fromhex(handshakeCode)).hexdigest()
+	return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(certificate), salt = bytes.fromhex(handshakeCode)).hexdigest()
 
 def getHandshakeCode(entropy, certificate):
-		return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
+	return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
 
 def getEncrypted(data, key, salt = ""):
 	alpha = [chr(n) for n in range(32, 127)]
-	crypt = {l : hashlib.blake2b((l).encode(), digest_size = 2, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() for l in alpha}
+	crypt = {l : hashlib.blake2b((l).encode(), digest_size = e_size, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() for l in alpha}
 
 	encryptedMsg = [crypt[l] for l in data]
 	return "".join(encryptedMsg)
 
 def getDecrypted(msg, key, salt = ""):
 	alpha = [chr(n) for n in range(32, 127)]
-	crypt = {hashlib.blake2b((l).encode(), digest_size = 2, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() : l for l in alpha}
+	crypt = {hashlib.blake2b((l).encode(), digest_size = e_size, key = bytes.fromhex(key), salt = bytes.fromhex(salt)).hexdigest() : l for l in alpha}
 
 	chunks = [msg[c:c+4] for c in range(0, len(msg), 4)]
 	data = [crypt[l] for l in chunks]
