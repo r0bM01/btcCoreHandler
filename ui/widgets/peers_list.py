@@ -72,7 +72,7 @@ class PeersTable(QWidget):
 
 
         self.peersTable = QTableWidget()
-        self.peersTable.setColumnCount(4)
+        self.peersTable.setColumnCount(5)
         self.peersTable.setHorizontalHeaderLabels(['ID', 'ADDRESS', 'TYPE', 'DATA', 'COUNTRY'])
         self.peersTable.verticalHeader().setVisible(False)
 
@@ -95,7 +95,7 @@ class PeersTable(QWidget):
             ADDR = QTableWidgetItem(str(peer['addr']))
             TYPE = QTableWidgetItem(str('Inbound' if peer['inbound'] else 'Outbound'))
             DATA = QTableWidgetItem(utils.convertBytesSizes(int(peer['bytessent']) + int(peer['bytesrecv'])))
-            COUNTRY = QTableWidgetItem(str(peer['country_name']))
+            COUNTRY = QTableWidgetItem(utils.convertLongCountry(peer['country_name']))
 
             ID.setTextAlignment(Qt.AlignCenter)
             ADDR.setTextAlignment(Qt.AlignCenter)

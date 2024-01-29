@@ -58,7 +58,6 @@ def convertBigSizes(bigNum):
             resSize = str(key)
     return str(f"{resValue:.2f} {resSize}")
 
-    
 
 def convertElapsedTime(numSeconds):
     numSeconds = int(numSeconds)
@@ -85,6 +84,14 @@ def convertPercentage(num):
         return str(f"{(num * 100):.2f} %")
     else:
         return num
+
+def convertLongCountry(country):
+    if str(country) == "United Kingdom of Great Britain and Northern Ireland":
+        country = "United Kingdom"
+    else:
+        country = str(country)
+    return country
+    
 
 def countriesStatsList(connectedInfo):
     countries = {}
