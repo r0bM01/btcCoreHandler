@@ -36,15 +36,13 @@ def lenght(data):
     return bytes.fromhex(str(hex(len(data))[2:]).zfill(4))
 
 def make_value(peerObj):
-    # 4 bytes (IP) + 4 bytes (CODE) + 1 byte (Country Lenght) + (COUNTRY) + 1 byte (Isp Lenght) + (ISP)
-    sep = str("#").encode()
-
+    # 4 bytes (IP) + 4 bytes (CODE) + 2 byte (Country Lenght) + (COUNTRY) + 2 byte (Isp Lenght) + (ISP)
     ip = ipaddress.ip_address(peerObj['ip']).packed # bytes 
     code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) # bytes
     country = bytes.fromhex(encode_to_cert(peerObj['country_name'].lower())) # bytes
     isp = bytes.fromhex(encode_to_cert(peerObj['isp'].lower())) # bytes
     value = ip + sep + code + sep + country + sep + isp
-    
+
     return lenght(value) + value
 
 def write_value(value):
