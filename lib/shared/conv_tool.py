@@ -43,7 +43,7 @@ def make_value(peerObj):
     ip = ipaddress.ip_address(peerObj['ip']).packed # bytes 
     code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) # bytes
     country = bytes.fromhex(encode_to_cert(peerObj['country_name'].lower())) # bytes
-    isp = encode_to_cert(peerObj['isp'].lower()) # hex
+    isp = bytes.fromhex(encode_to_cert(peerObj['isp'].lower())) # bytes
     value = ip + code + lenght(country) + country + lenght(isp) + isp
     return value
 
@@ -95,5 +95,5 @@ def main():
     input("press enter to close conversion")
      
 
-
-           
+if __name__ == '__main__':
+    main()
