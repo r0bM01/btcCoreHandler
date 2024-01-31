@@ -20,39 +20,39 @@ with open(addrs, "wb") as F:
 with open(BASE.joinpath("cert.rob"), "rb") as F:
     CERT = F.read()
 
-
-def make_dictionary():
-    return {chr(n): mini_hash(chr(n)) for n in range(32, 127)}
+ALPHA = {chr(n): hashlib.blake2b(chr(n).encode(), digest_size = 2, key = CERT).hexdigest() for n in range(32, 127)}
 
 def encode_to_cert(string):
-    hexstring = string.encode().hex()
-    return "".join([ALPHA[c] for c in hexstring])
+    return "".join([ALPHA[c] for c in string])
 
 def mini_hash(char):
     return hashlib.blake2b(char.encode(), digest_size = 2, key = CERT).hexdigest()
 
 def make_key(data):
-    return hashlib.blake2b(data, digest_size = 8, key = CERT)
+    return hashlib.blake2b(data, digest_size = 8, key = CERT).digest()
 
 def lenght(data):
     #data already in bytes
-    return bytes.fromhex(str(hex(len(data))[2:]).zfill(2))
+    return bytes.fromhex(str(hex(len(data))[2:]).zfill(4))
 
 def make_value(peerObj):
     # 4 bytes (IP) + 4 bytes (CODE) + 1 byte (Country Lenght) + (COUNTRY) + 1 byte (Isp Lenght) + (ISP)
+    sep = str("#").encode()
+
     ip = ipaddress.ip_address(peerObj['ip']).packed # bytes 
     code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) # bytes
     country = bytes.fromhex(encode_to_cert(peerObj['country_name'].lower())) # bytes
     isp = bytes.fromhex(encode_to_cert(peerObj['isp'].lower())) # bytes
-    value = ip + code + lenght(country) + country + lenght(isp) + isp
-    return value
+    value = ip + sep + code + sep + country + sep + isp
+    
+    return lenght(value) + value
 
 def write_value(value):
     # value already bytes
-    with open(addr, "ab") as F:
+    with open(addrs, "ab") as F:
         pos = F.tell()
         F.write(value)
-    return bytes.fromhex(str(hex(pos)[2:]).zfill(8))
+    return bytes.fromhex(str(hex(pos)[2:]).zfill(8)) # 4 bytes
 
 def set_value(peerObj):
     ipKey = make_key(ipaddress.ip_address(peerObj['ip']).packed)
@@ -75,7 +75,7 @@ def load_database():
     return INDEX
 
 
-ALPHA = {chr(n): mini_hash(chr(n)) for n in range(32, 127)}
+
 
 
 def main():
@@ -85,7 +85,9 @@ def main():
     PEERS = [json.loads(line[:-1]) for line in lines]
     print(f"loaded {len(PEERS)} peers objects")
     print("writing into the database")
+
     [set_value(p) for p in PEERS]
+
     print("done!")
 
     input("press enter to check database")
