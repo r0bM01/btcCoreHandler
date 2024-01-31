@@ -32,14 +32,14 @@ def mini_hash(char):
     return hashlib.blake2b(char.encode(), digest_size = 2, key = CERT).hexdigest()
 
 def make_key(data):
-    return hashlib.blake2b(data, digest_size = 8, key = CERT)
+    return hashlib.blake2b(data, digest_size = 8, key = CERT).digest()
 
 def lenght(data):
     #data already in bytes
-    return bytes.fromhex(str(hex(len(data))[2:]).zfill(2))
+    return bytes.fromhex(str(hex(len(data))[2:]).zfill(4))
 
 def make_value(peerObj):
-    # 4 bytes (IP) + 4 bytes (CODE) + 1 byte (Country Lenght) + (COUNTRY) + 1 byte (Isp Lenght) + (ISP)
+    # 4 bytes (IP) + 4 bytes (CODE) + 2 byte (Country Lenght) + (COUNTRY) + 2 byte (Isp Lenght) + (ISP)
     ip = ipaddress.ip_address(peerObj['ip']).packed # bytes 
     code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) # bytes
     country = bytes.fromhex(encode_to_cert(peerObj['country_name'].lower())) # bytes
