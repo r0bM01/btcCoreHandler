@@ -14,6 +14,9 @@ ALPHA = {hashlib.blake2b(chr(n).encode(), digest_size = 2, key = CERT).hexdigest
 def decode_with_cert(string):
     return "".join([string[c:c+4] for c in range(0, len(string), 4)])
 
+def make_key(data):
+    return hashlib.blake2b(data, digest_size = 8, key = CERT).digest()
+
 def load_database():
     with open(index, "rb") as F:
         dbTemp = F.read()
@@ -29,5 +32,27 @@ def read_value(filePos):
     return data
 
 def get_value(addr):
-    
+    ipKey = make_key(ipaddress.ip_address(addr).packed)
+    index = load_database()
+    if ipKey in index:
+        value = read_value(index[ipKey])
+        value = value.split(b"#")
+        result = {'ip': ipaddress.ip_address(value[0]).exploded,
+               'country_code2': decode_with_cert(value[1].hex()),
+               'country_name': decode_with_cert(value[2].hex()), 
+               'isp': decode_with_cert(value[3].hex()) }
+    else: 
+        result = {"error": "value not found!"}
+    return result    
         
+
+def main():
+    print("Test tool")
+    while True:
+        addr = input("IP addr or 'exit'\n>> ")
+        if addr.lower() == 'exit': break
+        value = get_value(addr)
+        if 'error' in value:
+            print(value['error'])
+        else:
+            [print(value[p]) for p in value]
