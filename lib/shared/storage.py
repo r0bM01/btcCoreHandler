@@ -26,7 +26,6 @@ class Server:
 
         self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
 
-        self.newGeolocation = lib.shared.settings.BASE_DIR.joinpath("geolocationData.bin") # from version 0.3.x-Alpha
 
         self.certificate = False
     
@@ -52,23 +51,6 @@ class Server:
         encodedData = [str(json.dumps(peer)).encode() for peer in geolocationData]
         with open(self.geolocationFile, "wb") as F:
             [F.write(peer + b"\n") for peer in encodedData]
-    
-    def convert_geolocation_file(self):
-        import ipaddress
-
-        def lenght(data):
-            return hex(len(data))[2:]
-
-        def tohex(data):
-            return [hex(ord(c))[2:] for c in data]
-        
-        oldData = self.load_geolocation()
-        newData = []
-        for peer in oldData:
-            ip = ipaddress.ip_address(peer['ip']).packed
-            country = b"".join([lib.shared.crypto.getSyngleByteHash(c, self.certificate) for c in tohex(peer['country_name'])])
-            isp = b"".join([lib.shared.crypto.getSyngleByteHash(c, self.certificate) for c in tohex(peer['isp'])])
-
         
                 
 
