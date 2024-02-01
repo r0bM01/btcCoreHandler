@@ -24,5 +24,10 @@ def load_database():
 def read_value(filePos):
     with open(addrs, "rb") as F:
         F.seek(int(filePos, 16))
-        ip_ccode = F.read(8)
+        size = F.read(4)
+        data = F.read(int(size.hex(), 16))
+    return data
+
+def get_value(addr):
+    
         
