@@ -106,8 +106,6 @@ def main():
     # a = json.loads('{"ip": "95.49.49.210", "country_name": "Poland", "country_code2": "PL", "isp": "Orange Polska Spolka Akcyjna"}')
     # b = json.loads('{"ip": "79.116.55.242", "country_name": "Spain", "country_code2": "ES", "isp": "Digi Spain Telecom S.L.U."}') 
 
-    
-    input("press enter to close conversion")
      
 
 if __name__ == '__main__':
