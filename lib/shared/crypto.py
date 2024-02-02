@@ -25,14 +25,20 @@ def getHash(data):
 def getMiniHash(data):
 	return hashlib.blake2b(data.encode(), digest_size = 2).hexdigest()
 
-def getSingleByteHash(singleByte, certificate):
-	return hashlib.blake2b(singleByte.encode(), digest_size = 1, key = bytes.fromhex(certificate)).hexdigest()
-
 def getHashedCommand(command, certificate, handshakeCode):
 	return hashlib.blake2b(command.encode(), digest_size = 8, key = bytes.fromhex(certificate), salt = bytes.fromhex(handshakeCode)).hexdigest()
 
 def getHandshakeCode(entropy, certificate):
 	return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
+
+def getKey(data): # accept bytes directly
+    return hashlib.blake2b(data, digest_size = 8, key = CERT).digest()
+
+def getEncryptionAlpha(certificate):
+	return {chr(n): hashlib.blake2b(chr(n).encode(), digest_size = 2, key = certificate).hexdigest() for n in range(32, 127)}
+
+def getDecryptionAlpha(certificate):
+	return {hashlib.blake2b(chr(n).encode(), digest_size = 2, key = certificate).hexdigest() : chr(n) for n in range(32, 127)}
 
 def getEncrypted(data, key, salt = ""):
 	alpha = [chr(n) for n in range(32, 127)]

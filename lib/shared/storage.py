@@ -76,6 +76,28 @@ class Server:
         return result
     
 
+class Geolocation:
+    def __init__(self, certificate):
+        self.CERT = certificate
+        self.DB_FILE = lib.shared.settings.BASE_DIR.joinpath("geoDB")
+        self.index = DB_FILE.joinpath("index.r0b")
+        self.addrs = DB_FILE.joinpath("addresses.r0b")
+
+        self.ALPHA = lib.shared.crypto.getEncryptionAlpha(self.CERT)
+        self.BETA = lib.shared.crypto.getDecryptionAlpha(self.CERT)
+
+    def make_key(self, data):
+        return lib.shared.crypto.getKey(data)
+    
+    def encode_to_cert(self, string):
+        return "".join([self.ALPHA[c] for c in string])
+    
+    def decode_with_cert(self, string):
+        return "".join([self.BETA[string[c:c+4]] for c in range(0, len(string), 4)])
+
+
+        
+
 class Logger:
     def __init__(self, filePath, verbose = False):
         self.verbose = verbose
