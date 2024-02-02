@@ -31,8 +31,8 @@ def getHashedCommand(command, certificate, handshakeCode):
 def getHandshakeCode(entropy, certificate):
 	return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
 
-def getKey(data): # accept bytes directly
-    return hashlib.blake2b(data, digest_size = 8, key = CERT).digest()
+def getKey(data, certificate): # accept bytes directly
+    return hashlib.blake2b(data, digest_size = 8, key = certificate).digest()
 
 def getEncryptionAlpha(certificate):
 	return {chr(n): hashlib.blake2b(chr(n).encode(), digest_size = 2, key = certificate).hexdigest() for n in range(32, 127)}

@@ -114,8 +114,7 @@ class RequestHandler:
     
     def updateGeolocationData(self, LOGGER):
         if self.BITCOIN_DATA.peersInfo:
-            self.GEO_DATA.updateData(self.BITCOIN_DATA.peersInfo, LOGGER)
-            self.BITCOIN_DATA.connectedInfo = self.GEO_DATA.getConnectedInfo(self.BITCOIN_DATA.peersInfo)
+            self.BITCOIN_DATA.connectedInfo = self.GEO_DATA.updateDatabase(self.BITCOIN_DATA.peersInfo, LOGGER)
 
 
 

@@ -17,6 +17,7 @@ import platform, json
 from collections import Counter
 from lib.shared.network import Utils
 
+
 class Bitcoin:
     def __init__(self):
         self.PID = None
@@ -73,50 +74,39 @@ class Bitcoin:
 
 class IPGeolocation:
         def __init__(self):
-            self.GEODATA = list()
+            #self.GEODATA = list()
+            self.INDEX = False # index loaded with ipkey and relative file position
+            self.FILES = False # Object accessing the database
     
-        def updateData(self, peersInfo, LOGGER):
-            nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
-            for nodeip in nodeList:
-                if not self.isKnown(nodeip):
-                    geoData = json.loads(Utils.getGeolocation(nodeip))
-                    self.GEODATA.append(geoData)
-                    LOGGER.add("new peer found", nodeip, geoData['country_name'])
-                
-        def isKnown(self, nodeip):
-            return any(node['ip'] == nodeip for node in self.GEODATA)
-        
-        def getRawData(self, nodeip):
-            if self.isKnown(nodeip):
-                return [node for node in self.GEODATA if node['ip'] == nodeip][0]
-            else:
-                geoData = json.loads(Utils.getGeolocation(nodeip))
-                self.GEODATA.append(geoData)
-                return geoData
-        
-        def getCountry(self, nodeip):
-            if self.isKnown(nodeip):
-                return [node['country_name'] for node in self.GEODATA if node['ip'] == nodeip][0]
-            else:
-                geoData = self.getRawData(nodeip)
-                return geoData['country_name']
-        
-        def getCountryList(self, peersInfo):
-            nodeList = [peer['addr'].split(":")[0] for peer in peersInfo]
-            return [(nodeip, self.getCountry(nodeip)) for nodeip in nodeList]
-        
-        def getCountriesStats(self, peersInfo):
-            countryList = self.getCountryList(peersInfo)
-            return {c[0] : c[1] for c in Counter(countryList).items()}
+        def loadDatabase(self):
+            self.INDEX = self.FILES.load_database()
 
-        def getConnectedInfo(self, peersInfo):
+        def getGeolocation(self, ip):
+            geoData = json.loads(Utils.getGeolocation(ip))
+            key = self.FILES.make_key(Utils.getPackedIp(ip))
+            filePos = self.FILES.set_value(geoData)
+            self.INDEX[key] = filePos
+            return geoData
+
+        def updateDatabase(self, peersInfo, LOGGER):
             for peer in peersInfo:
-                geoData = self.getRawData(peer['addr'].split(":")[0])
-                peer['country_name'] = geoData['country_name']
-                peer['country_code'] = geoData['country_code2']
-                peer['isp'] = geoData['isp']
-            return peersInfo
-
+                ip = peer['addr'].split(":")[0]
+                if not self.isKnown(ip):
+                    geoData = self.getGeolocation(ip)
+                    LOGGER.add("new peer found", geoData['ip'], geoData['country_name'])
+                key = self.FILES.make_key(Utils.getPackedIp(ip))
+                rawData = self.FILES.get_value(self.INDEX[key])
+                peer['country_name'] = rawData['country_name']
+                peer['country_code'] = rawData['country_code']
+                peer['isp'] = rawData['isp']
+            return peersInfo #it returns the same list updated with geolocation data
+                
+        def isKnown(self, ip):
+            return self.FILES.make_key(Utils.getPackedIp(ip)) in self.INDEX
+        
+        def getFromDatabase(self, ip):
+            return self.FILES.get_value_by_ip(ip)
+            
 
 
 class Machine:

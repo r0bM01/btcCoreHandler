@@ -15,7 +15,7 @@
 
 
 import lib.shared.crypto
-import socket, ssl, time
+import socket, ssl, time, ipaddress
 import urllib.request
 
 class Proto:
@@ -288,3 +288,11 @@ class Utils:
         request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
         locationData = urllib.request.urlopen(request, context = context).read().decode()
         return locationData
+
+    @staticmethod
+    def getPackedIp(ip):
+        return ipaddress.ip_address(ip).packed
+    
+    @staticmethod
+    def getExplodedIp(packedIp):
+        return ipaddress.ip_address(packedIp).exploded

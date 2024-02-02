@@ -37,8 +37,10 @@ class Server(lib.server.protocol.RequestHandler):
         self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
         self.srpcT = threading.Thread(target = self.SRPC.waitForCall, daemon = True)
         
-        loadedGeodata = self.STORAGE.load_geolocation()
-        if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
+        #loadedGeodata = self.STORAGE.load_geolocation()
+        #if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
+        self.GEO_DATA.FILES = self.STORAGE.geolocation
+        self.GEO_DATA.loadDatabase()
 
         self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
         self.isCached = False
