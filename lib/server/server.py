@@ -62,8 +62,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("closing server called from thread")
         self.isServing = False
         self.autoCacheRun = False
-        self.LOGGER.add("saving geodata")
-        self.STORAGE.write_geolocation(self.GEO_DATA.GEODATA)
         sys.exit()
 
     def start_network(self):

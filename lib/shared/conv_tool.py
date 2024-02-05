@@ -6,10 +6,12 @@ if not pathlib.Path.exists(DB): DB.mkdir()
 
 oldGeo = BASE.joinpath("geolocation.rob")
 
-
+debug = DB.joinpath("debug.txt")
 index = DB.joinpath("index.r0b")
 addrs = DB.joinpath("addresses.r0b")
 
+with open(debug, "w") as F:
+    pass
 
 with open(index, "wb") as F:
     pass
@@ -35,17 +37,17 @@ def make_key(data):
 
 def lenght(data):
     #data already in bytes
-    return bytes.fromhex(str(hex(len(data))[2:]).zfill(4))
+    return bytes.fromhex(str(hex(len(data))[2:]).zfill(4)) # 2 bytes
 
 def make_value(peerObj):
-    # 4 bytes (IP) + 4 bytes (CODE) + 2 byte (Country Lenght) + (COUNTRY) + 2 byte (Isp Lenght) + (ISP)
-    separator = str("#").encode()
-
-    ip = ipaddress.ip_address(peerObj['ip']).packed + separator# bytes 
-    code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) + separator # bytes
-    country = bytes.fromhex(encode_to_cert(peerObj['country_name'].lower())) + separator# bytes
-    isp = bytes.fromhex(encode_to_cert(peerObj['isp'].lower())) # bytes
-    value = ip + code + country + isp
+    
+    # separator = str("#").encode()
+    
+    ip = ipaddress.ip_address(peerObj['ip']).packed # 4 or 16 bytes 
+    code = bytes.fromhex(encode_to_cert(peerObj['country_code2'])) # 4 bytes
+    country = bytes.fromhex(encode_to_cert(peerObj['country_name'])) # bytes
+    isp = bytes.fromhex(encode_to_cert(peerObj['isp'])) # bytes
+    value = lenght(ip) + ip + code + lenght(country) + country + lenght(isp) + isp
 
     return lenght(value) + value
 
@@ -59,6 +61,8 @@ def write_value(value):
 def set_value(peerObj):
     ipKey = make_key(ipaddress.ip_address(peerObj['ip']).packed)
     filePos = write_value(make_value(peerObj))
+    with open(debug, "a") as D:
+        D.write(f"IP: {peerObj['ip']} - Packed: {ipKey} - Hex: {ipKey.hex()}")
     with open(index, "ab") as F:
         F.write(ipKey)
         F.write(filePos)
@@ -93,16 +97,7 @@ def main():
 
     db = load_database()
     
-    found = 0
-    missing = 0
-    for p in PEERS:
-        if make_key(ipaddress.ip_address(p['ip']).packed) in db:
-            found += 1
-        else:
-            missing += 1
-    
-    print(f"Found: {found}")
-    print(f"Missing: {missing}")
+   
     # a = json.loads('{"ip": "95.49.49.210", "country_name": "Poland", "country_code2": "PL", "isp": "Orange Polska Spolka Akcyjna"}')
     # b = json.loads('{"ip": "79.116.55.242", "country_name": "Spain", "country_code2": "ES", "isp": "Digi Spain Telecom S.L.U."}') 
 

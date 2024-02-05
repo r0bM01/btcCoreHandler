@@ -25,15 +25,16 @@ class Server:
         self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
         self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
 
+        self.certificate = self.load_certificate()
         #self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
-        self.geolocation = Geolocation()
+        self.geolocation = Geolocation(self.load_certificate())
 
-        self.certificate = False
+        
     
     def init_files(self):
         if not os.path.exists(lib.shared.settings.BASE_DIR): os.mkdir(lib.shared.settings.BASE_DIR)
-        if not os.path.exists(self.fileCert): self.create_certificate()
-        else: self.load_certificate()
+        # if not os.path.exists(self.fileCert): self.create_certificate()
+        # else: self.load_certificate()
             #F = open(self.fileCert, "wb")
             #F.close()
         F = open(self.fileLogs, "w")
@@ -57,7 +58,7 @@ class Server:
         with open(self.fileCert, "rb") as F:
             dataBytes = F.read()
             # self.certificate = lib.shared.crypto.getHash(tmpBytes.hex())
-        self.certificate = dataBytes.hex()
+        return dataBytes.hex()
         
 
     def check_certificate(self):
@@ -73,16 +74,16 @@ class Geolocation:
     def __init__(self, certificate):
         
         self.DB_FILE = lib.shared.settings.BASE_DIR.joinpath("geoDB")
-        self.index = DB_FILE.joinpath("index.r0b")
-        self.addrs = DB_FILE.joinpath("addresses.r0b")
+        self.index = self.DB_FILE.joinpath("index.r0b")
+        self.addrs = self.DB_FILE.joinpath("addresses.r0b")
 
-        self.certificate = certificate
+        self.certificate = bytes.fromhex(certificate)
 
         self.ALPHA = lib.shared.crypto.getEncryptionAlpha(self.certificate)
         self.BETA = lib.shared.crypto.getDecryptionAlpha(self.certificate)
     
 
-    def load_database():
+    def load_database(self):
         with open(self.index, "rb") as F:
             dbTemp = F.read()
         db = { dbTemp[x:x+8] : dbTemp[x+8:x+12] for x in range(0, len(dbTemp), 12) }
@@ -101,13 +102,22 @@ class Geolocation:
         #data already in bytes
         return bytes.fromhex(str(hex(len(data))[2:]).zfill(4))
     
+    def get_value_by_lenght(self, data):
+        l = int(data[:2].hex(), 16)
+        v = data[2:2+l]
+        return v, data[2+l:]
+    
     def make_value(self, geoObj):
-        separator = str("#").encode()
-        bytesValue = Utils.getPackedIp(geoObj['ip']) + separator
-        bytesValue += bytes.fromhex(self.encode_to_cert(geoObj['country_code2'])) + separator
-        bytesValue += bytes.fromhex(self.encode_to_cert(geoObj['country_name'])) + separator
-        bytesValue += bytes.fromhex(self.encode_to_cert(geoObj['isp']))
+        ip = Utils.getPackedIp(geoObj['ip']) 
+        country_name = bytes.fromhex(self.encode_to_cert(geoObj['country_name'])) 
+        isp = bytes.fromhex(self.encode_to_cert(geoObj['isp']))
+
+        bytesValue = self.make_lenght(ip) + ip
+        bytesValue += bytes.fromhex(self.encode_to_cert(geoObj['country_code2']))
+        bytesValue += self.make_lenght(country_name) + country_name
+        bytesValue += self.make_lenght(isp) + isp
         return self.make_lenght(bytesValue) + bytesValue
+
 
     def write_value(self, bytesValue):
         with open(self.addrs, "ab") as F:
@@ -119,17 +129,23 @@ class Geolocation:
         with open(self.addrs, "rb") as F:
             F.seek(int(filePos.hex(), 16))
             size = F.read(2)
-            print(int(size.hex(), 16))
             data = F.read(int(size.hex(), 16))
         return data
 
     def get_value(self, filePos):
-        rawData = self.read_value(filePos)
-        rawData = rawData.split(b"#")
-        peer['ip'] = Utils.getExplodedIp(rawData[0])
-        peer['country_code'] = self.decode_with_cert(rawData[1].hex())
-        peer['country_name'] = self.decode_with_cert(rawData[2].hex())
-        peer['isp'] = self.decode_with_cert(rawData[3].hex())
+        data = rawData = self.read_value(filePos)
+
+        peer = {}
+        ip, data = self.get_value_by_lenght(data)
+        code, data = data[:4], data[4:]
+        country, data  = self.get_value_by_lenght(data)
+        isp, data  = self.get_value_by_lenght(data)
+
+        peer['ip'] = Utils.getExplodedIp(ip)
+        peer['country_code'] = self.decode_with_cert(code.hex())
+        peer['country_name'] = self.decode_with_cert(country.hex())
+        peer['isp'] = self.decode_with_cert(isp.hex())
+
         return peer
 
     def get_value_by_ip(self, ipaddr):
