@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #############################################################################
 # Copyright [2023] [R0BM01@pm.me]                                           #
 #                                                                           #
@@ -19,7 +20,7 @@ import secrets
 import argparse
 
 
-class Base:
+class Installer:
     def __init__(self):
 
         self.baseDir = pathlib.Path('/usr/lib/btcCoreHandler')
@@ -91,27 +92,24 @@ class Base:
                 print("Error while copying files: ", E)
 
 
-    def install(self, importCert = False):
-        input("setup must be run as root!\nPress enter to install")
+    def install(self):
         ## installation folders    
         print("Bitcoin Core Handler installation in progress...")
         self.init_install_dirs()
         self.copy_install_files()
 
-        self.init_save_dirs()
-        self.init_save_files()
 
-        if bool(importCert): self.import_certificate(importCert)
-        else: self.create_certificate()
-        
-        
-        
         
 def main():
+    
+
     print("TESTING CLIENT INSTALLER")
+    input("setup must be run as root!\nPress enter to install")
+
 
     C = Base()
     C.install()
+
 
 
 if __name__ == '__main__':
