@@ -61,6 +61,7 @@ class Base:
             pathlib.Path.mkdir(self.saveDir.joinpath('cert'))
             pathlib.Path.mkdir(self.saveDir.joinpath('geoDb'))
             pathlib.Path.mkdir(self.saveDir.joinpath('statDb'))
+            print("Data directories created")
         #############################################
     
     def init_save_files(self):
@@ -109,7 +110,7 @@ class Base:
 def main():
     print("TESTING CLIENT INSTALLER")
 
-    C = Client()
+    C = Base()
     C.install()
 
 
