@@ -22,64 +22,86 @@ import argparse
 class Base:
     def __init__(self):
 
-        self.base = pathlib.Path('/usr/lib/btcCoreHandler')
+        self.baseDir = pathlib.Path('/usr/lib/btcCoreHandler')
 
         self.source = {'lib': pathlib.Path.cwd().joinpath('lib'),
                        'ui': pathlib.Path.cwd().joinpath('ui')}
 
-        self.dest = {'lib': self.base.joinpath('lib'),
-                     'ui': self.base.joinpath('ui')}
+        self.dest = {'lib': self.baseDir.joinpath('lib'),
+                     'ui': self.baseDir.joinpath('ui')}
         
-        self.home = pathlib.Path.home()
+        self.usrHome = pathlib.Path.home()
+        self.saveDir = self.usrHome.joinpath('.btcCoreHandler')
         
     def create_certificate(self):
-        return secrets.token_bytes(64)
+        if pathlib.Path.exists(self.saveDir.joinpath('cert')):
+            certFile = self.saveDir.joinpath('cert', 'cert.r0b')
+            with open(certFile, "wb") as F:
+                F.write(secrets.token_bytes(64))
+        print("Certificate generated")
     
-    def import_certificate(self, source):
-        with open(pathlib.Path(source), "rb") as F:
-            data = F.read()
-        return data if len(data) == 64 else False
-
-    def install(self):
-        if not pathlib.Path.exists(self.base):
-            pathlib.Path.mkdir(self.base)
-        
-        # creates folders
-        if not pathlib.Path.exists(self.dest['lib']):
-            pathlib.Path.mkdir(self.dest['lib'])
-
-        if not pathlib.Path.exists(self.dest['ui']):
-            pathlib.Path.mkdir(self.dest['ui'])
-
-        if not pathlib.Path.exists(self.dest['data']):
-            pathlib.Path.mkdir(self.dest['data'])
-            pathlib.Path.mkdir(self.dest['data'].joinpath('cert'))
-
-        try:
-            shutil.copytree(self.source['lib'], self.dest['lib'])
-            shutil.copytree(self.source['ui'], self.dest['ui'])
-        except OSError as E:
-            print("Error while copying files into directories!")
-            print(E)
-
-        print("Files correctly installed!")
-
-        if bool(importCertificate):
-            certificate = self.import_certificate(importCertificate)
+    def import_certificate(self, sourceFile):
+        if pathlib.Path.exists(sourceFile):
+            with open(pathlib.Path(sourceFile), "rb") as F:
+                data = F.read()
+            if len(data) == 64:
+                certFile = self.saveDir.joinpath('cert', 'cert.r0b')
+                with open(certFile, "wb") as F:
+                    F.write(data)
+                print("Certificate correctly imported!")
+            else:
+                print("Source certificate not valid!")
         else:
-            certificate = self.create_certificate()
-        
-        if bool(certificate):
-            homeFolder = self.dest['data']
-            with open(self.dest['data'].joinpath('cert', 'cert.r0b'), "wb") as C:
-                C.write(certificate)
-            print("Certificate correctly created/imported!")
-        else:
-            print("Error in creating/importing certificate!")
-        sys.exit()
+            print("Source file not found!")
+    
+    def init_save_dirs(self):
+        ## save folders
+        if not pathlib.Path.exists(self.saveDir):
+            pathlib.Path.mkdir(self.saveDir)
+            pathlib.Path.mkdir(self.saveDir.joinpath('cert'))
+            pathlib.Path.mkdir(self.saveDir.joinpath('geoDb'))
+            pathlib.Path.mkdir(self.saveDir.joinpath('statDb'))
+        #############################################
+    
+    def init_save_files(self):
+        if pathlib.Path.exists(self.saveDir):
+            self.saveDir.joinpath('geoDb', 'index.r0b').touch()
+            self.saveDir.joinpath('geoDb', 'addresses.r0b').touch()
+            self.saveDir.joinpath('statDb', 'index.r0b').touch()
+            self.saveDir.joinpath('statDb', 'statistics.r0b').touch()
+
+    def init_install_dirs(self):
+        if not pathlib.Path.exists(self.baseDir):
+            try:
+                pathlib.Path.mkdir(self.baseDir)
+                pathlib.Path.mkdir(self.dest['lib'])
+                pathlib.Path.mkdir(self.dest['ui'])
+                print("Installation directories created")
+            except OSError as E:
+                print("Error while creating directories: ", E)
+
+    def copy_install_files(self):
+        if pathlib.Path.exists(self.baseDir):
+            try:
+                shutil.copytree(self.source['lib'], self.dest['lib'], dirs_exist_ok=True)
+                shutil.copytree(self.source['ui'], self.dest['ui'], dirs_exist_ok=True)
+                print("Files copied")
+            except OSError as E:
+                print("Error while copying files: ", E)
 
 
-        
+    def install(self, importCert = False):
+        input("setup must be run as root!\nPress enter to install")
+        ## installation folders    
+        print("Bitcoin Core Handler installation in progress...")
+        self.init_install_dirs()
+        self.copy_install_files()
+
+        self.init_save_dirs()
+        self.init_save_files()
+
+        if bool(importCert): self.import_certificate(importCert)
+        else: self.create_certificate()
         
         
         
