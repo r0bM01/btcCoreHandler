@@ -19,55 +19,96 @@ import lib.shared.settings
 import lib.shared.crypto
 from lib.shared.network import Utils
 
-
-class Server:
+class Base:
     def __init__(self):
+        self.saveDir = pathlib.Path.home().joinpath(".btcCoreHandler")
+
+        self.saveDirs = {'cert': self.saveDir.joinpath('cert'),
+                         'debug': self.saveDir.joinpath('debug'), 
+                         'geoDb': self.saveDir.joinpath('geoDb'),
+                         'statsDb': self.saveDir.joinpath('statsDb'),}
+        
+        self.saveFiles = {'cert': self.saveDir.joinpath(self.saveDirs['cert'], 'cert.r0b'),
+                          'geoDbIndex': self.saveDir.joinpath(self.saveDirs['geoDb'], 'index.r0b'),
+                          'geoDbContent': self.saveDir.joinpath(self.saveDirs['geoDb'], 'addresses.r0b'),
+                          'statsDbIndex': self.saveDir.joinpath(self.saveDirs['statsDb'], 'index.r0b'),
+                          'statsDbContent': self.saveDir.joinpath(self.saveDirs['statsDb'], 'statistics.r0b')}
+    
+    def check_exists(self, filePath):
+        realPath = pathlib.Path(filePath)
+        return pathlib.Path.exists(realPath)
+    
+    def init_dir(self, dirPath):
+        realPath = pathlib.Path(dirPath)
+        realPath.mkdir(exist_ok = True)
+        
+    def init_file(self, filePath):
+        realPath = pathlib.Path(filePath)
+        realPath.touch(exist_ok = True)
+        
+    def init_all(self):
+        [self.init_dir(d) for d in self.saveDirs] # init and rewrites directories
+        [self.init_file(f) for f in self.saveFiles] #init and rewrites files
+        
+    def generate_certificate(self):
+        self.init_file(self.saveFiles['cert']) # avoid previous certificate
+        certBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
+        with open(self.saveFiles['cert'], "wb") as F:
+            F.write(certBytes)
+        
+    def import_certificate(self, sourceFile):
+        sourcePath = pathlib.Path(sourceFile)
+        self.init_file(self.saveFiles['cert']) # avoid previous certificate
+        with open(sourcePath, "rb") as F:
+            source = F.read()
+        with open(self.saveFiles['cert'], "wb") as F:
+            F.write(source)
+    
+    def load_certificate(self):
+        with open(self.saveFiles['cert'], "rb") as F:
+            certBytes = F.read()
+        return certBytes
+    
+    def check_certificate(self):
+        return len(self.load_certificate) == 64
+
+
+class Server(Base):
+    """
+    def __init__(self):
+
+        self.saveDirOk = pathlib.Path.exists
+        self.filesOk = self.check_save_all()
+
         self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
         self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
 
-        self.certificate = self.load_certificate()
+        self.certificate = False # self.load_certificate()
         #self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
-        self.geolocation = Geolocation(self.load_certificate())
+        self.geolocation = False #Geolocation(self.load_certificate())
+    """
 
-        
-    
-    def init_files(self):
-        if not os.path.exists(lib.shared.settings.BASE_DIR): os.mkdir(lib.shared.settings.BASE_DIR)
-        # if not os.path.exists(self.fileCert): self.create_certificate()
-        # else: self.load_certificate()
-            #F = open(self.fileCert, "wb")
-            #F.close()
-        F = open(self.fileLogs, "w")
-        F.close()
+    def check_base_dir(self):
+        return self.check_exists(self.saveDir)
 
+    def init_certificate(self):
+        if not pathlib.Path.exists(self.filesOk['certFile']):
+            raise OSError("Missing certificate! You cannot start server without it!")
+        if not self.check_certificate():
+            raise OSError("Certificate corrupted! Server cannot be started!")
+        self.certificate = self.load_certificate()
 
-    def write_geolocation(self, geolocationData):
-        encodedData = [str(json.dumps(peer)).encode() for peer in geolocationData]
-        with open(self.geolocationFile, "wb") as F:
-            [F.write(peer + b"\n") for peer in encodedData]
-        
-                
+    def init_geolocation(self):
+        if not bool(self.certificate):
+            raise OSError("Missing certificate! You cannot init Geolocation without it!")
+        if not pathlib.Path.exists(self.filesOk['geoDb']):
+            raise OSError("Geolocation database folder missing!")
+        if not pathlib.Path.exists(self.filesOk['geoDbIndex']):
+            raise OSError("Missing geolocation databse index!")
+        if not pathlib.Path.exists(self.filesOk['geoDbContent']):
+            raise OSError("Missing geolocation database!")
+        self.geolocation = Geolocation(self.certificate)
 
-    def create_certificate(self):
-        with open(self.fileCert, "wb") as F:
-            dataBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
-            F.write(dataBytes)
-        self.certificate = dataBytes.hex()
-        
-    def load_certificate(self):
-        with open(self.fileCert, "rb") as F:
-            dataBytes = F.read()
-            # self.certificate = lib.shared.crypto.getHash(tmpBytes.hex())
-        return dataBytes.hex()
-        
-
-    def check_certificate(self):
-        if os.path.exists(self.fileCert):
-            self.load_certificate()
-            result = True if len(self.certificate) == lib.shared.settings.CERT_SIZE else False
-        else:
-            result = False
-        return result
     
 
 class Geolocation:
@@ -165,9 +206,10 @@ class Geolocation:
 
 
 class Logger:
-    def __init__(self, filePath, verbose = False):
+    def __init__(self, dirPath, verbose = False):
         self.verbose = verbose
-        self.FILE = filePath
+        self.FILE = dirPath.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
+        self.FILE.touch()
         self.SESSION = []
 
     def add(self, message, *args):

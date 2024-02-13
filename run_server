@@ -16,14 +16,50 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import threading
+import time
 import lib.server.server
 import lib.server.machine
 import lib.shared.storage
 
 
+
+
 def main():
+    firstRun = False
+    tempLogs = [] # we need to store logs before checking directory tree
     storage = lib.shared.storage.Server()
+
+    def addTempLog(info):
+        log = str(time.ctime(time.time())) + str(info)
+        tempLogs.append(log)
+        print(lof)
+
+    addTempLog("Checking base directory")
+    if not storage.check_base_dir():
+        firstRun = True
+        addTempLog("Server first run")
+
+    addTempLog("Checking directory tree integrity")
+    for d, p in storage.saveDirs.items():
+        check = storage.check_exists(p)
+        addTempLog(f"Directory {d}: [{check}]")
+        if not check: 
+            storage.init_dir(p)
+            addTempLog(f"{d} created")
+
+    addTempLog("Checking files")
+    for f, p in storage.saveFiles.items():
+        check = storage.check_exists(p)
+        addTempLog(f"File {f}: [{p}]")
+        if not check:
+            storage.init_file(p)
+            addTempLog(f"{f} created")
+
+    
+
+
+
+    
     storage.init_files()
     # saved_geodata = storage.load_geolocation()
     logger = lib.shared.storage.Logger(filePath = storage.fileLogs, verbose = True)
