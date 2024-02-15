@@ -49,7 +49,7 @@ class Client:
         
     def load_certificate(self):
         cwd = pathlib.Path.cwd()
-        path = cwd.joinpath("lib/client/cert.rob")
+        path = cwd.joinpath(".btcCoreHandler/cert.rob")
         with open(path, "rb") as F:
             dataBytes = F.read()
         return dataBytes.hex()
