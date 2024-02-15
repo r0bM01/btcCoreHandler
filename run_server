@@ -60,7 +60,7 @@ def check_dirs_files(storage):
         if not check:
             storage.init_file(p)
             addTempLog(f"{f} created")
-        if f == 'cert': certNotValid = True
+        if f == 'cert' and not check: certNotValid = True
 
     success = True 
 
@@ -91,7 +91,6 @@ def main():
         logger.verbose = True
         SERVER = lib.server.server.Server(logger, storage)
 
-        
         
         if SERVER.bitcoindRunning:
             logger.add("updating base cache data")
