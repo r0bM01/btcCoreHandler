@@ -78,7 +78,7 @@ class Server(Base):
         return self.check_exists(self.saveDir)
 
     def init_certificate(self):
-        if not pathlib.Path.exists(self.filesOk['certFile']):
+        if not pathlib.Path.exists(self.saveFiles['cert']):
             raise OSError("Missing certificate! You cannot start server without it!")
         if not self.check_certificate():
             raise OSError("Certificate corrupted! Server cannot be started!")
@@ -87,11 +87,11 @@ class Server(Base):
     def init_geolocation(self):
         if not bool(self.certificate):
             raise OSError("Missing certificate! You cannot init Geolocation without it!")
-        if not pathlib.Path.exists(self.filesOk['geoDb']):
+        if not pathlib.Path.exists(self.saveDirs['geoDb']):
             raise OSError("Geolocation database folder missing!")
-        if not pathlib.Path.exists(self.filesOk['geoDbIndex']):
+        if not pathlib.Path.exists(self.saveFiles['geoDbIndex']):
             raise OSError("Missing geolocation databse index!")
-        if not pathlib.Path.exists(self.filesOk['geoDbContent']):
+        if not pathlib.Path.exists(self.saveFiles['geoDbContent']):
             raise OSError("Missing geolocation database!")
         self.geolocation = Geolocation(self.certificate, self.saveDirs['geoDb'])
 

@@ -43,12 +43,12 @@ def check_dirs_files(storage):
         firstRun = True
         addTempLog("Server first run")
         storage.init_dir(storage.saveDir)
-        storage.init_all()
+        #storage.init_all()
 
     addTempLog("Checking directory tree integrity")
     for d, p in storage.saveDirs.items():
         check = storage.check_exists(p)
-        addTempLog(f"Directory {d}: [{check}]")
+        addTempLog(f"dir [{d}]: [{check}]")
         if not check: 
             storage.init_dir(p)
             addTempLog(f"{d} created")
@@ -56,7 +56,7 @@ def check_dirs_files(storage):
     addTempLog("Checking files")
     for f, p in storage.saveFiles.items():
         check = storage.check_exists(p)
-        addTempLog(f"File {f}: [{p}]")
+        addTempLog(f"file [{f}]: [{p}]")
         if not check:
             storage.init_file(p)
             addTempLog(f"{f} created")
@@ -82,14 +82,16 @@ def main():
         logger = lib.shared.storage.Logger(storage.saveDirs['debug'], verbose = False)
         [logger.add(log) for log in tempLogs]
 
+        logger.add("loading certificate")
+        storage.init_certificate()
+        logger.add("geolocation init")
+        storage.init_geolocation()
+
         # server init with actual logger
         logger.verbose = True
         SERVER = lib.server.server.Server(logger, storage)
 
-        logger.add("loading certificate")
-        SERVER.init_certificate()
-        logger.add("geolocation init")
-        SERVER.init_geolocation()
+        
         
         if SERVER.bitcoindRunning:
             logger.add("updating base cache data")
