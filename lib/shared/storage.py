@@ -67,10 +67,10 @@ class Base:
     def load_certificate(self):
         with open(self.saveFiles['cert'], "rb") as F:
             certBytes = F.read()
-        return certBytes
+        return certBytes.hex()
     
     def check_certificate(self):
-        return len(self.load_certificate()) == 64
+        return len(self.load_certificate()) == 128
 
 class Server(Base):
 
