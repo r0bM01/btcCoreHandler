@@ -95,7 +95,14 @@ class Server(Base):
             raise OSError("Missing geolocation database!")
         self.geolocation = Geolocation(self.certificate, self.saveDirs['geoDb'])
 
+
+class Client(Base):
+
+    def check_base_dir(self):
+        return self.check_exists(self.saveDir)
     
+    
+
 
 class Geolocation:
     def __init__(self, certificate, dirPath):

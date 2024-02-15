@@ -17,6 +17,7 @@ import lib.shared.commands
 import lib.shared.crypto
 import lib.shared.network
 import lib.shared.settings
+import lib.shared.storage
 import json, threading, time, queue, pathlib
 
 
@@ -29,6 +30,9 @@ class Client:
         self.control = lib.shared.commands.Control()
 
         self.network = lib.shared.network.Client()
+
+        self.storage = lib.share.storage.Client()
+
         self.certificate = self.load_certificate()
         self.calls = False
         
@@ -48,11 +52,12 @@ class Client:
         self.lastConnCheck = False
         
     def load_certificate(self):
-        cwd = pathlib.Path.cwd()
-        path = cwd.joinpath(".btcCoreHandler/cert.rob")
-        with open(path, "rb") as F:
-            dataBytes = F.read()
-        return dataBytes.hex()
+        if self.storage.check_base_dir():
+            if self.storage.check_exists(self.storage.saveFiles['cert']):
+                if self.storage.check_certificate():
+                    return self.storage.load_certificate()
+        return False
+
 
     def initHashedCalls(self):
         if self.network.isConnected:
