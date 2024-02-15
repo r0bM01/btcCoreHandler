@@ -70,7 +70,7 @@ class Base:
         return certBytes
     
     def check_certificate(self):
-        return len(self.load_certificate) == 64
+        return len(self.load_certificate()) == 64
 
 class Server(Base):
 
