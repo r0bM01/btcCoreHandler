@@ -72,21 +72,7 @@ class Base:
     def check_certificate(self):
         return len(self.load_certificate) == 64
 
-
 class Server(Base):
-    """
-    def __init__(self):
-
-        self.saveDirOk = pathlib.Path.exists
-        self.filesOk = self.check_save_all()
-
-        self.fileCert = lib.shared.settings.BASE_DIR.joinpath("cert.rob")
-        self.fileLogs = lib.shared.settings.BASE_DIR.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
-
-        self.certificate = False # self.load_certificate()
-        #self.geolocationFile = lib.shared.settings.BASE_DIR.joinpath("geolocation.rob")
-        self.geolocation = False #Geolocation(self.load_certificate())
-    """
 
     def check_base_dir(self):
         return self.check_exists(self.saveDir)
@@ -107,23 +93,22 @@ class Server(Base):
             raise OSError("Missing geolocation databse index!")
         if not pathlib.Path.exists(self.filesOk['geoDbContent']):
             raise OSError("Missing geolocation database!")
-        self.geolocation = Geolocation(self.certificate)
+        self.geolocation = Geolocation(self.certificate, self.saveDirs['geoDb'])
 
     
 
 class Geolocation:
-    def __init__(self, certificate):
+    def __init__(self, certificate, dirPath):
         
-        self.DB_FILE = lib.shared.settings.BASE_DIR.joinpath("geoDB")
-        self.index = self.DB_FILE.joinpath("index.r0b")
-        self.addrs = self.DB_FILE.joinpath("addresses.r0b")
+        self.DB_DIR = pathlib.Path(dirPath)
+        self.index = self.DB_DIR.joinpath("index.r0b")
+        self.addrs = self.DB_DIR.joinpath("addresses.r0b")
 
         self.certificate = bytes.fromhex(certificate)
 
         self.ALPHA = lib.shared.crypto.getEncryptionAlpha(self.certificate)
         self.BETA = lib.shared.crypto.getDecryptionAlpha(self.certificate)
     
-
     def load_database(self):
         with open(self.index, "rb") as F:
             dbTemp = F.read()
@@ -202,7 +187,6 @@ class Geolocation:
             F.write(filePos)
         return filePos
         
-    
 
 
 class Logger:

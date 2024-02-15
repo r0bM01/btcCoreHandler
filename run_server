@@ -21,23 +21,29 @@ import lib.server.server
 import lib.server.machine
 import lib.shared.storage
 
+tempLogs = [] # we need to store logs before checking directory tree
 
-
-
-def main():
-    firstRun = False
-    tempLogs = [] # we need to store logs before checking directory tree
-    storage = lib.shared.storage.Server()
-
-    def addTempLog(info):
-        log = str(time.ctime(time.time())) + str(info)
+def addTempLog(log):
         tempLogs.append(log)
-        print(lof)
+        print(f"{str(time.ctime(time.time()))} - {log}")
+
+def check_dirs_files(storage):
+    firstRun = False
+    certNotValid = False
+    success = False
+
+    def certificate_choice():   
+        c = input("Type \n'I' to import \n'G' to generate \n'Q' to quit \n>> ").upper()
+        if c == 'I': storage.import_certificate(input("Certificate path >> "))
+        elif c == 'G': storage.generate_certificate()
+        return storage.check_certificate()
 
     addTempLog("Checking base directory")
     if not storage.check_base_dir():
         firstRun = True
         addTempLog("Server first run")
+        storage.init_dir(storage.saveDir)
+        storage.init_all()
 
     addTempLog("Checking directory tree integrity")
     for d, p in storage.saveDirs.items():
@@ -54,51 +60,59 @@ def main():
         if not check:
             storage.init_file(p)
             addTempLog(f"{f} created")
+        if f == 'cert': certNotValid = True
 
+    success = True 
+
+    if firstRun or certNotValid:
+        addTempLog("Certificate must be generated or imported")
+        if not certificate_choice():
+            success = False 
+            addTempLog("Certificate not imported/generated. Server stopping and exit.")
+        else:
+            addTempLog("Certificate valid!")
     
+    return success
 
 
+def main():
+    storage = lib.shared.storage.Server()
+    if check_dirs_files(storage):
+        #adds the temporary log to the actual logger
+        logger = lib.shared.storage.Logger(storage.saveDirs['debug'], verbose = False)
+        [logger.add(log) for log in tempLogs]
 
+        # server init with actual logger
+        logger.verbose = True
+        SERVER = lib.server.server.Server(logger, storage)
+
+        logger.add("loading certificate")
+        SERVER.init_certificate()
+        logger.add("geolocation init")
+        SERVER.init_geolocation()
+        
+        if SERVER.bitcoindRunning:
+            logger.add("updating base cache data")
+            SERVER.updateCacheData()
+
+            logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
+            logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
+            logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
+            logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
+
+            logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
+            SERVER.updateGeolocationData(logger)    
+        else:
+            logger.add("Bitcoin Daemon is not running")
     
-    storage.init_files()
-    # saved_geodata = storage.load_geolocation()
-    logger = lib.shared.storage.Logger(filePath = storage.fileLogs, verbose = True)
-    SERVER = lib.server.server.Server(logger, storage)
+        logger.add("starting network")
+        SERVER.start_network()
 
-    logger.add("updating base cache data")
-    SERVER.updateCacheData()
-
-    logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
-    logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
-    logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
-    logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
-
+        if SERVER.isOnline: SERVER.start_all()
+        else: logger.add("Server socket not working")
     
-    
-    logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
-    SERVER.updateGeolocationData(logger)
-
-    logger.add("starting network")
-    SERVER.start_network()
-
-    if SERVER.isOnline:
-        SERVER.start_all()
-        """
-        try:
-            SERVER.autoCache.start()
-            SERVER.autoServing.start()
-            logger.verbose = False
-        except KeyboardInterrupt:
-            logger.verbose = True
-            logger.add("Server stopped by keyboard interrupt")
-        finally:
-            storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
-            logger.verbose = True
-            SERVER.isServing = False
-            logger.add("Server stopped")
-        """
     else:
-        logger.add("Server socket not working")
+        print("Directories and Files check has failed. Exiting server application")
 
 if __name__ == '__main__':
     main()

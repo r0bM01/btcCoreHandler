@@ -58,11 +58,13 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoCache.start()
         self.autoServing.start()
         self.LOGGER.verbose = False
-        self.eventController.wait()
+
+        self.eventController.wait() # when activated it will stop the application
+
         self.LOGGER.add("closing server called from thread")
         self.isServing = False
         self.autoCacheRun = False
-        sys.exit()
+        sys.exit(1)
 
     def start_network(self):
         self.eventController.clear()
@@ -131,52 +133,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.LOGGER.add("serving loop exit")
 
         
-
-"""
-def main():
-    storage = lib.server.storage.Data()
-    storage.init_files()
-    saved_geodata = storage.load_geolocation()
-    logger = lib.server.storage.Logger(filePath = storage.fileLogs, verbose = True)
-    eventController = threading.Event()
-    SERVER = Server(logger, saved_geodata, eventController)
-
-    logger.add("updating base cache data")
-    SERVER.updateCacheData()
-
-    logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
-    logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
-    logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
-    logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
-
-    logger.add("loaded geodata", len(saved_geodata))
-    
-    logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
-    SERVER.updateGeolocationData()
-
-    logger.add("starting network")
-    SERVER.start_network()
-    eventController.clear()
-
-    if SERVER.isOnline:
-
-        try:
-            SERVER.autoCache.start()
-            logger.verbose = False
-            SERVER.autoServing.start()
-            eventController.wait()
-        except KeyboardInterrupt:
-            logger.verbose = True
-            logger.add("Server stopped by keyboard interrupt")
-        finally:
-            storage.write_geolocation(SERVER.GEO_DATA.GEODATA)
-            logger.verbose = True
-            SERVER.isServing = False
-            logger.add("Server stopped")
-    else:
-        logger.add("Server socket not working")
-"""
-
 
 
 
