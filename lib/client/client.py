@@ -23,7 +23,7 @@ import json, threading, time, queue, pathlib
 
 
 class Client:
-    def __init__(self):
+    def __init__(self, certificate):
 
         self.version = lib.shared.settings.VERSION
 
@@ -31,9 +31,9 @@ class Client:
 
         self.network = lib.shared.network.Client()
 
-        self.storage = lib.share.storage.Client()
+        #self.storage = lib.share.storage.Client()
 
-        self.certificate = self.load_certificate()
+        self.certificate = certificate
         self.calls = False
         
         self.systemInfo = False
@@ -66,7 +66,7 @@ class Client:
             self.calls = False
 
     def initConnection(self, host, port = False):
-        if not self.network.isConnected: 
+        if not self.network.isConnected and bool(self.certificate): 
             self.network.remoteHost = str(host)
             self.network.connectToServer(self.certificate)
         if self.network.isConnected:

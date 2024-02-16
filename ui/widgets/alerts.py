@@ -56,6 +56,12 @@ class Alerts(QMessageBox):
         self.setText("You have to insert the node's address to connect to.")
         self.setInformativeText("You can check the connection settings in 'options' page.")
         self.exec()
+    
+    def missingCertificate(self):
+        self.setWindowTitle("Cryptographic Certificate Missing")
+        self.setText("Certificate missing! You can't connect to BtcCH server without it!")
+        self.setInformativeText("Please check server certificate and import it on your client.")
+        self.exec()
 
     def disconnectedNode(self):
         self.setWindowTitle("Disconnected")
