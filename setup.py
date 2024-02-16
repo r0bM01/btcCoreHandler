@@ -107,7 +107,7 @@ def main():
     input("setup must be run as root!\nPress enter to install")
 
 
-    C = Base()
+    C = Installer()
     C.install()
 
 
