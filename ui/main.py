@@ -15,6 +15,7 @@
 
 
 import lib.client.client
+import lib.shared.storage
 import ui.assets.css
 import ui.widgets.alerts
 import ui.widgets.left_menu
@@ -38,14 +39,17 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.CLIENT = lib.client.client.Client()
-
         self.setWindowTitle("Bitcoin Core Handler")
         self.setFixedSize(640, 500)
         self.mainLayout = QHBoxLayout()
         #self.setStyleSheet("background-color: #2c3746;")
 
         self.alerts = ui.widgets.alerts.Alerts()
+
+        self.storage = lib.shared.storage.Client()
+        self.certificate = self.init_certificate()
+
+        self.CLIENT = lib.client.client.Client(self.certificate)
         
         self.PAGES = {}
         self.init_pages()
@@ -60,6 +64,12 @@ class MainWindow(QMainWindow):
 
         
         self.commandEvent = threading.Event()
+    
+    def init_certificate(self):
+        if not self.storage.check_base_dir(): self.storage.init_dir(self.saveDir)
+        certificate = self.storage.init_certificate()
+        if not bool(certificate): self.alerts.missingCertificate
+        return certificate
 
     def init_pages(self):
         self.PAGES['STATUS'] = ui.widgets.status.Status()
