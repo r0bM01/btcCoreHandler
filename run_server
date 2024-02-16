@@ -84,6 +84,7 @@ def main():
 
         logger.add("loading certificate")
         storage.init_certificate()
+        logger.add("Certificate: " + str(storage.certificate))
         logger.add("geolocation init")
         storage.init_geolocation()
 

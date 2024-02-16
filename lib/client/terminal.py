@@ -16,6 +16,7 @@
 
 import lib.shared.network
 import lib.shared.crypto
+import lib.shared.storage
 import json, threading, time, queue
 from collections import Counter
 from lib.client.client import Client
@@ -31,7 +32,14 @@ def clientTerminal():
             time.sleep(10)
         print("\nconnection terminated")
 
-    remoteConn = Client()
+
+    storage = lib.shared.storage.Client()
+
+    certificate = storage.init_certificate()
+
+    print(bool(certificate))
+
+    remoteConn = Client(certificate)
     eventThread = threading.Event()
     keepAliveThread = threading.Thread(target = keepConnAlive, daemon = True)
 
