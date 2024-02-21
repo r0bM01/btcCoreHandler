@@ -41,6 +41,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Bitcoin Core Handler")
         self.setFixedSize(640, 500)
+        appIcon = QIcon(QPixmap("ui/assets/bitcoin_64.png"))
+        self.setWindowIcon(appIcon)
         self.mainLayout = QHBoxLayout()
         #self.setStyleSheet("background-color: #2c3746;")
 
