@@ -180,6 +180,8 @@ class Geolocation:
         country, data  = self.get_value_by_lenght(data)
         isp, data  = self.get_value_by_lenght(data)
 
+        # return (ip, code, country, isp)
+
         peer['ip'] = Utils.getExplodedIp(ip)
         peer['country_code'] = self.decode_with_cert(code.hex())
         peer['country_name'] = self.decode_with_cert(country.hex())

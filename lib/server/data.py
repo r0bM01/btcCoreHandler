@@ -106,7 +106,33 @@ class IPGeolocation:
         
         def getFromDatabase(self, ip):
             return self.FILES.get_value_by_ip(ip)
-            
+
+        def search(self, text):
+            text = str(text).lower()
+            results = []
+            if Utils.getCheckedIp(text): # returns True if is an IPv4 or IPv6
+                key = self.FILES.make_key(Utils.getPackedIp(text))
+                if key in self.INDEX:
+                    results.append(self.FILES.get_value(self.INDEX[key]))
+                else:
+                    results.append({"error": "ip address not found!"})
+            elif len(text) == 2: # if text lenght is only 2 it means we are searching for a country code
+                print("country search")
+                for key in self.INDEX:
+                    p = self.FILES.get_value(self.INDEX[key])
+                    if text in p['country_code'].lower():
+                        results.append(p)
+            else:
+                print("other search")
+                for key in self.INDEX:
+                    p = self.FILES.get_value(self.INDEX[key])
+                    if text in p['country_name'].lower() or text in p['isp'].lower():
+                        results.append(p)
+            if not bool(results):
+                results.append({"error": "no results found!"})
+            return results
+
+
 
 
 class Machine:

@@ -85,6 +85,10 @@ def convertPercentage(num):
     else:
         return num
 
+def convertSatsDigits(num):
+    num = float(num)
+    return str(f"{num:.8f}")
+
 def convertLongCountry(country):
     if str(country) == "United Kingdom of Great Britain and Northern Ireland":
         country = "United Kingdom"

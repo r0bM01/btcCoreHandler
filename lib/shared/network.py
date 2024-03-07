@@ -290,6 +290,14 @@ class Utils:
         return locationData
 
     @staticmethod
+    def getCheckedIp(ip):
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
     def getPackedIp(ip):
         return ipaddress.ip_address(ip).packed
     

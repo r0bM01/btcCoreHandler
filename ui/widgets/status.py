@@ -147,7 +147,7 @@ class Status(QWidget):
         # mempool
         self.RESULT['size'].setText(str(statusInfo['size']))
         self.RESULT['usage'].setText(utils.convertBytesSizes(statusInfo['usage']))
-        self.RESULT['mempoolminfee'].setText(str(statusInfo['mempoolminfee']))
+        self.RESULT['mempoolminfee'].setText(utils.convertSatsDigits(statusInfo['mempoolminfee']))
         self.RESULT['fullrbf'].setText(str(statusInfo['fullrbf']))
         # network
         self.RESULT['localservicesnames'].setText(str(statusInfo['localservicesnames']))
