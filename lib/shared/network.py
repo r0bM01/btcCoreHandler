@@ -227,7 +227,7 @@ class ServerRPC(Proto):
         try:
             self.socket = socket.create_server((self.host, self.port), family = socket.AF_INET,
                                                 backlog = 1, reuse_port = True)
-            self.socket.settimeout(self._opTimeout)
+            self.socket.settimeout(None) #base server socket has no timeout. It blocks until a client is connecting
         except OSError:
             self.socket = False
 
@@ -235,8 +235,7 @@ class ServerRPC(Proto):
         try:
             self._remoteSock, self.remoteAddr = self.socket.accept()
             self._remoteSock.settimeout(self._opTimeout)
-            # self.sender(handshakeCode)
-            # self.handshakeCode = handshakeCode
+
         except OSError:
             self.sockClosure()
             
@@ -270,6 +269,22 @@ class Utils:
     def getExternalIP():
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP
+
+    @staticmethod
+    def checkInternet(dest = False):
+        addr = dest or 'https://8.8.8.8'
+        if 'https://' and 'http://' not in addr: 
+            addr = 'https://' + addr
+        if 'https://' in addr:
+            context = ssl.create_default_context()
+        else:
+            context = False 
+        try:
+            request = urllib.request.Request(url = addr, headers = {'User-Agent': 'Mozilla/5.0'})
+            test = urllib.request.urlopen(request, context = context, timeout = 2).read().decode()
+            return True
+        except urllib.request.URLError: 
+            return False
     
     @staticmethod
     def getBitnodesInfo(extIP, port):

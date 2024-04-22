@@ -90,7 +90,7 @@ class Server(Base):
         if not pathlib.Path.exists(self.saveDirs['geoDb']):
             raise OSError("Geolocation database folder missing!")
         if not pathlib.Path.exists(self.saveFiles['geoDbIndex']):
-            raise OSError("Missing geolocation databse index!")
+            raise OSError("Missing geolocation database index!")
         if not pathlib.Path.exists(self.saveFiles['geoDbContent']):
             raise OSError("Missing geolocation database!")
         self.geolocation = Geolocation(self.certificate, self.saveDirs['geoDb'])

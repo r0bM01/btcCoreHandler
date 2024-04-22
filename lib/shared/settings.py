@@ -18,7 +18,7 @@
 import os, pathlib
 
 #[VERSION]
-VERSION = "0.3.5-Alpha"
+VERSION = "1.0.0-Alpha"
 
 
 #[HOME DIRECTORY]

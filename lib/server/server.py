@@ -23,9 +23,14 @@ import lib.server.protocol
 import lib.server.srpc
 
 
+
 class Server(lib.server.protocol.RequestHandler):
     def __init__(self, logger, storage):
         lib.server.protocol.RequestHandler.__init__(self)
+
+        self.initTime = int(time.time())
+        self.internetIsOn = lib.shared.network.Utils.checkInternet()
+
         #init procedure
         self.STORAGE = storage
         self.LOGGER = logger
@@ -33,9 +38,10 @@ class Server(lib.server.protocol.RequestHandler):
 
         self.maxCallSize = 256 #bytes 
 
-        self.eventController = threading.Event()
-        self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
-        self.srpcT = threading.Thread(target = self.SRPC.waitForCall, daemon = True)
+        #self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
+        self.localControllerNetwork = lib.shared.network.ServerRPC()
+        self.localControllerEvent = threading.Event()
+        self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
         
         #loadedGeodata = self.STORAGE.load_geolocation()
         #if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
@@ -53,46 +59,76 @@ class Server(lib.server.protocol.RequestHandler):
         
         self.LOGGER.add("bitcoind running", self.bitcoindRunning)
     
+    def local_server_controller(self):
+        # command line operation
+        self.localControllerNetwork.openSocket()
+        self.LOGGER.add("server- local socket ready", bool(self.localControllerNetwork.socket))
+        self.LOGGER.add("server- local controller started")
+        self.LOGGER.add("server- local event controller is waiting", self.localControllerEvent.is_set())
+        cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
+        stop = False
+        while not stop:
+            self.localControllerNetwork.receiveClient() #blocking call for infinite time
+            if bool(self.localControllerNetwork._remoteSock):
+                call = self.localControllerNetwork.receiver()
+                if bool(call) and call == 'handlerinfo':
+                    message = json.dumps({'handlerUptime': self.initTime, 'handlerMachine': 'dummymex'})
+                    self.localControllerNetwork.sender(message)
+                elif bool(call) and call == 'handlerstop':
+                    stop = True
+            self.localControllerNetwork.sockClosure() #socket must always be closed
+        # server closure procedure
+        self.LOGGER.verbose = True
+        self.NETWORK.sockClosure() #closes the connected socket if any
+
+        self.isServing = False #stops server infinite loop
+        #self.autoServing.join()
+
+        self.autoCacheRest = 2 #sets to 2 the sleeping time
+        self.autoCacheRun = False #stops cache updater
+        #self.autoCache.join()
+
+        self.localControllerEvent.set() 
+        
 
     def start_all(self):
         self.autoCache.start()
         self.autoServing.start()
         self.LOGGER.verbose = False
 
-        self.eventController.wait() # when activated it will stop the application
+        self.localControllerEvent.wait() # when activated it will stop the application
 
-        self.LOGGER.add("closing server called from thread")
+        self.LOGGER.add("server- closure called from thread")
         self.isServing = False
         self.autoCacheRun = False
         sys.exit(1)
 
     def start_network(self):
         self.eventController.clear()
-        self.srpcT.start()
+        #self.srpcT.start()
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
-        self.LOGGER.add("SERVER", f"socket online: {self.isOnline}", f"bind to ip: {self.NETWORK.settings.host}")
+        self.LOGGER.add("server-", f"socket ready: {self.isOnline}", f"bind to ip: {self.NETWORK.settings.host}")
         #self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
-        self.LOGGER.add("server succesfully started")
+        self.LOGGER.add("server- network succesfully started")
 
     def checkCacheData(self):
         self.isCached = bool(self.BITCOIN_DATA.uptime)
         return self.isCached
 
     def cacheUpdater(self):
-        self.LOGGER.add("auto cache thread started")
+        self.LOGGER.add("server- auto cache thread started")
         self.autoCacheRun = True
         while self.autoCacheRun and self.bitcoindRunning:
             self.updateCacheData()
             self.updateGeolocationData(self.LOGGER)
             time.sleep(self.autoCacheRest)
-        self.LOGGER.add("auto cache thread stopped")
+        self.LOGGER.add("server- auto cache thread stopped")
             
 
     def start_serving(self):
         self.isServing = True
-        self.LOGGER.add("server started")
-        self.LOGGER.add("waiting for incoming connections")
+        self.LOGGER.add("server- waiting for incoming connections")
         while self.isServing and not self.SRPC.STOP:
          
             self.NETWORK.receiveClient(self.STORAGE.certificate) # creates an handshake random code when receiving a new client
@@ -130,7 +166,7 @@ class Server(lib.server.protocol.RequestHandler):
                     # self.LOGGER.add("remote socket active", self.NETWORK._remoteSock)
                     self.LOGGER.add("connection closed")
                 #######################################################
-        self.LOGGER.add("serving loop exit")
+        self.LOGGER.add("server- serving loop exit")
 
         
 
