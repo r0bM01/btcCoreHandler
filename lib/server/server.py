@@ -40,7 +40,6 @@ class Server(lib.server.protocol.RequestHandler):
 
         #self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
         self.localControllerNetwork = lib.shared.network.ServerRPC()
-        self.localControllerEvent = threading.Event()
         self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
         
         #loadedGeodata = self.STORAGE.load_geolocation()
@@ -64,8 +63,8 @@ class Server(lib.server.protocol.RequestHandler):
         self.localControllerNetwork.openSocket()
         self.LOGGER.add("server- local socket ready", bool(self.localControllerNetwork.socket))
         self.LOGGER.add("server- local controller started")
-        self.LOGGER.add("server- local event controller is waiting", self.localControllerEvent.is_set())
-        cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
+        # self.LOGGER.add("server- local event controller is waiting")
+        # cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
         stop = False
         while not stop:
             self.localControllerNetwork.receiveClient() #blocking call for infinite time
@@ -77,6 +76,11 @@ class Server(lib.server.protocol.RequestHandler):
                 elif bool(call) and call == 'handlerstop':
                     stop = True
             self.localControllerNetwork.sockClosure() #socket must always be closed
+        else:
+            nice_server_shutdown()
+        
+
+    def nice_server_shutdown(self):
         # server closure procedure
         self.LOGGER.verbose = True
         self.NETWORK.sockClosure() #closes the connected socket if any
@@ -88,7 +92,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoCacheRun = False #stops cache updater
         #self.autoCache.join()
 
-        self.localControllerEvent.set() 
         
 
     def start_all(self):
@@ -96,13 +99,13 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoServing.start()
         self.LOGGER.verbose = False
 
-        self.localControllerEvent.wait() # when activated it will stop the application
-
+        # self.localControllerEvent.wait() # when activated it will stop the application
+        """
         self.LOGGER.add("server- closure called from thread")
         self.isServing = False
         self.autoCacheRun = False
         sys.exit(1)
-
+        """
     def start_network(self):
         self.eventController.clear()
         #self.srpcT.start()
