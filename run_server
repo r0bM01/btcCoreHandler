@@ -106,7 +106,7 @@ def main():
         SERVER.localControllerThread.start()
 
         logger.add("--- Preliminary checks ended ---")
-
+        logger.add("bitcoin- daemon running", SERVER.bitcoindRunning)
         if SERVER.bitcoindRunning:
             logger.add("server- updating bitcoin cached data")
             SERVER.updateCacheData()
@@ -117,11 +117,10 @@ def main():
             logger.add("bitcoin- blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
             logger.add("bitcoin- peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
 
-            if internetIsOn:
+            if SERVER.internetIsOn:
                 logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
                 SERVER.updateGeolocationData(logger)   
 
-    
         logger.add("server- starting network")
         SERVER.start_network()
 

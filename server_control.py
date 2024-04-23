@@ -8,6 +8,6 @@ C.connect()
 
 
 input("\npress enter to stop server")
-C.sender("stopdaemon")
+C.sender("handlerstop")
 
 

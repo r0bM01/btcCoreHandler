@@ -180,7 +180,6 @@ class Server(Proto):
         self.remoteAddr = None
         self.handshakeCode = False
         
-
     def openSocket(self):
         try:
             self.socket = socket.create_server((self.settings.host, self.settings.port), family = socket.AF_INET,
@@ -188,6 +187,14 @@ class Server(Proto):
             self.socket.settimeout(self.settings.socketTimeout)
         except OSError:
             self.socket = False
+
+    def closeSocket(self):
+        try: 
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+        except (OSError, AttributeError):
+            pass
+        self.socket = False
 
     def receiveClient(self, certificate):
         try:

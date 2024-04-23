@@ -30,6 +30,7 @@ class Server(lib.server.protocol.RequestHandler):
 
         self.initTime = int(time.time())
         self.internetIsOn = lib.shared.network.Utils.checkInternet()
+        self.bitcoindRunning = lib.server.machine.checkDaemon()
 
         #init procedure
         self.STORAGE = storage
@@ -39,6 +40,7 @@ class Server(lib.server.protocol.RequestHandler):
         self.maxCallSize = 256 #bytes 
 
         #self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
+        self.localControllerEvent = threading.Event()
         self.localControllerNetwork = lib.shared.network.ServerRPC()
         self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
         
@@ -56,13 +58,13 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoCacheRun = False
         self.autoCacheRest = 30
         
-        self.LOGGER.add("bitcoind running", self.bitcoindRunning)
     
     def local_server_controller(self):
         # command line operation
         self.localControllerNetwork.openSocket()
         self.LOGGER.add("server- local socket ready", bool(self.localControllerNetwork.socket))
-        self.LOGGER.add("server- local controller started")
+        self.localControllerEvent.clear() # sets the internal flag to "False"
+        self.LOGGER.add("server- local controller started", not self.localControllerEvent.is_set())
         # self.LOGGER.add("server- local event controller is waiting")
         # cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
         stop = False
@@ -83,15 +85,23 @@ class Server(lib.server.protocol.RequestHandler):
     def nice_server_shutdown(self):
         # server closure procedure
         self.LOGGER.verbose = True
-        self.NETWORK.sockClosure() #closes the connected socket if any
+        self.LOGGER.add("server- nice shutdown started")
 
+        self.LOGGER.add("server- closing network sockets")
+        self.NETWORK.sockClosure() #closes the connected socket if any
+        self.NETWORK.closeSocket() #closes the server socket
+        
+        self.LOGGER.add("server- stopping main loop")
         self.isServing = False #stops server infinite loop
         #self.autoServing.join()
 
+        self.LOGGER.add("server- stopping autocache service")
         self.autoCacheRest = 2 #sets to 2 the sleeping time
         self.autoCacheRun = False #stops cache updater
         #self.autoCache.join()
 
+        self.LOGGER.add("server- shutdown completed")
+        self.localControllerEvent.set() # this will cause server stop
         
 
     def start_all(self):
@@ -99,15 +109,17 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoServing.start()
         self.LOGGER.verbose = False
 
-        # self.localControllerEvent.wait() # when activated it will stop the application
+        self.localControllerEvent.wait() # server hangs here!! 
+        # when activated it will stop the application
+
+        sys.exit(0) 
         """
         self.LOGGER.add("server- closure called from thread")
         self.isServing = False
         self.autoCacheRun = False
-        sys.exit(1)
         """
     def start_network(self):
-        self.eventController.clear()
+        
         #self.srpcT.start()
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
@@ -132,7 +144,7 @@ class Server(lib.server.protocol.RequestHandler):
     def start_serving(self):
         self.isServing = True
         self.LOGGER.add("server- waiting for incoming connections")
-        while self.isServing and not self.SRPC.STOP:
+        while self.isServing: #and not self.SRPC.STOP:
          
             self.NETWORK.receiveClient(self.STORAGE.certificate) # creates an handshake random code when receiving a new client
             if bool(self.NETWORK.handshakeCode): 
