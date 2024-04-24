@@ -30,7 +30,7 @@ class Server(lib.server.protocol.RequestHandler):
 
         self.initTime = int(time.time())
         self.internetIsOn = lib.shared.network.Utils.checkInternet()
-        self.bitcoindRunning = lib.server.machine.checkDaemon()
+        self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
 
         #init procedure
         self.STORAGE = storage
@@ -79,7 +79,7 @@ class Server(lib.server.protocol.RequestHandler):
                     stop = True
             self.localControllerNetwork.sockClosure() #socket must always be closed
         else:
-            nice_server_shutdown()
+            self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
         # server closure procedure
@@ -92,12 +92,12 @@ class Server(lib.server.protocol.RequestHandler):
         
         self.LOGGER.add("server- stopping main loop")
         self.isServing = False #stops server infinite loop
-        #self.autoServing.join()
+        # self.autoServing.join()
 
         self.LOGGER.add("server- stopping autocache service")
         self.autoCacheRest = 2 #sets to 2 the sleeping time
         self.autoCacheRun = False #stops cache updater
-        #self.autoCache.join()
+        # self.autoCache.join()
 
         self.LOGGER.add("server- shutdown completed")
         self.localControllerEvent.set() # this will cause server stop

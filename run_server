@@ -35,7 +35,6 @@ def check_dirs_files(storage):
     certNotValid = False
     success = False
 
-    addTempLog("--- Preliminary checks started ---")
     addTempLog(f"server- version running: [{lib.shared.settings.VERSION}]")
 
     def certificate_choice():   
@@ -62,7 +61,7 @@ def check_dirs_files(storage):
     addTempLog("server- checking files")
     for f, p in storage.saveFiles.items():
         check = storage.check_exists(p)
-        addTempLog(f"server- file [{f}]: [{p}]")
+        addTempLog(f"server- file [{f}]: [{check}]")
         if not check:
             storage.init_file(p)
             addTempLog(f"server- file {f} created")
@@ -77,7 +76,6 @@ def check_dirs_files(storage):
             addTempLog("Certificate not imported/generated. Server stopping and exit.")
         else:
             addTempLog("Certificate valid!")
-    
     return success
 
 
@@ -105,7 +103,6 @@ def main():
         
         SERVER.localControllerThread.start()
 
-        logger.add("bitcoin- daemon running", SERVER.bitcoindRunning)
         if SERVER.bitcoindRunning:
             logger.add("server- updating bitcoin cached data")
             SERVER.updateCacheData()
