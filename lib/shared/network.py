@@ -280,7 +280,7 @@ class Utils:
     @staticmethod
     def checkInternet(dest = False):
         addr = dest or 'https://8.8.8.8'
-        if 'https://' and 'http://' not in addr: 
+        if 'https://' not in addr and 'http://' not in addr: 
             addr = 'https://' + addr
         if 'https://' in addr:
             context = ssl.create_default_context()
@@ -288,9 +288,9 @@ class Utils:
             context = False 
         try:
             request = urllib.request.Request(url = addr, headers = {'User-Agent': 'Mozilla/5.0'})
-            test = urllib.request.urlopen(request, context = context, timeout = 2).read().decode()
+            test = urllib.request.urlopen(request, context = context, timeout = 2).read().decode('utf-8')
             return True
-        except urllib.request.URLError: 
+        except urllib.request.URLError as e: 
             return False
     
     @staticmethod

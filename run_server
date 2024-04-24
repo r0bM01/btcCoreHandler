@@ -36,7 +36,7 @@ def check_dirs_files(storage):
     success = False
 
     addTempLog("--- Preliminary checks started ---")
-    addTempLog("server- version running", lib.shared.settings.VERSION)
+    addTempLog(f"server- version running {lib.shared.settings.VERSION}")
 
     def certificate_choice():   
         c = input("Type \n'I' to import \n'G' to generate \n'Q' to quit \n>> ").upper()
