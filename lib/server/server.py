@@ -58,7 +58,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.autoCacheRun = False
         self.autoCacheRest = 30
         
-    
     def local_server_controller(self):
         # command line operation
         self.localControllerNetwork.openSocket()
@@ -76,11 +75,11 @@ class Server(lib.server.protocol.RequestHandler):
                     message = json.dumps({'handlerUptime': self.initTime, 'handlerMachine': 'dummymex'})
                     self.localControllerNetwork.sender(message)
                 elif bool(call) and call == 'handlerstop':
+                    self.LOGGER.add("server- received closure call", call)
                     stop = True
             self.localControllerNetwork.sockClosure() #socket must always be closed
         else:
             nice_server_shutdown()
-        
 
     def nice_server_shutdown(self):
         # server closure procedure
@@ -102,7 +101,6 @@ class Server(lib.server.protocol.RequestHandler):
 
         self.LOGGER.add("server- shutdown completed")
         self.localControllerEvent.set() # this will cause server stop
-        
 
     def start_all(self):
         self.autoCache.start()
@@ -140,7 +138,6 @@ class Server(lib.server.protocol.RequestHandler):
             time.sleep(self.autoCacheRest)
         self.LOGGER.add("server- auto cache thread stopped")
             
-
     def start_serving(self):
         self.isServing = True
         self.LOGGER.add("server- waiting for incoming connections")

@@ -124,7 +124,6 @@ class Client(Proto):
         self.isConnected = False
         self.handshakeCode = False
         
-
     def connectToServer(self, certificate):
         try:
             self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
