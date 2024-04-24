@@ -6,8 +6,15 @@ C.remotePort = 46001
 
 C.connect()
 
-
 input("\npress enter to stop server")
 C.sender("handlerstop")
+
+while True:
+    result = C.receiver()
+    if not bool(result) or result == 'handlerstopped':
+        break
+    else:
+        print(result)
+
 
 

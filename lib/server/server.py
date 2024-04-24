@@ -83,7 +83,7 @@ class Server(lib.server.protocol.RequestHandler):
 
     def nice_server_shutdown(self):
         # server closure procedure
-        self.LOGGER.verbose = True
+        # self.LOGGER.verbose = True
         self.LOGGER.add("server- nice shutdown started")
 
         self.LOGGER.add("server- closing network sockets")
@@ -100,6 +100,8 @@ class Server(lib.server.protocol.RequestHandler):
         # self.autoCache.join()
 
         self.LOGGER.add("server- shutdown completed")
+        self.localControllerNetwork.sender("shutdown completed")
+        self.localControllerNetwork.sender("handlerstopped")
         self.localControllerEvent.set() # this will cause server stop
 
     def start_all(self):
