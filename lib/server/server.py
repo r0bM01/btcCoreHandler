@@ -23,14 +23,15 @@ import lib.server.protocol
 import lib.server.srpc
 
 class Services:
-    def __init__(self, bitcoin_data, geolocation_data, logger):
+    def __init__(self, cache_data, geolocation_data, logger):
 
         self.services = [{'name': 'bitcoin', 'target': self.bitcoin_service, 'active': False}, 
                          {'name': 'geodata', 'target': self.geodata_service, 'active': False}]
 
         self.services_controller = threading.Event()
 
-        self.bitcoin = bitcoin_data
+        self.cache = cache_data # new data holder
+
         self.geolocation = geolocation_data
         self.logger = logger
 
@@ -66,29 +67,26 @@ class Services:
             self.services_controller.wait(self.worker_rest)
 
     def bitcoin_service(self):
+        ## runs the machine calls
         uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
-        self.bitcoin.uptime = json.loads(uptime)
-
         blockchainInfo = lib.server.machine.MachineInterface.runBitcoindCall("getblockchaininfo")
-        self.bitcoin.blockchainInfo = json.loads(blockchainInfo)
-        
         networkInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnetworkinfo")
-        self.bitcoin.networkInfo = json.loads(networkInfo)
-
         nettotalsInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnettotals")
-        self.bitcoin.nettotalsInfo = json.loads(nettotalsInfo)
-
         mempoolInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmempoolinfo")
-        self.bitcoin.mempoolInfo = json.loads(mempoolInfo)
-        
         miningInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmininginfo")
-        self.bitcoin.miningInfo = json.loads(miningInfo)
-
         peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
-        self.bitcoin.peersInfo = json.loads(peersInfo)
+        ## saves the data into cache
+        self.cache.bitcoin['uptime'] = json.loads(uptime)
+        self.cache.bitcoin['blockchainInfo'] = json.loads(blockchainInfo)
+        self.cache.bitcoin['networkInfo'] = json.loads(networkInfo)
+        self.cache.bitcoin['nettotalsInfo'] = json.loads(nettotalsInfo)
+        self.cache.bitcoin['mempoolInfo'] = json.loads(mempoolInfo)
+        self.cache.bitcoin['miningInfo'] = json.loads(miningInfo)
+        self.cache.bitcoin['peersInfo'] = json.loads(peersInfo)
+        self.cache.bitcoin_update_time = int(time.time()) 
 
     def geodata_service(self):
-        self.bitcoin.connectedInfo = self.geolocation.updateDatabase(self.bitcoin.peersInfo, self.logger)
+        self.cache.connectedInfo = self.geolocation.updateDatabase(self.bitcoin.peersInfo, self.logger)
 
 class Server(lib.server.protocol.RequestHandler):
     def __init__(self, logger, storage):
@@ -105,11 +103,10 @@ class Server(lib.server.protocol.RequestHandler):
         self.STORAGE = storage
         self.LOGGER = logger
         self.NETWORK = lib.shared.network.Server(lib.shared.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
-        self.SERVICES = Services(self.BITCOIN_DATA, self.GEO_DATA, self.LOGGER)
+        self.SERVICES = Services(self.CACHE, self.GEO_DATA, self.LOGGER)
 
         self.maxCallSize = 256 #bytes 
 
-        #self.SRPC = lib.server.srpc.ServerRPC(self.eventController)
         self.localControllerEvent = threading.Event()
         self.localControllerNetwork = lib.shared.network.ServerRPC()
         self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
@@ -120,16 +117,9 @@ class Server(lib.server.protocol.RequestHandler):
         self.GEO_DATA.loadDatabase()
 
         self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
-        self.isCached = False
         self.isServing = False
         self.isOnline = False
 
-        """
-        self.autoCache = threading.Thread(target = self.cacheUpdater, daemon = True)
-        self.autoCacheRun = False
-        self.autoCacheRest = 30
-        """
-        
     def local_server_controller(self):
         # command line operation
         self.localControllerNetwork.openSocket()
@@ -167,9 +157,6 @@ class Server(lib.server.protocol.RequestHandler):
 
         self.LOGGER.add("server- stopping autocache service")
         self.SERVICES.stop()
-        # self.autoCacheRest = 2 #sets to 2 the sleeping time
-        # self.autoCacheRun = False #stops cache updater
-        # self.autoCache.join()
 
         self.LOGGER.add("server- shutdown completed")
         self.localControllerNetwork.sender("shutdown completed")
@@ -197,18 +184,6 @@ class Server(lib.server.protocol.RequestHandler):
         #self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
         self.LOGGER.add("server- network succesfully started")
 
-    def checkCacheData(self):
-        self.isCached = bool(self.BITCOIN_DATA.uptime)
-        return self.isCached
-
-    def cacheUpdater(self):
-        self.LOGGER.add("server- auto cache thread started")
-        self.autoCacheRun = True
-        while self.autoCacheRun and self.bitcoindRunning:
-            self.updateCacheData()
-            self.updateGeolocationData(self.LOGGER)
-            time.sleep(self.autoCacheRest)
-        self.LOGGER.add("server- auto cache thread stopped")
             
     def start_serving(self):
         self.isServing = True
@@ -252,7 +227,46 @@ class Server(lib.server.protocol.RequestHandler):
                 #######################################################
         self.LOGGER.add("server- serving loop exit")
 
-        
+class Peer(lib.shared.network.Proto):
+    def __init__(self, remoteSocket):
+        self._remoteSock = remoteSocket
+        self.certificate = None
+        self.handshake_code = None
+        self.crypto = None
+
+        self.first_active = int(time.time())
+        self.last_active = None
+        self.session_calls = None
+
+    def handshake_process(self):
+        """
+        clientRandom = self.dataRecv(16)
+        serverRandom = lib.shared.crypto.getRandomBytes(16)
+        entropy = clientRandom + serverRandom
+        if bool(clientRandom) and self.dataSend(serverRandom):
+            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
+            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
+            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
+            if self.dataRecv(16) == bytes.fromhex(request):
+                self.handshakeCode = handshakeCode if self.dataSend(bytes.fromhex(confirm)) else False
+        if not bool(self.handshakeCode): self.sockClosure()
+        """
+        pass
+    
+    def activate_cryptography(self):
+        self.crypto = lib.shared.crypto.Peer(self.certificate, self.handshake_code)
+        self.crypto.make_cryptography_dict()
+
+    def write(self, data):
+        encrypted_data = self.crypto.encrypt(data)
+        return self.sender(encrypted_data)
+    
+    def read(self, max_call_size = False):
+        encrypted_data = self.receiver(max_call_size)
+        if bool(encrypted_data): data = self.crypto.decrypt(encrypted_data)
+        else: data = False
+        return data
+            
 
 
 

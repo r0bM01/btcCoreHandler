@@ -18,6 +18,41 @@ from collections import Counter
 from lib.shared.network import Utils
 
 
+class Cache:
+    def __init__(self):
+        ## hosting machine details
+        self.node_details = {'node': platform.node(),
+                             'machine': platform.machine(),
+                             'system': platform.system(),
+                             'release': platform.release() }
+
+        ## hosting machine bitcoin process ID
+        self.PID = None
+
+        ## btcCoreHandler server start time
+        self.server_init_time = None
+
+        ## Bitcoin related data
+        self.bitcoin = {'uptime': None,
+                        'blockchainInfo': None,
+                        'networkInfo': None,
+                        'mempoolInfo': None,
+                        'miningInfo': None,
+                        'nettotalsInfo': None,
+                        'peersInfo': None }
+        
+        self.bitcoin_update_time = None
+        
+        ## peersInfo + geolocation
+        self.connectedInfo = None 
+
+        ## IP Geolocation
+        self.ip_index = None
+
+
+
+
+
 class Bitcoin:
     def __init__(self):
         self.PID = None

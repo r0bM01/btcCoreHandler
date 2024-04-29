@@ -34,6 +34,8 @@ class RequestHandler:
     def __init__(self):
         #must be inherited by server class
         #do not instantiate directly
+
+        self.CACHE = lib.server.data.Cache() # New data holder
         
         self.CONTROL = lib.shared.commands.Control()
         self.BITCOIN_DATA = lib.server.data.Bitcoin()
@@ -54,10 +56,10 @@ class RequestHandler:
 
         if request == "keepalive": return json.dumps({"confirm": "alive"})
         elif request == "getsysteminfo": return json.dumps(lib.server.data.Machine.dataInfo) 
-        elif request == "getstatusinfo": return json.dumps(self.BITCOIN_DATA.getStatusInfo())
-        elif request == "getconnectedinfo": return json.dumps(self.BITCOIN_DATA.connectedInfo)
-        elif request == "getpeerinfo": return json.dumps(self.BITCOIN_DATA.peersInfo)
-        elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.BITCOIN_DATA.peersInfo))
+        elif request == "getstatusinfo": return json.dumps(self.getstatusinfo())
+        elif request == "getconnectedinfo": return json.dumps(self.CACHE.connectedInfo)
+        elif request == "getpeerinfo": return json.dumps(self.CACHE.bitcoin['peersInfo'])
+        elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.CACHE.bitcoin['peersInfo']))
         elif request == "getserverlogs": return json.dumps(LOGGER.SESSION)
         elif request == "test": return "TESTENCRYPTSERVICE"
         elif request == "advancedcall": return self.directCall(args)
@@ -89,32 +91,39 @@ class RequestHandler:
         else:
             return json.dumps({"error": "invalid command"})
         
-    def updateCacheData(self):
-        if self.bitcoindRunning:
-            uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
-            self.BITCOIN_DATA.uptime = json.loads(uptime)
+    def getstatusinfo(self):
+        message = {}
+        #message['startData'] = self.startDate
+        message['uptime'] = self.CACHE.bitcoin['uptime']['uptime']
+        message['chain'] = self.CACHE.bitcoin['blockchainInfo']['chain']
+        message['blocks'] = self.CACHE.bitcoin['blockchainInfo']['blocks']
+        message['headers'] = self.CACHE.bitcoin['blockchainInfo']['headers']
+        message['verificationprogress'] = self.CACHE.bitcoin['blockchainInfo']['verificationprogress']
+        message['pruned'] = self.CACHE.bitcoin['blockchainInfo']['pruned']
+        message['size_on_disk'] = self.CACHE.bitcoin['blockchainInfo']['size_on_disk']
 
-            blockchainInfo = lib.server.machine.MachineInterface.runBitcoindCall("getblockchaininfo")
-            self.BITCOIN_DATA.blockchainInfo = json.loads(blockchainInfo)
-            
-            networkInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnetworkinfo")
-            self.BITCOIN_DATA.networkInfo = json.loads(networkInfo)
+        message['version'] = self.CACHE.bitcoin['networkInfo']['version']
+        message['subversion'] = self.CACHE.bitcoin['networkInfo']['subversion']
+        message['protocolversion'] = self.CACHE.bitcoin['networkInfo']['protocolversion']
+        message['connections'] = self.CACHE.bitcoin['networkInfo']['connections']
+        message['connections_in'] = self.CACHE.bitcoin['networkInfo']['connections_in']
+        message['connections_out'] = self.CACHE.bitcoin['networkInfo']['connections_out']
+        message['localservicesnames'] = self.CACHE.bitcoin['networkInfo']['localservicesnames']
+        message['networks'] = self.CACHE.bitcoin['networkInfo']['networks']
+        message['relayfee'] = self.CACHE.bitcoin['networkInfo']['relayfee']
 
-            nettotalsInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnettotals")
-            self.BITCOIN_DATA.nettotalsInfo = json.loads(nettotalsInfo)
+        message['totalbytessent'] = self.CACHE.bitcoin['nettotalsInfo']['totalbytessent']
+        message['totalbytesrecv'] = self.CACHE.bitcoin['nettotalsInfo']['totalbytesrecv']
 
-            mempoolInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmempoolinfo")
-            self.BITCOIN_DATA.mempoolInfo = json.loads(mempoolInfo)
-            
-            miningInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmininginfo")
-            self.BITCOIN_DATA.miningInfo = json.loads(miningInfo)
+        message['difficulty'] = self.CACHE.bitcoin['miningInfo']['difficulty']
+        message['networkhashps'] = self.CACHE.bitcoin['miningInfo']['networkhashps']
 
-            peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
-            self.BITCOIN_DATA.peersInfo = json.loads(peersInfo)
-    
-    def updateGeolocationData(self, LOGGER):
-        if self.BITCOIN_DATA.peersInfo:
-            self.BITCOIN_DATA.connectedInfo = self.GEO_DATA.updateDatabase(self.BITCOIN_DATA.peersInfo, LOGGER)
+        message['size'] = self.CACHE.bitcoin['mempoolInfo']['size']
+        # message['bytes'] = self.mempoolInfo['bytes']
+        message['usage'] = self.CACHE.bitcoin['mempoolInfo']['usage']
+        message['mempoolminfee'] = self.CACHE.bitcoin['mempoolInfo']['mempoolminfee']
+        message['fullrbf'] = self.CACHE.bitcoin['mempoolInfo']['fullrbf']
+        return message
 
 
 

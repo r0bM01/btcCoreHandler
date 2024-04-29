@@ -16,6 +16,46 @@
 import hmac, hashlib, secrets
 
 
+class Peer:
+	def __init__(self, certificate, handshakeCode):
+		self.certificate = bytes.fromhex(certificate)
+		self.handshake = bytes.fromhex(handshakeCode)
+
+		self.encryption_dict = False
+		self.decryption_dict = False
+
+	def make_hash(self, string):
+		key = bytes.fromhex(self.certificate)
+		psw = bytes.fromhex(self.handshake)
+		data = string.encode('utf-8')
+		return hashlib.blake2b(data, key = key, salt = psw, digest_size = 2).hexdigest()
+	
+	def make_cryptography_dict(self):
+		enc = {} # thread safe encryption dict
+		dec = {} # thread safe decryption dict
+		for num in range(256):
+			code = hex(num)[2:].zfill(2)
+			value = self.make_hash(code)
+			enc[code] = value
+			dec[value] = code
+		# can now add it to class property
+		self.encryption_dict = enc
+		self.decryption_dict = dec
+			
+	def encrypt(self, message):
+		key = bytes.fromhex(self.certificate)
+		psw = bytes.fromhex(self.handshake)
+		msg = message.encode('utf-8').hex()
+		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
+
+	def decrypt(self, message):
+		key = bytes.fromhex(self.certificate)
+		psw = bytes.fromhex(self.handshake)
+		msg = message.encode('utf-8').hex()
+		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
+		return hex_decrypt.decode('utf-8')
+
+
 def getRandomBytes(size):
 	return secrets.token_bytes(int(size))
 
