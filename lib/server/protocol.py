@@ -43,25 +43,26 @@ class RequestHandler:
 
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
         
-    def handle_request(self, remoteCall, LOGGER):
-        call = remoteCall[:16]
-        args = remoteCall[16:]
+    def handle_request(self, remoteCall):
+        remote_request = remoteCall.split("#")
+        call = remote_request[0]
+        args = remote_request[1:]
+
+        
+        if call not in self.CONTROL.calls: return json.dumps({"error": "invalid command"})
+        if call in self.CONTROL.cachedCalls: return json.dumps(call())
+        
+        if call == "keepalive": return json.dumps({"confirm": "alive"})
+
         if not self.CONTROL.check(call): return json.dumps({"error": "invalid command"})
-        request = self.CONTROL.encodedCalls[call]
-        # LOGGER.add("call", request)
+
         if not self.bitcoindRunning and request == "getstatusinfo": return json.dumps({"uptime": 0})
         if not self.bitcoindRunning and request != "start": return json.dumps({"error": "bitcoin daemon not running"})
         elif not self.bitcoindRunning and request == "start": self.startbitcoind()
         elif self.bitcoindRunning and request == "stop": self.stopbitcoind()
 
-        if request == "keepalive": return json.dumps({"confirm": "alive"})
-        elif request == "getsysteminfo": return json.dumps(lib.server.data.Machine.dataInfo) 
-        elif request == "getstatusinfo": return json.dumps(self.getstatusinfo())
-        elif request == "getconnectedinfo": return json.dumps(self.CACHE.connectedInfo)
-        elif request == "getpeerinfo": return json.dumps(self.CACHE.bitcoin['peersInfo'])
         elif request == "getgeolocationinfo": return json.dumps(self.GEO_DATA.getCountryList(self.CACHE.bitcoin['peersInfo']))
-        elif request == "getserverlogs": return json.dumps(LOGGER.SESSION)
-        elif request == "test": return "TESTENCRYPTSERVICE"
+
         elif request == "advancedcall": return self.directCall(args)
         elif request in self.CONTROL.bitcoinCalls: return lib.server.machine.MachineInterface.runBitcoindCall(request)
 
@@ -90,6 +91,15 @@ class RequestHandler:
                 return json.dumps({"error": "command not authorized"})
         else:
             return json.dumps({"error": "invalid command"})
+
+    def getconnectedinfo(self):
+        return json.dumps(self.CACHE.connectedInfo)
+
+    def getsysteminfo(self):
+        return json.dumps(self.CACHE.node_details)
+
+    def getpeerinfo(self):
+        return jsoin.dumps(self.CACHE.bitcoin['peersInfo'])
         
     def getstatusinfo(self):
         message = {}

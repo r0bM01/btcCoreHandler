@@ -48,7 +48,6 @@ class Proto:
         except (OSError, AttributeError):
             pass
         self._remoteSock = False
-    #################################################
     
     ###########################################################################################################
         # MESSAGE SEND/RECEIVE WITH CONFIRM

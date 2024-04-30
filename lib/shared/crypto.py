@@ -17,25 +17,28 @@ import hmac, hashlib, secrets
 
 
 class Peer:
-	def __init__(self, certificate, handshakeCode):
-		self.certificate = bytes.fromhex(certificate)
-		self.handshake = bytes.fromhex(handshakeCode)
+	def __init__(self, peerCert, handshakeCode):
+		self.certificate = peerCert
+		self.handshake_code = handshakeCode
 
 		self.encryption_dict = False
 		self.decryption_dict = False
 
-	def make_hash(self, string):
-		key = bytes.fromhex(self.certificate)
-		psw = bytes.fromhex(self.handshake)
-		data = string.encode('utf-8')
-		return hashlib.blake2b(data, key = key, salt = psw, digest_size = 2).hexdigest()
+		self.get_entropy = Utils.getRandomBytes
 	
+	def make_handshake_code(self, entropy):
+		if type(entropy) is not bytes:
+			entropy = bytes.fromhex(entropy)
+		return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
+
 	def make_cryptography_dict(self):
+		key = self.certificate
+		psw = self.handshake_code
 		enc = {} # thread safe encryption dict
 		dec = {} # thread safe decryption dict
 		for num in range(256):
 			code = hex(num)[2:].zfill(2)
-			value = self.make_hash(code)
+			value = hashlib.blake2b(code.encode('utf-8'), key = key, salt = psw, digest_size = 2).hexdigest()
 			enc[code] = value
 			dec[value] = code
 		# can now add it to class property
@@ -43,21 +46,36 @@ class Peer:
 		self.decryption_dict = dec
 			
 	def encrypt(self, message):
-		key = bytes.fromhex(self.certificate)
-		psw = bytes.fromhex(self.handshake)
+		key = self.certificate
+		psw = self.handshake_code
 		msg = message.encode('utf-8').hex()
 		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
 
 	def decrypt(self, message):
-		key = bytes.fromhex(self.certificate)
-		psw = bytes.fromhex(self.handshake)
+		key = self.certificate
+		psw = self.handshake_code
 		msg = message.encode('utf-8').hex()
 		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
 		return hex_decrypt.decode('utf-8')
 
 
-def getRandomBytes(size):
-	return secrets.token_bytes(int(size))
+
+class Utils:
+	@staticmethod
+	def getRandomBytes(size):
+		return secrets.token_bytes(int(size))
+	
+	@staticmethod
+	def getHashedCommand(command, certificate, handshakeCode):
+		return hashlib.blake2b(command.encode(), key = bytes.fromhex(certificate), salt = bytes.fromhex(handshakeCode), digest_size = 8).hexdigest()
+
+	@staticmethod
+	def getHandshakeCertificate(entropy, certificate):
+		return hashlib.blake2b(entropy, key = certificate, digest_size = 16).hexdigest()
+	
+	@staticmethod
+	def getHandshakeCode(entropy, certificate, nonce):
+		return hashlib.blake2b(entropy, key = certificate, salt = nonce, digest_size = 16).hexdigest()
 
 def getHash(data):
 	return hashlib.blake2b(data.encode()).hexdigest()
