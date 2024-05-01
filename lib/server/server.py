@@ -193,7 +193,7 @@ class Server(lib.server.protocol.RequestHandler):
                 peer.join()
                 self.connected_peers.remove(peer)
 
-    def remote_peer_handler(self, remotePeer, handshake):
+    def remote_peer_handler(self, remotePeerSocket, handshake):
         connectedPeer = lib.server.network.Peer(remotePeerSocket, handshake.remote_certificate, handshake.handshake_code)
         while connectedPeer._remoteSock and not self.localControllerEvent.is_set():
             remote_request = connectedPeer.read(self.maxCallSize)
@@ -214,7 +214,7 @@ class Server(lib.server.protocol.RequestHandler):
             ## handshake is managed by server daemon thread
             if bool(remotePeerSocket):
                 self.LOGGER.add("server- peer is trying to connect", remotePeerSocket.getpeername())
-                handshake = lib.server.network.Handshake(self.STORAGE.certificate, remotePeerSocket)
+                handshake = lib.server.network.Handshake([self.STORAGE.certificate], remotePeerSocket)
                 handshake.start_process()
             ## if handshake is successfull it will be created a thread to handle the remote peer requests
             if bool(remotePeerSocket) and bool(handshake.handshake_done) and self.available_workers():
