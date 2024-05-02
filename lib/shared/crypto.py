@@ -18,8 +18,8 @@ import hmac, hashlib, secrets
 
 class Peer:
 	def __init__(self, peerCert, handshakeCode):
-		self.certificate = peerCert
-		self.handshake_code = handshakeCode
+		self.certificate = bytes.fromhex(peerCert)
+		self.handshake_code = bytes.fromhex(handshakeCode)
 
 		self.encryption_dict = False
 		self.decryption_dict = False

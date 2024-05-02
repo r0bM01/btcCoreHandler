@@ -193,33 +193,34 @@ class Server(lib.server.protocol.RequestHandler):
                 peer.join()
                 self.connected_peers.remove(peer)
 
-    def remote_peer_handler(self, remotePeerSocket, handshake):
-        connectedPeer = lib.server.network.Peer(remotePeerSocket, handshake.remote_certificate, handshake.handshake_code)
-        while connectedPeer._remoteSock and not self.localControllerEvent.is_set():
-            remote_request = connectedPeer.read(self.maxCallSize)
-            self.LOGGER.add("server- peer has sent a new request", connectedPeer.getpeername()[0], remote_request)
+    def remote_peer_handler(self, new_peer):
+        new_peer.init_crypto()
+        #connectedPeer = lib.server.network.Peer(remotePeerSocket, handshake.remote_certificate, handshake.handshake_code)
+        while new_peer._remoteSock and not self.localControllerEvent.is_set():
+            remote_request = new_peer.read(self.maxCallSize)
+            self.LOGGER.add("server- peer has sent a new request", new_peer.address, remote_request)
             result = self.handle_request(remote_request)
-            reply_sent = connectedPeer.write(result)
-            self.LOGGER.add("server- peer reply sent", connectedPeer.getpeername()[0], reply_sent)
+            reply_sent = new_peer.write(result)
+            self.LOGGER.add("server- peer reply sent", new_peer.address, reply_sent)
+            new_peer.session_calls.append({'time': int(time.time()), 'request': remote_request, 'success': reply_sent})
         else:
-            self.LOGGER.add("server- peer has disconnected", connectedPeer.getpeername()[0])
-            connectedPeer.sockClosure()
+            self.LOGGER.add("server- peer has disconnected", new_peer.address)
+            new_peer.sockClosure()
 
     def start_serving(self):
         self.isServing = True
         self.LOGGER.add("server- waiting for incoming connections")
-        while self.isServing: 
+        while self.isServing and not self.localControllerEvent.is_set(): 
 
-            remotePeerSocket = self.NETWORK.receiveClient()
+            new_peer = lib.server.network.Peer(self.NETWORK.receiveClient())
             ## handshake is managed by server daemon thread
-            if bool(remotePeerSocket):
-                self.LOGGER.add("server- peer is trying to connect", remotePeerSocket.getpeername())
-                handshake = lib.server.network.Handshake([self.STORAGE.certificate], remotePeerSocket)
-                handshake.start_process()
+            if bool(new_peer._remoteSock):
+                self.LOGGER.add("server- peer is trying to connect", new_peer.address)
+                new_peer.make_handshake([self.STORAGE.certificate])
             ## if handshake is successfull it will be created a thread to handle the remote peer requests
-            if bool(remotePeerSocket) and bool(handshake.handshake_done) and self.available_workers():
-                self.LOGGER.add("server- peer successfully connected", remotePeerSocket.getpeername())
-                remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = (remotePeerSocket, handshake))
+            if bool(new_peer._remoteSock) and bool(new_peer.handshake_done) and self.available_workers():
+                self.LOGGER.add("server- peer successfully connected", new_peer.address)
+                remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = (new_peer))
                 remotePeerThread.start()
                 self.connected_peers.append(remotePeerThread)
             
