@@ -89,7 +89,7 @@ class Handshake(Proto):
             remote_checksum = self.dataRecv(16)
             self.remote_certificate = certs_checksums.get(remote_certificate)
     
-    def make_handshake(self):
+    def start_handshake(self):
         if bool(self.remote_certificate):
             handshake_nonce = Utils.getRandomBytes(16) # generates a nonce that must be hashed with entropy and correct certificate
             handshake = bytes.fromhex(Utils.getHandshakeCode(self.entropy_code, self.remote_certificate, handshake_nonce))
@@ -110,7 +110,7 @@ class Handshake(Proto):
         ## step 2: hash all available certificates with the entropy and checks if remote certificate checksum is allowed 
         self.choose_certificate(certificates_list)
         ## step 3: random nonce will be sent to remote peer and the reply should be equal to entropy hashed with certificate and nonce
-        self.make_handshake()
+        self.start_handshake()
         ## step 4: when everything matches sends confirmation
         self.confirm_handshake()
         ## final: if peer received the confirmation, handshake is considered done
@@ -121,8 +121,6 @@ class Peer(Handshake):
         ## inherits handshake object
         self._remoteSock = new_peer_tuple[0]
         self.address = new_peer_tuple[1]
-        #self.certificate = bytes.fromhex(peerCert)
-        #self.handshake_code = bytes.fromhex(handshakeCode)
         self.crypto = None #Peer(self.certificate, self.handshake_code)
 
         self.first_active = int(time.time())

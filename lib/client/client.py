@@ -15,7 +15,7 @@
 
 import lib.shared.commands
 import lib.shared.crypto
-import lib.shared.network
+import lib.client.network
 import lib.shared.settings
 import lib.shared.storage
 import json, threading, time, queue, pathlib
@@ -29,7 +29,7 @@ class Client:
 
         self.control = lib.shared.commands.Control()
 
-        self.network = lib.shared.network.Client()
+        self.network = lib.client.network.Client()
 
         #self.storage = lib.share.storage.Client()
 
@@ -68,7 +68,8 @@ class Client:
     def initConnection(self, host, port = False):
         if not self.network.isConnected and bool(self.certificate): 
             self.network.remoteHost = str(host)
-            self.network.connectToServer(self.certificate)
+            self.network.connectToServer()
+            self.network.make_handshake(self.certificate)
         if self.network.isConnected:
             self.initHashedCalls()
             self.getSystemInfo()

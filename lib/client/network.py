@@ -16,29 +16,24 @@
 
 import socket
 from lib.shared.network import Proto
+from lib.shared.crypto import Utils
+from lib.shared.crypto import Peer
 
-
-
-class Client(Proto):
+class Client(Handshake):
     def __init__(self):
         self.remoteHost = None # has to be given by UI  
         self.remotePort = 4600 # default port
         self.timeout = 120
         self.isConnected = False
-        self.handshakeCode = False
-        
-    def connectToServer(self, certificate):
+        self.crypto = None
+                
+    def connectToServer(self):
         try:
             self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
-            #self._remoteSock.settimeout(10)
-            # self.handshakeCode = self.receiver()
-            # self.isConnected = True if len(self.handshakeCode) == 32 else False
+            self.isConnected = True
         except (OSError, TimeoutError):
             self.isConnected = False
             self._remoteSock = False
-        
-        if bool(self._remoteSock): 
-            self.handshakeProcess(certificate)
 
     def disconnectServer(self):
         #self._remoteSock.close()
@@ -47,16 +42,49 @@ class Client(Proto):
         self.isConnected = False
         self.handshakeCode = False
     
-    def handshakeProcess(self, certificate):
-        clientRandom = lib.shared.crypto.getRandomBytes(16)
+    def init_crypto(self):
+        self.crypto = Peer(self.local_certificate, self.handshake_code)
+        self.crypto.make_cryptography_dict()
+    
+
+class Handshake(Proto):
+    entropy_code = False
+    local_certificate = False
+    handshake_code = False
+    
+    def exchange_entropy(self):
+        clientRandom = Utils.getRandomBytes(16)
         serverRandom = self.dataRecv(16) if self.dataSend(clientRandom) else False
-        entropy = clientRandom + serverRandom
         if bool(serverRandom):
-            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
-            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
-            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
-            if self.dataSend(bytes.fromhex(request)) and self.dataRecv(8) == bytes.fromhex(confirm):
-                self.handshakeCode = handshakeCode
-                self.isConnected = True
-                self._remoteSock.settimeout(self.timeout)
-        if not bool(self.handshakeCode): self.sockClosure() 
+            self.entropy_code = clientRandom + serverRandom
+    
+    def choose_certificate(self, loaded_certificate):
+        if bool(self.entropy_code):
+            cert_checksum = bytes.fromhex(Utils.getHandshakeCertificate(self.entropy_code, bytes.fromhex(loaded_certificate)))  
+            if self.dataSend(cert_checksum):
+                self.local_certificate = loaded_certificate
+    
+    def do_handshake(self):
+        if bool(self.local_certificate):
+            handshake_nonce = self.dataRecv(16) # gets new handshake nonce from server
+            if bool(handshake_nonce):
+                self.handshake_code = bytes.fromhex(Utils.getHandshakeCode(self.entropy_code, self.local_certificate, handshake_nonce))
+
+    def confirm_handshake(self):
+        if bool(self.handshake_code):
+            confirmation = bytes.fromhex(Utils.getHandshakeCode(b'handshakeaccepted', self.local_certificate, self.handshake_code))
+            if self.dataRecv(16) == confirmation:
+                self.handshake_done = True
+                self.local_certificate = self.local_certificate.hex()
+                self.handshake_code = self.handshake_code.hex()
+                     
+    def make_handshake(self, loaded_certificate):
+        ## step 1: exchange a 16 bytes entropy code
+        self.exchange_entropy()
+        ## step 2: hash all available certificates with the entropy and checks if remote certificate checksum is allowed 
+        self.choose_certificate(loaded_certificate)
+        ## step 3: random nonce will be sent to remote peer and the reply should be equal to entropy hashed with certificate and nonce
+        self.do_handshake()
+        ## step 4: when everything matches sends confirmation
+        self.confirm_handshake()
+        ## final: if peer received the confirmation, handshake is considered done
