@@ -80,12 +80,22 @@ class Base:
             F.write(dataLenght + dataBytes)
         return dataPos
     
-    def read(self, filePath, dataPos = 0):
+    def read_all(self, filePath):
         realPath = pathlib.Path(filePath)
+        data_array = []
         with open(realPath, "rb") as F:
-            F.seek(dataPos)
-            dataBytes = F.read(int(F.read(2).hex(), 16))
-        return dataBytes
+            while True:
+                data_pos = F.tell()
+                data_size = int(F.read(2), 16)
+                if bool(data_size):
+                    data_bytes = F.read(data_size)
+                    data_array.append({'dataPos': data_pos, 'dataBytes': data_bytes})
+                    F.seek(data_size, 1)
+                else:
+                    break
+        return data_array
+
+
 
 class Client(Base):
 

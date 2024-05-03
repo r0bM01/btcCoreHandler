@@ -52,3 +52,18 @@ class Storage(lib.storage.Base):
         if not pathlib.Path.exists(self.file_tree['geoDbContent']):
             raise OSError("Missing geolocation database!")
         self.geolocation = Geolocation(self.certificate, self.dir_tree['geoDb'])
+    
+    def geolocation_load_db_index(self):
+        full_data_file = self.read_all(self.file_tree['geoDbContent']) #bytes loaded
+        database = {}
+        for entry in full_data_file:
+            entry_file_pos = entry['dataPos']
+            geolocation_data = self.crypto.decrypt(entry['dataBytes']).split("#")
+            database[geolocation_data[0]] = entry['dataPos']
+        return database # returns a dict "ip_bytes_key" : "peer_file_position_value"
+    
+    def geolocation_load_entry(self, file_pos):
+        pass
+
+             
+        
