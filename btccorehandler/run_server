@@ -17,10 +17,11 @@
 #############################################################################
 
 import time, sys
-import lib.server.server
-import lib.server.machine
-import lib.shared.storage
-import lib.shared.settings
+import lib.storage
+import lib.settings
+import server.server
+import server.machine
+
 
 from lib.shared.network import Utils
 
