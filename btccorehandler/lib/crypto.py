@@ -16,7 +16,7 @@
 import hmac, hashlib, secrets
 
 
-class Peer:
+class Network:
 	def __init__(self, peerCert, handshakeCode):
 		self.certificate = bytes.fromhex(peerCert)
 		self.handshake_code = bytes.fromhex(handshakeCode)
@@ -46,18 +46,32 @@ class Peer:
 		self.decryption_dict = dec
 			
 	def encrypt(self, message):
-		key = self.certificate
-		psw = self.handshake_code
 		msg = message.encode('utf-8').hex()
 		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
 
 	def decrypt(self, message):
-		key = self.certificate
-		psw = self.handshake_code
 		msg = message.encode('utf-8').hex()
 		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
 		return hex_decrypt.decode('utf-8')
 
+
+class Storage:
+	def __init__(self, certificate):
+		self.certificate = bytes.fromhex(certificate)
+		self.encryption_dict = { hex(num)[2:].zfill(2) : self.hash_func(hex(num)[2:].zfill(2)) for num in range(256) }
+		self.decryption_dict = { self.hash_func(hex(num)[2:].zfill(2)) : hex(num)[2:].zfill(2) for num in range(256) }
+
+	def hash_func(self, code):
+		return hashlib.blake2b(code.encode('utf-8'), key = self.certificate, digest_size = 2).hexdigest()
+
+	def encrypt(self, data):
+		msg = data.encode('utf-8').hex()
+		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
+
+	def decrypt(self, data):
+		msg = data.encode('utf-8').hex()
+		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
+		return hex_decrypt.decode('utf-8')
 
 
 class Utils:

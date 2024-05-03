@@ -15,7 +15,7 @@
 
 import socket, time
 from lib.shared.network import Proto
-from lib.shared.crypto import Peer
+from lib.shared.crypto import Network
 from lib.shared.crypto import Utils
 
 ###########################################################################################################
@@ -128,7 +128,7 @@ class Peer(Handshake):
         self.session_calls = []
     
     def init_crypto(self):
-        self.crypto = Peer(self.remote_certificate, self.handshake_code)
+        self.crypto = Network(self.remote_certificate, self.handshake_code)
         self.crypto.make_cryptography_dict()
 
     def write(self, data):
