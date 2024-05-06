@@ -72,7 +72,7 @@ class Base:
     def verify_certificate(self):
         return len(self.load_certificate()) == 128
     
-    def write(self, filePath, dataBytes):
+    def write_append(self, filePath, dataBytes):
         realPath = pathlib.Path(filePath)
         dataLenght = bytes.fromhex(str(hex(len(dataBytes))[2:]).zfill(4))
         with open(realPath, "ab") as F:
@@ -80,7 +80,15 @@ class Base:
             F.write(dataLenght + dataBytes)
         return dataPos
     
-    def read_all(self, filePath):
+    def write_new(self, filePath, dataBytes):
+        realPath = pathlib.Path(filePath)
+        dataLenght = bytes.fromhex(str(hex(len(dataBytes))[2:]).zfill(4))
+        with open(realPath, "wb") as F:
+            dataPos = F.tell()
+            F.write(dataLenght + dataBytes)
+        return dataPos
+
+    def read_all_file(self, filePath):
         realPath = pathlib.Path(filePath)
         data_array = []
         with open(realPath, "rb") as F:
@@ -94,6 +102,15 @@ class Base:
                 else:
                     break
         return data_array
+    
+    def read_single_entry(self, filePath, dataPos):
+        realPath = pathlib.Path(filePath)
+        with open(realPath, "rb") as F:
+            F.seek(dataPos)
+            data_size = int(F.read(2), 16)
+            data_bytes = F.read(data_size)
+        return data_bytes
+
 
 
 

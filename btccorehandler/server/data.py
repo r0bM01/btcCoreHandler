@@ -13,18 +13,20 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import platform, json
-from collections import Counter
+import platform, json, time
+import server.machine
 from lib.shared.network import Utils
 
 
 class Cache:
     def __init__(self):
         ## hosting machine details
-        self.node_details = {'node': platform.node(),
-                             'machine': platform.machine(),
-                             'system': platform.system(),
-                             'release': platform.release() }
+        self.node_details = {
+            'node': platform.node(),
+            'machine': platform.machine(),
+            'system': platform.system(),
+            'release': platform.release() 
+            }
 
         ## hosting machine bitcoin process ID
         self.PID = None
@@ -33,146 +35,75 @@ class Cache:
         self.server_init_time = None
 
         ## Bitcoin related data
-        self.bitcoin = {'uptime': None,
-                        'blockchainInfo': None,
-                        'networkInfo': None,
-                        'mempoolInfo': None,
-                        'miningInfo': None,
-                        'nettotalsInfo': None,
-                        'peersInfo': None }
-        
+        self.bitcoin_info = {
+            'uptime': None,
+            'blockchainInfo': None,
+            'networkInfo': None,
+            'mempoolInfo': None,
+            'miningInfo': None,
+            'nettotalsInfo': None,
+            'peersInfo': None 
+            }
+        ## last update time
         self.bitcoin_update_time = None
-        
-        ## peersInfo + geolocation
-        self.connectedInfo = None 
 
         ## IP Geolocation
-        self.ip_index = None
-
-
-
-
-
-class Bitcoin:
-    def __init__(self):
-        self.PID = None
-
-        self.uptime = None
-
-        self.blockchainInfo = None
-        self.networkInfo = None
-        self.mempoolInfo = None
-        self.miningInfo = None
-        self.nettotalsInfo = None
-        self.peersInfo = None
-        self.connectedInfo = None # peersInfo + geolocation
-
-    def getStatusInfo(self):
-        message = {}
-        #message['startData'] = self.startDate
-        message['uptime'] = self.uptime['uptime']
-        message['chain'] = self.blockchainInfo['chain']
-        message['blocks'] = self.blockchainInfo['blocks']
-        message['headers'] = self.blockchainInfo['headers']
-        message['verificationprogress'] = self.blockchainInfo['verificationprogress']
-        message['pruned'] = self.blockchainInfo['pruned']
-        message['size_on_disk'] = self.blockchainInfo['size_on_disk']
-
-        message['version'] = self.networkInfo['version']
-        message['subversion'] = self.networkInfo['subversion']
-        message['protocolversion'] = self.networkInfo['protocolversion']
-        message['connections'] = self.networkInfo['connections']
-        message['connections_in'] = self.networkInfo['connections_in']
-        message['connections_out'] = self.networkInfo['connections_out']
-        message['localservicesnames'] = self.networkInfo['localservicesnames']
-        message['networks'] = self.networkInfo['networks']
-        message['relayfee'] = self.networkInfo['relayfee']
-
-        message['totalbytessent'] = self.nettotalsInfo['totalbytessent']
-        message['totalbytesrecv'] = self.nettotalsInfo['totalbytesrecv']
-
-        message['difficulty'] = self.miningInfo['difficulty']
-        message['networkhashps'] = self.miningInfo['networkhashps']
-
-        message['size'] = self.mempoolInfo['size']
-        # message['bytes'] = self.mempoolInfo['bytes']
-        message['usage'] = self.mempoolInfo['usage']
-        message['mempoolminfee'] = self.mempoolInfo['mempoolminfee']
-        message['fullrbf'] = self.mempoolInfo['fullrbf']
-        return message
+        self.geolocation_index = None # database must be loaded ## index[ip_address] = position on file
+        self.geolocation_write = None # function to write into database
+        self.geolocation_read = None # function to read from database
+        ## peersInfo + geolocation
+        self.connectedInfo = None 
     
-    def getSinglePeerInfo(self, peerID):
-        for p in self.peersInfo:
-            if str(peerID) == p['id']: message = p
-        return message
+    def get_bitcoin_info(self):
+        ## runs the machine calls
+        self.bitcoin_info['uptime'] = json.loads(server.machine.MachineInterface.runBitcoindCall("uptime"))
+        self.bitcoin_info['blockchainInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getblockchaininfo"))
+        self.bitcoin_info['networkInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getnetworkinfo"))
+        self.bitcoin_info['nettotalsInfo']= json.loads(server.machine.MachineInterface.runBitcoindCall("getnettotals"))
+        self.bitcoin_info['mempoolInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmempoolinfo"))
+        self.bitcoin_info['miningInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmininginfo"))
+        self.bitcoin_info['peersInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
 
+        self.bitcoin_update_time = int(time.time()) 
 
-class IPGeolocation:
-        def __init__(self):
-            #self.GEODATA = list()
-            self.INDEX = False # index loaded with ipkey and relative file position
-            self.FILES = False # Object accessing the database
-    
-        def loadDatabase(self):
-            self.INDEX = self.FILES.load_database()
-
-        def getGeolocation(self, ip):
-            geoData = json.loads(Utils.getGeolocation(ip))
-            key = self.FILES.make_key(Utils.getPackedIp(ip))
-            filePos = self.FILES.set_value(geoData)
-            self.INDEX[key] = filePos
-            return geoData
-
-        def updateDatabase(self, peersInfo, LOGGER):
-            for peer in peersInfo:
-                ip = peer['addr'].split(":")[0]
-                if not self.isKnown(ip):
-                    geoData = self.getGeolocation(ip)
-                    LOGGER.add("new peer found", geoData['ip'], geoData['country_name'])
-                key = self.FILES.make_key(Utils.getPackedIp(ip))
-                rawData = self.FILES.get_value(self.INDEX[key])
-                peer['country_name'] = rawData['country_name']
-                peer['country_code'] = rawData['country_code']
-                peer['isp'] = rawData['isp']
-            return peersInfo #it returns the same list updated with geolocation data
-                
-        def isKnown(self, ip):
-            return self.FILES.make_key(Utils.getPackedIp(ip)) in self.INDEX
-        
-        def getFromDatabase(self, ip):
-            return self.FILES.get_value_by_ip(ip)
-
-        def search(self, text):
-            text = str(text).lower()
-            results = []
-            if Utils.getCheckedIp(text): # returns True if is an IPv4 or IPv6
-                key = self.FILES.make_key(Utils.getPackedIp(text))
-                if key in self.INDEX:
-                    results.append(self.FILES.get_value(self.INDEX[key]))
-                else:
-                    results.append({"error": "ip address not found!"})
-            elif len(text) == 2: # if text lenght is only 2 it means we are searching for a country code
-                print("country search")
-                for key in self.INDEX:
-                    p = self.FILES.get_value(self.INDEX[key])
-                    if text in p['country_code'].lower():
-                        results.append(p)
+    def get_geolocation_update(self):
+        all_peers = self.bitcoin_info['peersInfo']
+        for peer in all_peers:
+            ip = peer['addr'].split(":")[0]
+            if ip in self.geolocation_index:
+                # retrieve geodata from database
+                geo_data = self.geolocation_read(self.geolocation_index[ip])
             else:
-                print("other search")
-                for key in self.INDEX:
-                    p = self.FILES.get_value(self.INDEX[key])
-                    if text in p['country_name'].lower() or text in p['isp'].lower():
-                        results.append(p)
-            if not bool(results):
-                results.append({"error": "no results found!"})
-            return results
+                # get geodata from web and writes it into database
+                geo_data = json.loads(Utils.getGeolocation(ip))
+                self.geolocation_index[ip] = self.geolocation_write(geo_data)
+            # adds geodata to peer details
+            geo_data.pop('ip') # removes 'ip' field
+            peer.update(geo_data)
+        self.connectedInfo = all_peers
 
+    def get_geolocation_entry(self, ip):
+        if Utils.getCheckedIp(ip) and ip in self.geolocation_index:
+            result = self.geolocation.read(self.geolocation_index[ip])
+        else:
+            result = {'error': 'ip address not found'}
+        return result
 
+    def get_geolocation_search(self, txt_input):
+        target = text_input.lower()
+        result = []
+        if Utils.getCheckedIp(target) and target in self.geolocation_index:
+            result.append(self.geolocation_read(self.geolocation_index[target]))
+        else: 
+            for peer in self.geolocation_index:
+                geo_data = self.geolocation_read(self.geolocation_index[peer])
+                if len(target) == 2 and target in geo_data['country_code2'].lower():
+                    result.append(geo_data)
+                elif len(target) > 2 and target in geo_data['country_name'].lower():
+                    result.append(geo_data)
+                elif len(target) > 2 and target in geo_data['isp'].lower():
+                    result.append(geo_data)
+        if not bool(result):
+                result.append({"error": "no results found!"})    
+        return result
 
-
-class Machine:
-    dataInfo = {}
-    dataInfo['node'] = platform.node()
-    dataInfo['machine'] = platform.machine()
-    dataInfo['system'] = platform.system()
-    dataInfo['release'] = platform.release()

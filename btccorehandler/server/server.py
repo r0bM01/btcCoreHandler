@@ -40,7 +40,7 @@ class Server(lib.server.protocol.RequestHandler):
         self.STORAGE = storage
         self.LOGGER = logger
         self.NETWORK = lib.server.network.Server(lib.server.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
-        self.SERVICES = lib.server.services.Engine(self.CACHE, self.GEO_DATA, self.LOGGER)
+        self.SERVICES = lib.server.services.Engine(self.LOGGER)
 
         self.maxCallSize = 256 #bytes
         self.maxPeersWorker = 5 # max 5 peers connected at the same time, which equals to max 5 child threads
@@ -102,6 +102,10 @@ class Server(lib.server.protocol.RequestHandler):
         self.localControllerNetwork.sender("handlerstopped")
         self.localControllerNetwork.sockClosure() #socket must always be closed
         self.localControllerEvent.set() # this will cause server stop
+
+    def init_services(self):
+        self.SERVICES.add_new_service('bitcoin', self.CACHE.get_bitcoin_info) # adds bitcoin 'info' service update
+        self.SERVICES.add_new_service('geolocation', self.CACHE.get_geolocation_update) 
 
     def start_all(self):
         # self.autoCache.start()

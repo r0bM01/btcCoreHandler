@@ -60,9 +60,7 @@ def main():
             storage.init_file(storage.file_tree[file])
             logger.add(f"storage: file [{storage.file_tree[file]}] created")
     
-    ## loads geolocation database
-    storage.init_geolocation()
-    logger.add("storage: geolocation data loaded", bool(storage.geolocation.index) )
+    
     
     ## init Server instance
     SERVER = server.server.Server(logger, storage)
@@ -75,9 +73,15 @@ def main():
     ## init Server RPC local controller
     SERVER.localControllerThread.start()
 
+    ## loads known geolocation data from storage
+    SERVER.CACHE.geolocation_index = storage.geolocation_load_db_index()
+    SERVER.CACHE.geolocation_write = storage.geolocation_write_entry
+    SERVER.CACHE.geolocation_read = storage.geolocation_load_entry
+    logger.add("geolocation: data loaded from storage", bool(SERVER.CACHE.geolocation_index))
+
     if SERVER.bitcoindRunning:
         logger.add("server: updating bitcoin cached data")
-        SERVER.SERVICES.bitcoin_service()
+        SERVER.CACHE.get_bitcoin_info()
         #SERVER.updateCacheData()
 
         logger.add("bitcoin: client", SERVER.BITCOIN_DATA.networkInfo['subversion'])

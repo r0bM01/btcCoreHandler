@@ -19,16 +19,12 @@ import lib.server.machine
 
 
 class Engine:
-    def __init__(self, cache_data, geolocation_data, logger):
+    def __init__(self, logger):
 
-        self.services = [{'name': 'bitcoin', 'target': self.bitcoin_service, 'active': False}, 
-                         {'name': 'geodata', 'target': self.geodata_service, 'active': False}]
+        self.services = [{'name': 'geodata', 'target': self.geodata_service, 'active': False}]
 
         self.services_controller = threading.Event()
 
-        self.cache = cache_data # new data holder
-
-        self.geolocation = geolocation_data
         self.logger = logger
 
         self.worker = self.make_new_thread()
@@ -55,31 +51,12 @@ class Engine:
 
     def make_new_thread(self):
         return threading.Thread(target = self.services_worker, daemon = True)
+    
+    def add_new_service(name, target):
+        self.services.append({'name': name, 'target': target, 'active': False})
 
     def services_worker(self):
         while not self.services_controller.is_set():
             for service in self.services:
                 if service['active']: service['target']() # execute the service if active
             self.services_controller.wait(self.worker_rest)
-
-    def bitcoin_service(self):
-        ## runs the machine calls
-        uptime = lib.server.machine.MachineInterface.runBitcoindCall("uptime")
-        blockchainInfo = lib.server.machine.MachineInterface.runBitcoindCall("getblockchaininfo")
-        networkInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnetworkinfo")
-        nettotalsInfo = lib.server.machine.MachineInterface.runBitcoindCall("getnettotals")
-        mempoolInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmempoolinfo")
-        miningInfo = lib.server.machine.MachineInterface.runBitcoindCall("getmininginfo")
-        peersInfo = lib.server.machine.MachineInterface.runBitcoindCall("getpeerinfo")
-        ## saves the data into cache
-        self.cache.bitcoin['uptime'] = json.loads(uptime)
-        self.cache.bitcoin['blockchainInfo'] = json.loads(blockchainInfo)
-        self.cache.bitcoin['networkInfo'] = json.loads(networkInfo)
-        self.cache.bitcoin['nettotalsInfo'] = json.loads(nettotalsInfo)
-        self.cache.bitcoin['mempoolInfo'] = json.loads(mempoolInfo)
-        self.cache.bitcoin['miningInfo'] = json.loads(miningInfo)
-        self.cache.bitcoin['peersInfo'] = json.loads(peersInfo)
-        self.cache.bitcoin_update_time = int(time.time()) 
-
-    def geodata_service(self):
-        self.cache.connectedInfo = self.geolocation.updateDatabase(self.bitcoin.peersInfo, self.logger)

@@ -16,6 +16,42 @@
 import subprocess, json
 
 
+class Node:
+    def __init__(self):
+        self.allowed_commands = []
+    
+    def get_local_IP(self):
+        return str(subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip("\n"))
+    
+    def check_bitcoin_daemon(self):
+        return bool(subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode())
+
+    def run_command(self, command):
+        if command not in self.allowed_commands: return {"error", "command not allowed"}
+
+class BitcoinDaemon:
+    def __init__(self):
+        self.daemon = "bitcoind"
+        self.client = "bitcoin-cli"
+
+        self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
+    
+    def start(self):
+        subprocess.run([self.daemon])
+        self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
+        return {"start": self.is_running}
+
+    def stop(self):
+        subprocess.run([self.client, "stop"])
+        self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
+        return {"stop": self.is_running}
+
+    def run_command(self, command, args):
+        result = subprocess.run([self.client], capture_output = True).stdout.decode()
+
+
+
+
 class MachineInterface:
     
     @staticmethod

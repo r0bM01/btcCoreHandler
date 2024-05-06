@@ -23,12 +23,6 @@ import lib.server.machine
 
 from lib.shared.network import Utils
 
-class BaseRequest:
-    _maxLenght = 256
-
-    def deserialize(self, fullRequest):
-        self.baseCall = fullRequest[:16]
-        self.params = fullRequest[16:].split(":")
         
 class RequestHandler:
     def __init__(self):
@@ -36,18 +30,34 @@ class RequestHandler:
         #do not instantiate directly
 
         self.CACHE = lib.server.data.Cache() # New data holder
-        
         self.CONTROL = lib.shared.commands.Control()
-        self.BITCOIN_DATA = lib.server.data.Bitcoin()
-        self.GEO_DATA = lib.server.data.IPGeolocation()
+        self.BITCOIN_DAEMON = server.machine.BitcoinDaemon()
 
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
-        
-    def handle_request(self, remoteCall):
-        remote_request = remoteCall.split("#")
-        call = remote_request[0]
-        args = remote_request[1:]
 
+        ## calls list
+        self.cached_calls = { # cached calls that require bitcoin daemon running
+            'getstatusinfo', 'getconnectedinfo', 'getblockchaininfo', 'getnetworkinfo',
+            'getnettotals', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo'
+            }
+        
+        self.general_calls = { 'keepalive', 'getsysteminfo' } # general calls that do not require bitcoin daemon
+        self.control_calls = { 'startdaemon', 'stopdaemon', 'getserverlogs' } # calls reserved to admin level. Do not require bitcoin daemon
+
+        self.updated_calls = { 'updated', 'getgeolocation' }
+
+
+    def handle_request(self, remote_message, remote_level):
+        remote_request = remote_message.split("#")
+        main_call = remote_request[0]
+        
+
+        if main_call in self.general_calls: return json.dumps(main_call())
+
+
+        if not self.BITCOIN_DAEMON.is_running and main_call == 'getstatusinfo': return json.dumps({"uptime": 0})
+        elif not self.BITCOIN_DAEMON.is_running and main_call != 'start': return json.dumps({"error": "bitcoin daemon not running"})
+        elif not self.BITCOIN_DAEMON.is_running and main_call == 'start': return jsoin.dumps(self.BITCOIN_DAMEMON.start())
         
         if call not in self.CONTROL.calls: return json.dumps({"error": "invalid command"})
         if call in self.CONTROL.cachedCalls: return json.dumps(call())
@@ -91,15 +101,15 @@ class RequestHandler:
                 return json.dumps({"error": "command not authorized"})
         else:
             return json.dumps({"error": "invalid command"})
-
-    def getconnectedinfo(self):
-        return json.dumps(self.CACHE.connectedInfo)
+    
+    def keepalive(self):
+        return {"confirm": "alive"}
 
     def getsysteminfo(self):
         return json.dumps(self.CACHE.node_details)
-
-    def getpeerinfo(self):
-        return jsoin.dumps(self.CACHE.bitcoin['peersInfo'])
+    
+    def bitcoin_call(self, command, args):
+        pass
         
     def getstatusinfo(self):
         message = {}
@@ -135,5 +145,24 @@ class RequestHandler:
         message['fullrbf'] = self.CACHE.bitcoin['mempoolInfo']['fullrbf']
         return message
 
+    def getblockchaininfo(self):
+        return json.dumps(self.CACHE.bitcoin_info['blockchainInfo'])
 
+    def getnetworkinfo(self):
+        return json.dumps(self.CACHE.bitcoin_info['networkInfo'])
 
+    def getnettotals(self):
+        return json.dumps(self.CACHE.bitcoin_info['nettotalsInfo'])
+    
+    def getmempoolinfo(self):
+        return json.dumps(self.CACHE.bitcoin_info['mempoolInfo'])
+
+    def getmininginfo(self):
+        return json.dumps(self.CACHE.bitcoin_info['miningInfo'])  
+
+    def getpeerinfo(self):
+        return json.dumps(self.CACHE.bitcoin_info['peersInfo'])
+
+    def getconnectedinfo(self):
+        return json.dumps(self.CACHE.connectedInfo)
+    
