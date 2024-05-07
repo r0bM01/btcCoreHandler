@@ -157,3 +157,38 @@ class Client:
             
 
 
+    """
+    def getstatusinfo(self):
+        message = {}
+        #message['startData'] = self.startDate
+        message['uptime'] = self.CACHE.bitcoin['uptime']['uptime']
+        message['chain'] = self.CACHE.bitcoin['blockchainInfo']['chain']
+        message['blocks'] = self.CACHE.bitcoin['blockchainInfo']['blocks']
+        message['headers'] = self.CACHE.bitcoin['blockchainInfo']['headers']
+        message['verificationprogress'] = self.CACHE.bitcoin['blockchainInfo']['verificationprogress']
+        message['pruned'] = self.CACHE.bitcoin['blockchainInfo']['pruned']
+        message['size_on_disk'] = self.CACHE.bitcoin['blockchainInfo']['size_on_disk']
+
+        message['version'] = self.CACHE.bitcoin['networkInfo']['version']
+        message['subversion'] = self.CACHE.bitcoin['networkInfo']['subversion']
+        message['protocolversion'] = self.CACHE.bitcoin['networkInfo']['protocolversion']
+        message['connections'] = self.CACHE.bitcoin['networkInfo']['connections']
+        message['connections_in'] = self.CACHE.bitcoin['networkInfo']['connections_in']
+        message['connections_out'] = self.CACHE.bitcoin['networkInfo']['connections_out']
+        message['localservicesnames'] = self.CACHE.bitcoin['networkInfo']['localservicesnames']
+        message['networks'] = self.CACHE.bitcoin['networkInfo']['networks']
+        message['relayfee'] = self.CACHE.bitcoin['networkInfo']['relayfee']
+
+        message['totalbytessent'] = self.CACHE.bitcoin['nettotalsInfo']['totalbytessent']
+        message['totalbytesrecv'] = self.CACHE.bitcoin['nettotalsInfo']['totalbytesrecv']
+
+        message['difficulty'] = self.CACHE.bitcoin['miningInfo']['difficulty']
+        message['networkhashps'] = self.CACHE.bitcoin['miningInfo']['networkhashps']
+
+        message['size'] = self.CACHE.bitcoin['mempoolInfo']['size']
+        # message['bytes'] = self.mempoolInfo['bytes']
+        message['usage'] = self.CACHE.bitcoin['mempoolInfo']['usage']
+        message['mempoolminfee'] = self.CACHE.bitcoin['mempoolInfo']['mempoolminfee']
+        message['fullrbf'] = self.CACHE.bitcoin['mempoolInfo']['fullrbf']
+        return message
+        """
