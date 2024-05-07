@@ -49,11 +49,6 @@ class Server(lib.server.protocol.RequestHandler):
         self.localControllerEvent = threading.Event()
         self.localControllerNetwork = lib.shared.network.ServerRPC()
         self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
-        
-        #loadedGeodata = self.STORAGE.load_geolocation()
-        #if bool(loadedGeodata): self.GEO_DATA.GEODATA.extend(loadedGeodata)
-        self.GEO_DATA.FILES = self.STORAGE.geolocation
-        self.GEO_DATA.loadDatabase()
 
         self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
         self.isServing = False

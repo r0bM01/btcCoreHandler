@@ -37,12 +37,12 @@ class Cache:
         ## Bitcoin related data
         self.bitcoin_info = {
             'uptime': None,
-            'blockchainInfo': None,
-            'networkInfo': None,
-            'mempoolInfo': None,
-            'miningInfo': None,
-            'nettotalsInfo': None,
-            'peersInfo': None 
+            'blockchaininfo': None,
+            'networkinfo': None,
+            'mempoolinfo': None,
+            'mininginfo': None,
+            'nettotalsinfo': None,
+            'peersinfo': None 
             }
         ## last update time
         self.bitcoin_update_time = None
@@ -57,12 +57,12 @@ class Cache:
     def get_bitcoin_info(self):
         ## runs the machine calls
         self.bitcoin_info['uptime'] = json.loads(server.machine.MachineInterface.runBitcoindCall("uptime"))
-        self.bitcoin_info['blockchainInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getblockchaininfo"))
-        self.bitcoin_info['networkInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getnetworkinfo"))
-        self.bitcoin_info['nettotalsInfo']= json.loads(server.machine.MachineInterface.runBitcoindCall("getnettotals"))
-        self.bitcoin_info['mempoolInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmempoolinfo"))
-        self.bitcoin_info['miningInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmininginfo"))
-        self.bitcoin_info['peersInfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
+        self.bitcoin_info['blockchaininfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getblockchaininfo"))
+        self.bitcoin_info['networkinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getnetworkinfo"))
+        self.bitcoin_info['nettotalsinfo']= json.loads(server.machine.MachineInterface.runBitcoindCall("getnettotals"))
+        self.bitcoin_info['mempoolinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmempoolinfo"))
+        self.bitcoin_info['mininginfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmininginfo"))
+        self.bitcoin_info['peersinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
 
         self.bitcoin_update_time = int(time.time()) 
 
@@ -83,7 +83,9 @@ class Cache:
         self.connectedInfo = all_peers
 
     def get_geolocation_entry(self, ip):
-        if Utils.getCheckedIp(ip) and ip in self.geolocation_index:
+        if not Utils.getCheckedIp(ip): 
+            result = {'error': 'ip address not valid'}
+        elif ip in self.geolocation_index:
             result = self.geolocation.read(self.geolocation_index[ip])
         else:
             result = {'error': 'ip address not found'}
