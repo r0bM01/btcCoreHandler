@@ -101,7 +101,7 @@ class RequestHandler:
 
     def bitcoin_call(self, command, args_list):
         # temporary. Needs to be changed with new BitcoinDaemon interface
-        return lib.server.machine.MachineInterface.runBitcoindCall(command, args_list)
+        return self.BITCOIN_DAEMON.run_command(command, args_list)
         
     
 
