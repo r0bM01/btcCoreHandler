@@ -27,8 +27,9 @@ class RequestHandler:
         #must be inherited by server class
         #do not instantiate directly
 
-        self.CACHE = server.data.Cache() # New data holder
         self.BITCOIN_DAEMON = server.machine.BitcoinDaemon()
+        self.CACHE = server.data.Cache() # New data holder
+        
 
         self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
 

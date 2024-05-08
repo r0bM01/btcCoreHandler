@@ -14,9 +14,9 @@
 #############################################################################
 
 import socket, time
-from lib.shared.network import Proto
-from lib.shared.crypto import Network
-from lib.shared.crypto import Utils
+from lib.network import Proto
+from lib.crypto import (Network, Utils)
+
 
 ###########################################################################################################
 ###########################################################################################################
@@ -24,7 +24,7 @@ from lib.shared.crypto import Utils
 class Settings:
     def __init__(self, host = False, port = False):
         self.host = str(host) if host else "" # if not provided binds it to all interfaces # socket.gethostbyname(socket.gethostname()) 
-        self.port = int(port) if port else 4600
+        self.port = int(port) if port else 46800
 
         self.socketTimeout = 5
         self.remoteSockTimeout = 120
@@ -57,7 +57,7 @@ class Server(Proto):
     def receiveClient(self):
         try:
             self._remoteSock, self.remoteAddr = self.socket.accept()
-            self._remoteSock.settimeout(self._opTimeout)
+            self._remoteSock.settimeout(self._opTimeout) 
             return (self._remoteSock, self.remoteAddr)
         except OSError:
             self.sockClosure()
@@ -100,6 +100,7 @@ class Handshake(Proto):
         if bool(self.handshake_code):
             confirmation = bytes.fromhex(Utils.getHandshakeCode(b'handshakeaccepted', self.remote_certificate, self.handshake_code))
             if self.dataSend(confirmation):
+                self._remoteSock.settimeout(120) ## with correct handshake, server can wait a request up to 120 seconds for this peer
                 self.handshake_done = True
                 self.remote_certificate = self.remote_certificate.hex()
                 self.handshake_code = self.handshake_code.hex()
@@ -121,6 +122,7 @@ class Peer(Handshake):
         ## inherits handshake object
         self._remoteSock = new_peer_tuple[0]
         self.address = new_peer_tuple[1]
+
         self.crypto = None #Peer(self.certificate, self.handshake_code)
 
         self.first_active = int(time.time())

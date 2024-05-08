@@ -54,7 +54,7 @@ class Cache:
         ## peersInfo + geolocation
         self.connectedInfo = None 
     
-    def get_bitcoin_info(self):
+    def get_bitcoin_info(self, logger):
         ## runs the machine calls
         self.bitcoin_info['uptime'] = json.loads(server.machine.MachineInterface.runBitcoindCall("uptime"))
         self.bitcoin_info['blockchaininfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getblockchaininfo"))
@@ -63,10 +63,12 @@ class Cache:
         self.bitcoin_info['mempoolinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmempoolinfo"))
         self.bitcoin_info['mininginfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getmininginfo"))
         self.bitcoin_info['peersinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
-
         self.bitcoin_update_time = int(time.time()) 
 
-    def get_geolocation_update(self):
+        if all(value for key, value in self.bitcoin_info.items()):
+            logger.add("server: a bitcoin call didn't work")
+
+    def get_geolocation_update(self, logger):
         all_peers = self.bitcoin_info['peersInfo']
         for peer in all_peers:
             ip = peer['addr'].split(":")[0]
@@ -77,6 +79,7 @@ class Cache:
                 # get geodata from web and writes it into database
                 geo_data = json.loads(Utils.getGeolocation(ip))
                 self.geolocation_index[ip] = self.geolocation_write(geo_data)
+                logger.add("geolocation: new node found", geo_data['ip'], geo_data['country_name'])
             # adds geodata to peer details
             geo_data.pop('ip') # removes 'ip' field
             peer.update(geo_data)

@@ -72,26 +72,26 @@ def main():
     ## init Server RPC local controller
     SERVER.localControllerThread.start()
 
-    ## loads known geolocation data from storage
-    SERVER.CACHE.geolocation_index = storage.geolocation_load_db_index()
-    SERVER.CACHE.geolocation_write = storage.geolocation_write_entry
-    SERVER.CACHE.geolocation_read = storage.geolocation_load_entry
-    logger.add("geolocation: data loaded from storage", bool(SERVER.CACHE.geolocation_index))
 
     if SERVER.bitcoindRunning:
         logger.add("server: updating bitcoin cached data")
-        SERVER.CACHE.get_bitcoin_info()
-        #SERVER.updateCacheData()
+        SERVER.CACHE.get_bitcoin_info(logger)
 
         logger.add("bitcoin: client", SERVER.CACHE.bitcoin_info['networkinfo']['subversion'])
         logger.add("bitcoin: uptime", SERVER.CACHE.bitcoin_info['uptime']['uptime'])
         logger.add("bitcoin: chain", SERVER.CACHE.bitcoin_info['blockchaininfo']['chain'])
         logger.add("bitcoin: blocks", SERVER.CACHE.bitcoin_info['blockchaininfo']['blocks'])
         logger.add("bitcoin: peers", SERVER.CACHE.bitcoin_info['networkinfo']['connections'])
-
-        if SERVER.internetIsOn:
-            logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
-            SERVER.updateGeolocationData(logger)   
+    
+    if SERVER.bitcoindRunning and SERVER.internetIsOn:
+        ## loads known geolocation data from storage
+        SERVER.init_geolocation_cache()
+        logger.add("geolocation: data loaded from storage", bool(SERVER.CACHE.geolocation_index))
+        ## sends a single update on geolocation
+        logger.add("geolocation: updating data. It might take up to 2 minutes")
+        SERVER.CACHE.get_geolocation_update(logger)   
+        ## init auto update services
+        SERVER.init_services()
 
     logger.add("server: starting network")
     SERVER.start_network()

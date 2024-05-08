@@ -58,5 +58,5 @@ class Engine:
     def services_worker(self):
         while not self.services_controller.is_set():
             for service in self.services:
-                if service['active']: service['target']() # execute the service if active
+                if service['active']: service['target'](self.logger) # execute the service if active
             self.services_controller.wait(self.worker_rest)
