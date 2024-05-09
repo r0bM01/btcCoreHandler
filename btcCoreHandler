@@ -17,4 +17,4 @@
 
 import subprocess
 
-subprocess.Popen(["/usr/lib/btcCoreHandler/run_ui"])
+subprocess.Popen(["btccorehandler/run_server"])
