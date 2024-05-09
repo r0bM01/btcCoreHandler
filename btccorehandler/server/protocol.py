@@ -31,7 +31,7 @@ class RequestHandler:
         self.CACHE = server.data.Cache() # New data holder
         
 
-        self.bitcoindRunning = lib.server.machine.MachineInterface.checkDaemon()
+        self.bitcoindRunning = server.machine.MachineInterface.checkDaemon()
 
         ## calls list
         self.cached_calls = { # cached calls that require bitcoin daemon running

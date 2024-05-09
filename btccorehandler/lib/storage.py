@@ -15,9 +15,9 @@
 
 
 import os, pathlib, time, json
-import lib.shared.settings
-import lib.shared.crypto
-from lib.shared.network import Utils
+import lib.settings
+import lib.crypto
+from lib.network import Utils
 
 class Base:
     def __init__(self):
@@ -94,11 +94,11 @@ class Base:
         with open(realPath, "rb") as F:
             while True:
                 data_pos = F.tell()
-                data_size = int(F.read(2), 16)
+                data_size = F.read(2)
                 if bool(data_size):
-                    data_bytes = F.read(data_size)
+                    data_bytes = F.read(int(data_size.hex(), 16))
                     data_array.append({'dataPos': data_pos, 'dataBytes': data_bytes})
-                    F.seek(data_size, 1)
+                    #F.seek(data_size, 1)
                 else:
                     break
         return data_array
@@ -107,8 +107,8 @@ class Base:
         realPath = pathlib.Path(filePath)
         with open(realPath, "rb") as F:
             F.seek(dataPos)
-            data_size = int(F.read(2), 16)
-            data_bytes = F.read(data_size)
+            data_size = F.read(2)
+            data_bytes = F.read(int(data_size.hex(), 16))
         return data_bytes
 
 

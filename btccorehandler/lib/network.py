@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import lib.shared.crypto
+import lib.crypto
 import socket, ssl, time, ipaddress
 import urllib.request
 

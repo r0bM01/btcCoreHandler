@@ -43,19 +43,21 @@ def main():
         logger.add("Certificate must be generated or imported")
         certificate_choice(storage)
     logger.add("storage: certificate is available", storage.verify_certificate())
+    storage.init_certificate()
+    storage.init_cryptography()
 
     ## checks directories and files
     logger.add("storage: checking directory tree integrity")
     for directory in storage.dir_tree:
         check = storage.check_exists(storage.dir_tree[directory])
-        logger.add(f"storage: exists [{storage.dir_tree[directory]}]", check)
+        logger.add(f"storage: [{storage.dir_tree[directory]}]", check)
         if not check: 
             storage.init_dir(storage.dir_tree[directory])
             logger.add(f"storage: dir [{storage.dir_tree[directory]}] created")
     
     for file in storage.file_tree:
         check = storage.check_exists(storage.file_tree[file])
-        logger.add(f"storage: exists [{storage.file_tree[file]}]", check)
+        logger.add(f"storage: [{storage.file_tree[file]}]", check)
         if not check:
             storage.init_file(storage.file_tree[file])
             logger.add(f"storage: file [{storage.file_tree[file]}] created")

@@ -49,9 +49,9 @@ class Network:
 		msg = message.encode('utf-8').hex()
 		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
 
-	def decrypt(self, message):
-		msg = message.encode('utf-8').hex()
-		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
+	def decrypt(self, hex_message):
+		msg = hex_message # message.encode('utf-8').hex()
+		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+4]) for x in range(0, len(msg), 4) ]))
 		return hex_decrypt.decode('utf-8')
 
 
@@ -68,9 +68,9 @@ class Storage:
 		msg = data.encode('utf-8').hex()
 		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
 
-	def decrypt(self, data):
-		msg = data.encode('utf-8').hex()
-		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+l]) for x in range(0, len(msg), 4) ]))
+	def decrypt(self, hex_data):
+		msg = hex_data #data.encode('utf-8').hex()
+		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+4]) for x in range(0, len(msg), 4) ]))
 		return hex_decrypt.decode('utf-8')
 
 

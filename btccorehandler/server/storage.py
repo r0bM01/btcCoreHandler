@@ -54,17 +54,17 @@ class Storage(lib.storage.Base):
         self.geolocation = Geolocation(self.certificate, self.dir_tree['geoDb'])
     
     def geolocation_load_db_index(self):
-        full_data_file = self.read_all_file(self.file_tree['geoDbContent']) #bytes loaded
+        full_data_file = self.read_all_file(self.file_tree['geoDbContent']) #returns dict['dataPos] : int / dict['dataBytes] : bytes
         database = {}
         for entry in full_data_file:
             entry_file_pos = entry['dataPos']
-            geolocation_data = self.crypto.decrypt(entry['dataBytes']).split("#")
+            geolocation_data = self.crypto.decrypt(entry['dataBytes'].hex()).split("#")
             database[geolocation_data[0]] = entry['dataPos']
         return database # returns a dict "ip_bytes_key" : "peer_file_position_value"
     
     def geolocation_load_entry(self, file_pos):
         single_entry = self.read_single_entry(file_pos)
-        retrieved_data = self.crypto.decrypt(single_entry).split("#")
+        retrieved_data = self.crypto.decrypt(single_entry.hex()).split("#")
         geolocation_data = {
             'ip': retrieved_data[0],
             'country_code2': retrieved_data[1].upper(),

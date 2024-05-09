@@ -15,7 +15,7 @@
 
 
 import json, threading
-import lib.server.machine
+import server.machine
 
 
 class Engine:

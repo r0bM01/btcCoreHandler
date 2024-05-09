@@ -15,7 +15,7 @@
 
 import platform, json, time
 import server.machine
-from lib.shared.network import Utils
+from shared.network import Utils
 
 
 class Cache:
@@ -65,7 +65,7 @@ class Cache:
         self.bitcoin_info['peersinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
         self.bitcoin_update_time = int(time.time()) 
 
-        if all(value for key, value in self.bitcoin_info.items()):
+        if not all(bool(value) for key, value in self.bitcoin_info.items()):
             logger.add("server: a bitcoin call didn't work")
 
     def get_geolocation_update(self, logger):
