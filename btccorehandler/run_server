@@ -35,7 +35,7 @@ def main():
     storage = server.storage.Storage()
     storage.init_base()
 
-    logger = lib.logger(storage.dir_tree['debug'], verbose = True)
+    logger = lib.logger.Logger(storage.dir_tree['debug'], verbose = True)
     logger.add("server: version running", lib.settings.VERSION)
 
     ## checks if certificate is available

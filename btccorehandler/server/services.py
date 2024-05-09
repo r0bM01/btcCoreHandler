@@ -21,7 +21,7 @@ import server.machine
 class Engine:
     def __init__(self, logger):
 
-        self.services = [{'name': 'geodata', 'target': self.geodata_service, 'active': False}]
+        self.services = []
 
         self.services_controller = threading.Event()
 

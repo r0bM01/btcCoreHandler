@@ -25,9 +25,9 @@ import server.services
 
 
 
-class Server(lib.server.protocol.RequestHandler):
+class Server(server.protocol.RequestHandler):
     def __init__(self, logger, storage):
-        lib.server.protocol.RequestHandler.__init__(self)
+        server.protocol.RequestHandler.__init__(self)
 
         signal.signal(signal.SIGINT, self.nice_server_shutdown)
         signal.signal(signal.SIGTERM, self.nice_server_shutdown)
@@ -39,8 +39,8 @@ class Server(lib.server.protocol.RequestHandler):
         #init procedure
         self.STORAGE = storage
         self.LOGGER = logger
-        self.NETWORK = lib.server.network.Server(lib.server.network.Settings(host = lib.server.machine.MachineInterface.getLocalIP()))
-        self.SERVICES = lib.server.services.Engine(self.LOGGER)
+        self.NETWORK = server.network.Server(lib.server.network.Settings(host = server.machine.MachineInterface.getLocalIP()))
+        self.SERVICES = server.services.Engine(self.LOGGER)
 
         self.maxCallSize = 256 #bytes
         self.maxPeersWorker = 5 # max 5 peers connected at the same time, which equals to max 5 child threads

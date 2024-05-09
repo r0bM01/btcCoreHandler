@@ -13,6 +13,8 @@
 # limitations under the License.                                            #
 #############################################################################
 
+import pathlib
+
 import lib.storage
 import lib.crypto
 
