@@ -15,7 +15,7 @@
 
 
 import lib.crypto
-import socket, ssl, time, ipaddress
+import socket, ssl, time, ipaddress, json
 import urllib.request
 
 class Proto:
@@ -307,10 +307,15 @@ class Utils:
     @staticmethod
     def getGeolocation(ip):
         context = ssl.create_default_context()
+        """
         baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
+        """
+        baseUrl = "http://ip-api.com/json/" + str(ip)
         request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
-        locationData = urllib.request.urlopen(request, context = context).read().decode()
-        return locationData
+        locationData = json.loads(urllib.request.urlopen(request).read().decode())
+        ## format data to old mode
+        geo_data = {'ip': locationData['query'], 'country_code2': locationData['countryCode'], 'country_name': locationData['country'], 'isp': locationData['isp']}
+        return json.dumps(geo_data)
 
     @staticmethod
     def getCheckedIp(ip):

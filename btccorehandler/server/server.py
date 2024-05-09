@@ -39,7 +39,7 @@ class Server(server.protocol.RequestHandler):
         #init procedure
         self.STORAGE = storage
         self.LOGGER = logger
-        self.NETWORK = server.network.Server(lib.server.network.Settings(host = server.machine.MachineInterface.getLocalIP()))
+        self.NETWORK = server.network.Server(server.network.Settings(host = server.machine.MachineInterface.getLocalIP()))
         self.SERVICES = server.services.Engine(self.LOGGER)
 
         self.maxCallSize = 256 #bytes

@@ -52,7 +52,7 @@ class Engine:
     def make_new_thread(self):
         return threading.Thread(target = self.services_worker, daemon = True)
     
-    def add_new_service(name, target):
+    def add_new_service(self, name, target):
         self.services.append({'name': name, 'target': target, 'active': False})
 
     def services_worker(self):

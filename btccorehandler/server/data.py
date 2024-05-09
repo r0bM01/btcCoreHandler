@@ -15,7 +15,7 @@
 
 import platform, json, time
 import server.machine
-from shared.network import Utils
+from lib.network import Utils
 
 
 class Cache:
@@ -79,7 +79,7 @@ class Cache:
                 # get geodata from web and writes it into database
                 geo_data = json.loads(Utils.getGeolocation(ip))
                 self.geolocation_index[ip] = self.geolocation_write(geo_data)
-                logger.add("geolocation: new node found", geo_data['ip'], geo_data['country_name'])
+                logger.add("geolocation: new node found", geo_data['ip'], geo_data['country_name'])  
             # adds geodata to peer details
             geo_data.pop('ip') # removes 'ip' field
             peer.update(geo_data)

@@ -120,8 +120,9 @@ class Handshake(Proto):
 class Peer(Handshake):
     def __init__(self, new_peer_tuple):
         ## inherits handshake object
-        self._remoteSock = new_peer_tuple[0]
-        self.address = new_peer_tuple[1]
+        if bool(new_peer_tuple):
+            self._remoteSock = new_peer_tuple[0]
+            self.address = new_peer_tuple[1]
 
         self.crypto = None #Peer(self.certificate, self.handshake_code)
 

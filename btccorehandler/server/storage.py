@@ -65,7 +65,7 @@ class Storage(lib.storage.Base):
         return database # returns a dict "ip_bytes_key" : "peer_file_position_value"
     
     def geolocation_load_entry(self, file_pos):
-        single_entry = self.read_single_entry(file_pos)
+        single_entry = self.read_single_entry(self.file_tree['geoDbContent'], file_pos)
         retrieved_data = self.crypto.decrypt(single_entry.hex()).split("#")
         geolocation_data = {
             'ip': retrieved_data[0],
@@ -78,7 +78,7 @@ class Storage(lib.storage.Base):
     def geolocation_write_entry(self, entry_data):
         concat = str(entry_data['ip']) + "#" + entry_data['country_code2'] + "#" + entry_data['country_name'] + "#" + entry_data['isp']
         encrypted_data = self.crypto.encrypt(concat)
-        entry_pos = self.write_append(self.file_tree['geoDbContent'], encrypted_data)
+        entry_pos = self.write_append(self.file_tree['geoDbContent'], bytes.fromhex(encrypted_data))
         return entry_pos
 
         
