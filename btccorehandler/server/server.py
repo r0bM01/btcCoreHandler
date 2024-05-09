@@ -15,9 +15,9 @@
 
 
 
-import json, time, subprocess, threading, platform, sys, signal
+import time, threading, sys, signal
 import lib.network
-import lib.crypto
+
 import server.machine
 import server.protocol
 import server.network
@@ -29,8 +29,8 @@ class Server(server.protocol.RequestHandler):
     def __init__(self, logger, storage):
         server.protocol.RequestHandler.__init__(self)
 
-        signal.signal(signal.SIGINT, self.nice_server_shutdown)
-        signal.signal(signal.SIGTERM, self.nice_server_shutdown)
+        signal.signal(signal.SIGINT, self.signal_server_shutdown)
+        signal.signal(signal.SIGTERM, self.signal_server_shutdown)
 
         self.initTime = int(time.time())
         self.internetIsOn = lib.network.Utils.checkInternet()
@@ -84,6 +84,10 @@ class Server(server.protocol.RequestHandler):
                     stop = True
         else:
             self.nice_server_shutdown()
+    
+    def signal_server_shutdown(self, signum, frame):
+        server.LOGGER.add("server: shutdown called by signal", signum)
+        self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
         # server closure procedure
@@ -166,9 +170,10 @@ class Server(server.protocol.RequestHandler):
                 remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = (new_peer))
                 remotePeerThread.start()
                 self.connected_peers.append(remotePeerThread)
+                self.LOGGER.add("server: connected peers", len(self.connected_peers))
             
             self.cleanup_workers()
-            self.LOGGER.add("server: connected peers", len(self.connected_peers))
+            
         else:
             self.LOGGER.add("server: serving loop exit")
 
