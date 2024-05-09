@@ -69,7 +69,7 @@ class Cache:
             logger.add("server: a bitcoin call didn't work")
 
     def get_geolocation_update(self, logger):
-        all_peers = self.bitcoin_info['peersInfo']
+        all_peers = self.bitcoin_info['peersinfo']
         for peer in all_peers:
             ip = peer['addr'].split(":")[0]
             if ip in self.geolocation_index:
