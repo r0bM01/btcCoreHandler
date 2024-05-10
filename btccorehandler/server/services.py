@@ -36,10 +36,10 @@ class Engine:
             self.logger.add("server: service", service['name'], service['active'])
         if not bool(self.worker):
             self.worker = self.make_new_thread()
-        if not self.worker.is_alive:
-            self.services_controller.clear()
-            self.worker.start()
-            self.logger.add("server: services working", self.worker.is_alive())
+        #if not self.worker.is_alive:
+        self.services_controller.clear()
+        self.worker.start()
+        self.logger.add("server: services worker started", self.worker.is_alive())
     
     def stop(self):
         for service in self.services:

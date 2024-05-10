@@ -1,23 +1,19 @@
-import lib.shared.network
+import lib.network
+import time, subprocess
 
-C = lib.shared.network.ClientRPC()
-C.remoteHost = "127.0.0.1"
-C.remotePort = 46001
+C = lib.network.ClientRPC()
+
 
 C.connect()
 
 input("\npress enter to stop server")
-C.sender("handlerinfo")
-print(C.receiver())
+
 
 
 C.sender("handlerstop")
-while True:
-    result = C.receiver()
-    if not bool(result) or result == 'handlerstopped':
-        break
-    else:
-        print(result)
 
-
+print("server stopping...wait")
+time.sleep(2)
+stop = subprocess.run(["pidof", "python3"], capture_output = True).stdout.decode()
+print(stop)
 

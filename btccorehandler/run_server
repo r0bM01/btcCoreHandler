@@ -94,6 +94,7 @@ def main():
         SERVER.CACHE.get_geolocation_update(logger)   
         ## init auto update services
         SERVER.init_services()
+        time.sleep(1) # waits for services to start
 
     logger.add("server: starting network")
     SERVER.start_network()

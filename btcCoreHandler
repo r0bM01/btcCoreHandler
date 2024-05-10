@@ -17,4 +17,4 @@
 
 import subprocess
 
-subprocess.Popen(["btccorehandler/run_server"])
+subprocess.Popen(["btccorehandler/run_server"], name = "btcCoreHandler")

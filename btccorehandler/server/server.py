@@ -15,7 +15,7 @@
 
 
 
-import time, threading, sys, signal
+import time, threading, sys, signal, json
 import lib.network
 
 import server.machine
@@ -86,7 +86,7 @@ class Server(server.protocol.RequestHandler):
             self.nice_server_shutdown()
     
     def signal_server_shutdown(self, signum, frame):
-        server.LOGGER.add("server: shutdown called by signal", signum)
+        LOGGER.add("server: shutdown called by signal", signum)
         self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
@@ -94,9 +94,9 @@ class Server(server.protocol.RequestHandler):
         # self.LOGGER.verbose = True
         self.LOGGER.add("server: nice shutdown started")
 
-        self.LOGGER.add("server: closing network sockets")
-        self.NETWORK.sockClosure() #closes the connected socket if any
-        self.NETWORK.closeSocket() #closes the server socket
+        # self.LOGGER.add("server: closing network sockets")
+        # self.NETWORK.sockClosure() #closes the connected socket if any
+        # self.NETWORK.closeSocket() #closes the server socket
         
         self.LOGGER.add("server: stopping main loop")
         self.isServing = False #stops server infinite loop
