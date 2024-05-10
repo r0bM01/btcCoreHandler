@@ -15,6 +15,46 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import subprocess
+import sys
+import subprocess, argparse
 
-subprocess.Popen(["btccorehandler/run_server"], name = "btcCoreHandler")
+from btccorehandler.lib.settings import VERSION
+from btccorehandler.lib.network import ClientRPC
+
+
+
+parser = argparse.ArgumentParser(prog = "BTC Core Handler", description = "Handles BitcoinCore by remote.")
+parser.add_argument("-v", "--version", help = "print version and exit", action = "store_true")
+
+server_parser = parser.add_subparsers("server", help = "Server control commands")
+server_parser.add_argument("-i", "--info", help = "gets server information and exit", action = "store_true")
+server_parser.add_argument("start", help = "starts server", action = "store_true")
+server_parser.add_argument("stop", help = "stops server", action = "store_true")
+
+args = parser.parse_args()
+
+clientRPC = ClientRPC()
+server_on = clientRPC.is_server_running()
+
+if not args.version:
+    # runs the gui
+    pass
+elif args.info:
+    # runs the clientRPC and calls info
+    if server_on:
+        server_status = clientRPC.get_server_info()
+        print(server_status)
+elif args.start:
+    # checks with clientRPC if daemon is running then starts server
+    if not server_on:
+        subprocess.Popen(["btccorehandler/run_server"])
+    else:
+        print("Server is already running. Use: 'server -i' to check the status")
+elif args.stop:
+    # checks with clientRPC if daemon is running then stops server
+    if server_on:
+        clientRPC.server_stop()
+    else:
+        print("Server is not running. You have to start it first")
+elif args.version:
+    print(f"Running btcCoreHandler {VERSION}")

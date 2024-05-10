@@ -139,8 +139,27 @@ class ClientRPC(Proto):
         except (OSError, TimeoutError):
             self.isConnected = False
             self._remoteSock = False
-        
-        # return self._remoteSock
+    
+    def disconnect(self):
+        self.sockClosure()
+    
+    def is_server_running(self):
+        self.connect()
+        is_on = self.isConnected()
+        self.sockClosure()
+        return is_on
+    
+    def get_server_info(self):
+        self.sender("handlerinfo")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
+    def server_stop(self):
+        self.sender("handlerstop")
+        confirm = self.receiver()
+        self.sockClosure()
+
 
 ###########################################################################################################
 ###########################################################################################################

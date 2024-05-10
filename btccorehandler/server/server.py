@@ -81,7 +81,9 @@ class Server(server.protocol.RequestHandler):
                     self.localControllerNetwork.sender(message)
                 elif bool(call) and call == 'handlerstop':
                     self.LOGGER.add("server: received closure call", call)
+                    self.localControllerNetwork.sender("handler server stopping now")
                     stop = True
+                self.localControllerNetwork.sockClosure() # closes the socket after each call
         else:
             self.nice_server_shutdown()
     
