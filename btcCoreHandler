@@ -26,19 +26,26 @@ from btccorehandler.lib.network import ClientRPC
 parser = argparse.ArgumentParser(prog = "BTC Core Handler", description = "Handles BitcoinCore by remote.")
 parser.add_argument("-v", "--version", help = "print version and exit", action = "store_true")
 
-server_parser = parser.add_subparsers("server", help = "Server control commands")
-server_parser.add_argument("-i", "--info", help = "gets server information and exit", action = "store_true")
-server_parser.add_argument("start", help = "starts server", action = "store_true")
-server_parser.add_argument("stop", help = "stops server", action = "store_true")
+subparser = parser.add_subparsers()
+
+server_parser = subparser.add_parser("server", help = "controls server handler")
+server_parser.add_argument("-info", help = "gets server information and exit", action = "store_true")
+server_parser.add_argument("-start", help = "starts server", action = "store_true")
+server_parser.add_argument("-stop", help = "stops server", action = "store_true")
 
 args = parser.parse_args()
 
 clientRPC = ClientRPC()
 server_on = clientRPC.is_server_running()
 
-if not args.version:
+server_cmd = any([args.info, args.start, args.stop])
+
+
+if not args.version and not server_cmd:
     # runs the gui
-    pass
+    print("runs the GUI")
+elif args.version:
+    print(f"Running btcCoreHandler {VERSION}")
 elif args.info:
     # runs the clientRPC and calls info
     if server_on:
@@ -47,14 +54,14 @@ elif args.info:
 elif args.start:
     # checks with clientRPC if daemon is running then starts server
     if not server_on:
+        print("handler server starting")
         subprocess.Popen(["btccorehandler/run_server"])
     else:
         print("Server is already running. Use: 'server -i' to check the status")
 elif args.stop:
     # checks with clientRPC if daemon is running then stops server
     if server_on:
+        print("handler server stopping")
         clientRPC.server_stop()
     else:
         print("Server is not running. You have to start it first")
-elif args.version:
-    print(f"Running btcCoreHandler {VERSION}")

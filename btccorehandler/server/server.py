@@ -77,7 +77,10 @@ class Server(server.protocol.RequestHandler):
             if bool(self.localControllerNetwork._remoteSock):
                 call = self.localControllerNetwork.receiver()
                 if bool(call) and call == 'handlerinfo':
-                    message = json.dumps({'handlerUptime': self.initTime, 'handlerMachine': 'dummymex'})
+                    message = json.dumps({'handlerUptime': self.initTime,
+                                          'handlerMachine': self.CACHE.node_details,
+                                          'connectedPeers': len(self.connected_peers),
+                                          'geolocationPeers': len(self.CACHE.geolocation_index)})
                     self.localControllerNetwork.sender(message)
                 elif bool(call) and call == 'handlerstop':
                     self.LOGGER.add("server: received closure call", call)
@@ -88,7 +91,7 @@ class Server(server.protocol.RequestHandler):
             self.nice_server_shutdown()
     
     def signal_server_shutdown(self, signum, frame):
-        LOGGER.add("server: shutdown called by signal", signum)
+        self.LOGGER.add("server: shutdown called by signal", signum)
         self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
@@ -108,9 +111,6 @@ class Server(server.protocol.RequestHandler):
         self.SERVICES.stop()
 
         self.LOGGER.add("server: shutdown completed")
-        self.localControllerNetwork.sender("shutdown completed")
-        self.localControllerNetwork.sender("handlerstopped")
-        self.localControllerNetwork.sockClosure() #socket must always be closed
         self.localControllerEvent.set() # this will cause server stop
 
     

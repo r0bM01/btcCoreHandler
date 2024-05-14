@@ -14,7 +14,6 @@
 #############################################################################
 
 
-import lib.crypto
 import socket, ssl, time, ipaddress, json
 import urllib.request
 
@@ -131,11 +130,13 @@ class ClientRPC(Proto):
     def __init__(self, port = 46001):
         self.host = "127.0.0.1"
         self.port = int(port)
+
+        self.isConnected = False
     
     def connect(self):
         try:
             self._remoteSock = socket.create_connection((self.host, self.port), timeout = self._opTimeout)
-
+            self.isConnected = True
         except (OSError, TimeoutError):
             self.isConnected = False
             self._remoteSock = False
@@ -145,17 +146,19 @@ class ClientRPC(Proto):
     
     def is_server_running(self):
         self.connect()
-        is_on = self.isConnected()
+        is_on = self.isConnected
         self.sockClosure()
         return is_on
     
     def get_server_info(self):
+        self.connect()
         self.sender("handlerinfo")
         info = self.receiver()
         self.sockClosure()
         return info
     
     def server_stop(self):
+        self.connect()
         self.sender("handlerstop")
         confirm = self.receiver()
         self.sockClosure()
