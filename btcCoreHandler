@@ -25,6 +25,7 @@ from btccorehandler.lib.network import ClientRPC
 
 parser = argparse.ArgumentParser(prog = "BTC Core Handler", description = "Handles BitcoinCore by remote.")
 parser.add_argument("-v", "--version", help = "print version and exit", action = "store_true")
+parser.add_argument("-t", "--terminal", help = "open terminal interface", action = "store_true")
 
 subparser = parser.add_subparsers()
 
@@ -46,6 +47,9 @@ if not args.version and not server_cmd:
     print("runs the GUI")
 elif args.version:
     print(f"Running btcCoreHandler {VERSION}")
+elif args.terminal:
+    import client.terminal
+    client.terminal.main()
 elif args.info:
     # runs the clientRPC and calls info
     if server_on:
