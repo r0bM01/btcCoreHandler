@@ -112,20 +112,6 @@ class Base:
         return data_bytes
 
 
-
-
-class Client(Base):
-
-    def check_base_dir(self):
-        return self.check_exists(self.saveDir)
-
-    def init_certificate(self):
-        if self.check_exists(self.saveDirs['cert']) and self.check_exists(self.saveFiles['cert']):
-            return self.load_certificate() if self.check_certificate() else False
-        else:
-            self.init_dir(self.saveDirs['cert'])
-            self.init_file(self.saveFiles['cert'])
-            return False
     
 
 class Geolocation:

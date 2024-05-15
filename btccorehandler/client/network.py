@@ -15,14 +15,14 @@
 
 
 import socket
-from lib.shared.network import Proto
-from lib.shared.crypto import Utils
-from lib.shared.crypto import Peer
+from lib.network import Proto
+from lib.crypto import Utils
+from lib.crypto import Peer
 
 class Client(Handshake):
     def __init__(self):
         self.remoteHost = None # has to be given by UI  
-        self.remotePort = 4600 # default port
+        self.remotePort = 46800 # default port
         self.timeout = 120
         self.isConnected = False
         self.crypto = None
@@ -40,12 +40,22 @@ class Client(Handshake):
         #self._remoteSock = False
         self.sockClosure()
         self.isConnected = False
-        self.handshakeCode = False
     
     def init_crypto(self):
         self.crypto = Peer(self.local_certificate, self.handshake_code)
         self.crypto.make_cryptography_dict()
     
+    def write(self, data):
+        encrypted_data = self.crypto.encrypt(data)
+        return self.sender(encrypted_data)
+    
+    def read(self, max_call_size = False):
+        encrypted_data = self.receiver(max_call_size)
+        if bool(encrypted_data): 
+            data = self.crypto.decrypt(encrypted_data)
+            self.last_active = int(time.time())
+        else: data = False
+        return data
 
 class Handshake(Proto):
     entropy_code = False
