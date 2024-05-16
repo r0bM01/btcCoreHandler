@@ -27,30 +27,29 @@ class Handshake(Proto):
     handshake_done = False
     
     def exchange_entropy(self):
-        clientRandom = Utils.getRandomBytes(16)
+        clientRandom = Utils.get_random_bytes(16)
         serverRandom = self.dataRecv(16) if self.dataSend(clientRandom) else False
         if bool(serverRandom):
-            self.entropy_code = clientRandom + serverRandom
+            self.entropy_code = clientRandom.hex() + serverRandom.hex()
 
     def choose_certificate(self, loaded_certificate):
         if bool(self.entropy_code):
-            cert_checksum = bytes.fromhex(Utils.getHandshakeCertificate(self.entropy_code, bytes.fromhex(loaded_certificate)))  
-            if self.dataSend(cert_checksum):
+            cert_checksum = Utils.get_checksum(bytes.fromhex(self.entropy_code), bytes.fromhex(loaded_certificate))
+            if self.dataSend(bytes.fromhex(cert_checksum)):
                 self.local_certificate = loaded_certificate
     
     def do_handshake(self):
         if bool(self.local_certificate):
             handshake_nonce = self.dataRecv(16) # gets new handshake nonce from server
             if bool(handshake_nonce):
-                self.handshake_code = bytes.fromhex(Utils.getHandshakeCode(self.entropy_code, self.local_certificate, handshake_nonce))
+                self.handshake_code = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.local_certificate), bytes.fromhex(handshake_nonce))
 
     def confirm_handshake(self):
         if bool(self.handshake_code):
-            confirmation = bytes.fromhex(Utils.getHandshakeCode(b'handshakeaccepted', self.local_certificate, self.handshake_code))
-            if self.dataRecv(16) == confirmation:
+            confirmation = Utils.make_handshake_code(b'handshakeaccepted', bytes.fromhex(self.local_certificate), bytes.fromhex(handshake_nonce))
+            if self.dataRecv(16) == bytes.fromhex(confirmation):
                 self.handshake_done = True
                 self.local_certificate = self.local_certificate.hex()
-                self.handshake_code = self.handshake_code.hex()
                      
     def make_handshake(self, loaded_certificate):
         ## step 1: exchange a 16 bytes entropy code

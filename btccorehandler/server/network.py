@@ -78,32 +78,32 @@ class Handshake(Proto):
     handshake_done = False
 
     def exchange_entropy(self):
-        serverRandom = Utils.getRandomBytes(16)
+        serverRandom = Utils.get_random_bytes(16)
         clientRandom = self.dataRecv(16)
         if bool(clientRandom) and self.dataSend(serverRandom):
-            self.entropy_code = clientRandom + serverRandom
+            self.entropy_code = clientRandom.hex() + serverRandom.hex()
     
     def choose_certificate(self, certificates_list):
         if bool(self.entropy_code):
-            certs_checksums = {bytes.fromhex(Utils.getHandshakeCertificate(self.entropy_code, bytes.fromhex(cert))) : cert for cert in certificates_list} # returns 16 bytes codes
+            # creates a dict with cert-checksum : cert
+            certs_checksums = { Utils.get_checksum(bytes.fromhex(self.entropy_code), bytes.fromhex(cert)) : cert for cert in certificates_list } 
             remote_checksum = self.dataRecv(16)
-            self.remote_certificate = certs_checksums.get(remote_checksum)
+            self.remote_certificate = certs_checksums.get(remote_checksum.hex())
     
     def start_handshake(self):
         if bool(self.remote_certificate):
-            handshake_nonce = Utils.getRandomBytes(16) # generates a nonce that must be hashed with entropy and correct certificate
-            handshake = bytes.fromhex(Utils.getHandshakeCode(self.entropy_code, self.remote_certificate, handshake_nonce))
-            if self.dataSend(handshake_nonce):
-                self.handshake_code = handshake if self.dataRecv(16) == handshake else False
+            # generates a nonce that must be hashed with entropy and correct certificate
+            handshake_nonce = Utils.get_random_bytes(16) 
+            # creates the handshake code hashing the entropy created with the selected certificate and the nonce generated
+            handshake = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.remote_certificate), bytes.fromhex(handshake_nonce))
+            if self.dataSend(handshake_nonce) and self.dataRecv(16) == bytes.fromhex(handshake):
+                self.handshake_code = handshake
     
     def confirm_handshake(self):
         if bool(self.handshake_code):
-            confirmation = bytes.fromhex(Utils.getHandshakeCode(b'handshakeaccepted', self.remote_certificate, self.handshake_code))
-            if self.dataSend(confirmation):
-                self._remoteSock.settimeout(120) ## with correct handshake, server can wait a request up to 120 seconds for this peer
+            confirmation = Utils.make_handshake_code(b'handshakeaccepted', self.remote_certificate, self.handshake_code)
+            if self.dataSend( bytes.fromhex(confirmation) ):
                 self.handshake_done = True
-                self.remote_certificate = self.remote_certificate.hex()
-                self.handshake_code = self.handshake_code.hex()
                      
     def make_handshake(self, certificates_list):
         ## step 1: exchange a 16 bytes entropy code

@@ -143,6 +143,7 @@ class Server(server.protocol.RequestHandler):
                 self.connected_peers.remove(peer)
 
     def remote_peer_handler(self, new_peer):
+        new_peer._remoteSock.settimeout(120) ## set socket max waiting time to 2 minutes
         new_peer.init_crypto()
         #connectedPeer = lib.server.network.Peer(remotePeerSocket, handshake.remote_certificate, handshake.handshake_code)
         while new_peer._remoteSock and not self.localControllerEvent.is_set():
