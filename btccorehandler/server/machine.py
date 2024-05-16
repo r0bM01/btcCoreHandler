@@ -47,7 +47,8 @@ class BitcoinDaemon:
         return {"stop": self.is_running}
 
     def run_command(self, command, args_list):
-        full_call = [self.client].extend(command)
+        full_call = [self.client]
+        full_call.append(command)
         full_call.extend(args_list)
         result = subprocess.run(full_call, capture_output = True).stdout.decode()
         return result
