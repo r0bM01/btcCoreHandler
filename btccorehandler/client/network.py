@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import socket
+import socket, time
 from lib.network import Proto
 from lib.crypto import Utils
 from lib.crypto import Network
