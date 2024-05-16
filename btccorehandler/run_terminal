@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-
 import lib.crypto
 import client.network
 import client.storage
-import sys, json
+import sys, json, pprint
 
 
 def terminal_exit():
@@ -20,11 +19,11 @@ def main():
     network = client.network.Client()
 
     # start terminal interface
-    print("#### Bitcoin Core Handler terminal ####")
-    server_addr = input("\ninsert server ip >> ")
-    server_port = int(input("\ninsert server port >>"))
+    print("\n#### Bitcoin Core Handler terminal ####\n")
+    server_addr = input("insert server ip >> ")
+    server_port = int(input("insert server port >> "))
 
-    print(f"connecting to {server_addr}")
+    print(f"connecting to {server_addr}: ", end = "", flush = True)
     network.remoteHost = server_addr
     network.remotePort = server_port
     # connecting to server
@@ -40,14 +39,14 @@ def main():
         print(f"handshake to server {server_addr} refused")
         terminal_exit()
     
-    print(f"connection to {server_addr} established and handshake [{network.handshake_done}]")
+    print(f"[{bool(network.handshake_done)}]")
 
     network.set_waiting_mode()
     # init network crypto
     network.init_crypto()
 
     # open terminal calls interface
-    print("Insert a call request or digit 'exit' to close the terminal")
+    print("\nInsert a call request or digit 'exit' to close the terminal\n")
     while network.isConnected:
         request = str(input("\n>> ")).lower()
         result = None
@@ -56,8 +55,7 @@ def main():
             result = network.read()
         if bool(result):
             result = json.loads(result)
-            for key, value in result:
-                print(f"{key}: {value}")
+            pprint.pp(result)
 
 if __name__ == '__main__':
     main()
