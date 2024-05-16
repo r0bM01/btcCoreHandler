@@ -149,10 +149,10 @@ class Server(server.protocol.RequestHandler):
         while new_peer._remoteSock and not self.localControllerEvent.is_set():
             remote_request = new_peer.read(self.maxCallSize)
             if bool(remote_request):
-                self.LOGGER.add("server: peer has sent a new request", new_peer.address, remote_request)
+                self.LOGGER.add("peer: new request", new_peer.address, remote_request)
                 result = self.handle_request(remote_request)
                 reply_sent = new_peer.write(result)
-                self.LOGGER.add("server: peer reply sent", new_peer.address, reply_sent)
+                self.LOGGER.add("peer: reply sent", new_peer.address, reply_sent)
                 new_peer.session_calls.append({'time': int(time.time()), 'request': remote_request, 'success': reply_sent})
         else:
             self.LOGGER.add("server: peer has disconnected", new_peer.address)
