@@ -42,11 +42,11 @@ class Handshake(Proto):
         if bool(self.local_certificate):
             handshake_nonce = self.dataRecv(16) # gets new handshake nonce from server
             if bool(handshake_nonce):
-                self.handshake_code = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.local_certificate), bytes.fromhex(handshake_nonce))
+                self.handshake_code = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.local_certificate), handshake_nonce)
 
     def confirm_handshake(self):
         if bool(self.handshake_code):
-            confirmation = Utils.make_handshake_code(b'handshakeaccepted', bytes.fromhex(self.local_certificate), bytes.fromhex(handshake_nonce))
+            confirmation = Utils.make_handshake_code(b'handshakeaccepted', bytes.fromhex(self.local_certificate), bytes.fromhex(self.handshake_code))
             if self.dataRecv(16) == bytes.fromhex(confirmation):
                 self.handshake_done = True
                 self.local_certificate = self.local_certificate.hex()
@@ -87,7 +87,7 @@ class Client(Handshake):
         self.isConnected = False
     
     def init_crypto(self):
-        self.crypto = Peer(self.local_certificate, self.handshake_code)
+        self.crypto = Network(self.local_certificate, self.handshake_code)
         self.crypto.make_cryptography_dict()
     
     def write(self, data):

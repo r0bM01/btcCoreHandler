@@ -95,13 +95,13 @@ class Handshake(Proto):
             # generates a nonce that must be hashed with entropy and correct certificate
             handshake_nonce = Utils.get_random_bytes(16) 
             # creates the handshake code hashing the entropy created with the selected certificate and the nonce generated
-            handshake = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.remote_certificate), bytes.fromhex(handshake_nonce))
+            handshake = Utils.make_handshake_code(bytes.fromhex(self.entropy_code), bytes.fromhex(self.remote_certificate), handshake_nonce)
             if self.dataSend(handshake_nonce) and self.dataRecv(16) == bytes.fromhex(handshake):
                 self.handshake_code = handshake
     
     def confirm_handshake(self):
         if bool(self.handshake_code):
-            confirmation = Utils.make_handshake_code(b'handshakeaccepted', self.remote_certificate, self.handshake_code)
+            confirmation = Utils.make_handshake_code(b'handshakeaccepted', bytes.fromhex(self.remote_certificate), bytes.fromhex(self.handshake_code))
             if self.dataSend( bytes.fromhex(confirmation) ):
                 self.handshake_done = True
                      

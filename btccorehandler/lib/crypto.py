@@ -24,7 +24,6 @@ class Network:
 		self.encryption_dict = False
 		self.decryption_dict = False
 
-		self.get_entropy = Utils.getRandomBytes
 	
 	def make_handshake_code(self, entropy):
 		if type(entropy) is not bytes:
@@ -85,7 +84,7 @@ class Utils:
 	
 	@staticmethod
 	def make_handshake_code(entropy, certificate, nonce):
-		return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), salt = nonce, digest_size = 16).hexdigest()
+		return hashlib.blake2b(entropy, key = certificate, salt = nonce, digest_size = 16).hexdigest()
 
 
 

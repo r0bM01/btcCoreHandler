@@ -134,7 +134,7 @@ class Server(server.protocol.RequestHandler):
         self.LOGGER.add("server: network succesfully started")
     
     def available_workers(self):
-        return len(self.self.connected_peers) < self.maxPeersWorker
+        return len(self.connected_peers) < self.maxPeersWorker
     
     def cleanup_workers(self):
         for peer in self.connected_peers:
