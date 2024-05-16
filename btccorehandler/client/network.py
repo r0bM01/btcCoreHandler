@@ -88,6 +88,9 @@ class Client(Handshake):
         self.sockClosure()
         self.isConnected = False
     
+    def set_waiting_mode(self, wait_seconds = False):
+        self._remoteSock.settimeout(wait_seconds or self.timeout)
+    
     def init_crypto(self):
         self.crypto = Network(self.local_certificate, self.handshake_code)
         self.crypto.make_cryptography_dict()

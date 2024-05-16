@@ -56,9 +56,9 @@ class Server(Proto):
 
     def receiveClient(self):
         try:
-            self._remoteSock, self.remoteAddr = self.socket.accept()
-            self._remoteSock.settimeout(self._opTimeout) 
-            return (self._remoteSock, self.remoteAddr)
+            remote_sock, remote_addr = self.socket.accept()
+            remote_sock.settimeout(self._opTimeout) 
+            return (remote_sock, remote_addr)
         except OSError:
             self.sockClosure()
             return False
@@ -124,11 +124,17 @@ class Peer(Handshake):
             self._remoteSock = new_peer_tuple[0]
             self.address = new_peer_tuple[1]
 
+        self.timeout = 120
+        self.isConnected = False
+
         self.crypto = None #Peer(self.certificate, self.handshake_code)
 
         self.first_active = int(time.time())
         self.last_active = None
         self.session_calls = []
+    
+    def set_waiting_mode(self, wait_seconds = False):
+        self._remoteSock.settimeout(wait_seconds or self.timeout)
     
     def init_crypto(self):
         self.crypto = Network(self.remote_certificate, self.handshake_code)
