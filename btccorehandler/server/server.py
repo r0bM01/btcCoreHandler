@@ -170,7 +170,7 @@ class Server(server.protocol.RequestHandler):
             ## if handshake is successfull it will be created a thread to handle the remote peer requests
             if bool(new_peer._remoteSock) and bool(new_peer.handshake_done) and self.available_workers():
                 self.LOGGER.add("server: peer successfully connected", new_peer.address)
-                remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = (new_peer))
+                remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = [new_peer])
                 remotePeerThread.start()
                 self.connected_peers.append(remotePeerThread)
                 self.LOGGER.add("server: connected peers", len(self.connected_peers))

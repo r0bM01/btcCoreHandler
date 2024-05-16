@@ -42,6 +42,7 @@ def main():
     
     print(f"connection to {server_addr} established and handshake [{network.handshake_done}]")
 
+    network._remoteSock.settimeout(120)
     # init network crypto
     network.init_crypto()
 
