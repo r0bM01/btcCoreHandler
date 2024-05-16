@@ -20,6 +20,7 @@ def main():
 
     # start terminal interface
     print("\n#### Bitcoin Core Handler terminal ####\n")
+
     server_addr = input("insert server ip >> ")
     server_port = int(input("insert server port >> "))
 
@@ -51,7 +52,7 @@ def main():
         request = str(input("\n>> ")).lower()
         result = None
         if request == 'exit': terminal_exit()
-        if network.write(request):
+        if network.write(request.replace(" ", "#")):
             result = network.read()
         if bool(result):
             result = json.loads(result)
