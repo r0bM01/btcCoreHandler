@@ -87,7 +87,7 @@ class Handshake(Proto):
         if bool(self.entropy_code):
             certs_checksums = {bytes.fromhex(Utils.getHandshakeCertificate(self.entropy_code, bytes.fromhex(cert))) : cert for cert in certificates_list} # returns 16 bytes codes
             remote_checksum = self.dataRecv(16)
-            self.remote_certificate = certs_checksums.get(remote_certificate)
+            self.remote_certificate = certs_checksums.get(remote_checksum)
     
     def start_handshake(self):
         if bool(self.remote_certificate):

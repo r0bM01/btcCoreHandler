@@ -89,7 +89,7 @@ class Utils:
 	
 	@staticmethod
 	def getHandshakeCode(entropy, certificate, nonce):
-		return hashlib.blake2b(entropy, key = certificate, salt = nonce, digest_size = 16).hexdigest()
+		return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), salt = nonce, digest_size = 16).hexdigest()
 
 def getHash(data):
 	return hashlib.blake2b(data.encode()).hexdigest()

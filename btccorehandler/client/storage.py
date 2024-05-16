@@ -15,6 +15,7 @@
 
 import pathlib
 from lib.storage import Base
+from lib.crypto import Storage
 
 
 class Client(Base):
@@ -32,7 +33,7 @@ class Client(Base):
     def init_cryptography(self):
         if not bool(self.certificate):
             raise OSError("Missing certificate! Cryptography cannot be initialized!")
-        self.crypto = lib.crypto.Storage(self.certificate)
+        self.crypto = Storage(self.certificate)
 
     def save_settings(Self):
         pass
