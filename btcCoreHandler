@@ -57,6 +57,11 @@ elif args.info:
     if server_on:
         server_status = clientRPC.get_server_info()
         print(server_status)
+elif args.new:
+    # creates a new certificate
+    if server_on:
+        certificate = clientRPC.make_new_client()
+        print(certificate)
 elif args.start:
     # checks with clientRPC if daemon is running then starts server
     if not server_on:
