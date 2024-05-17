@@ -25,13 +25,15 @@ from btccorehandler.lib.network import ClientRPC
 
 
 parser = argparse.ArgumentParser(prog = "BTC Core Handler", description = "Handles BitcoinCore by remote.")
-parser.add_argument("-v", "--version", help = "print version and exit", action = "store_true")
+parser.add_argument("-g", "--gui", help = "starts GUI handler client", action = "store_true")
 parser.add_argument("-t", "--terminal", help = "open terminal interface", action = "store_true")
+parser.add_argument("-v", "--version", help = "print version and exit", action = "store_true")
 
 subparser = parser.add_subparsers()
 
 server_parser = subparser.add_parser("server", help = "controls server handler")
 server_parser.add_argument("-info", help = "gets server information and exit", action = "store_true")
+server_parser.add_argument("-new", help = "generates a certificate for a new client", action = "store_true")
 server_parser.add_argument("-start", help = "starts server", action = "store_true")
 server_parser.add_argument("-stop", help = "stops server", action = "store_true")
 

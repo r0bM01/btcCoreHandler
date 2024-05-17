@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import os, pathlib, time, json
+import os, pathlib, time, json, base64
 import lib.settings
 import lib.crypto
 from lib.network import Utils
@@ -49,12 +49,42 @@ class Base:
     def init_all(self):
         [self.init_dir(self.dir_tree[d]) for d in self.dir_tree] # init and rewrites directories
         [self.init_file(f) for f in self.file_tree] #init and rewrites files
+    
+    def get_dir_content(self, dir_path):
+        realPath = pathlib.Path(dir_path)
+        return [f for f in realPath.iterdir()]
         
     def generate_certificate(self):
         self.init_file(self.file_tree['cert']) # avoid previous certificate
-        certBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
+        certBytes = lib.crypto.Utils.get_random_bytes(lib.settings.CERT_SIZE)
         with open(self.file_tree['cert'], "wb") as F:
             F.write(certBytes)
+    
+    def derive_certificate(self, client_name):
+        name = client.name.lower()
+        derived_cert = lib.crypto.Utils.get_derived_certificate(b'client', bytes.fromhex(self.load_certificate), name.encode('utf-8'))
+        return derived_cert
+    
+    def export_certificate_pem(self, cert_bytes, cert_name):
+        cert_encoded = base64.b64encode(cert_bytes)
+        cert_text = cert_encoded.decode('utf-8')
+        cert_lines = [cert_text[i:i+64] for i in range(0, len(cert_text), 64)]
+        cert_file = cert_name.upper() + ".pem"
+        file_path = pathlib.Path(self.dir_tree['cert'], cert_file)
+        with open(file_path, "w") as C:
+            C.write("-----BEGIN CERTIFICATE-----\n")
+            [C.write(line + "\n") for line in cert_lines]
+            C.write("-----END CERTIFICATE-----")
+        return file_path
+    
+    def load_certificate_pem_byname(self, cert_name):
+        cert_file = cert_name.upper() + ".pem"
+        file_path = pathlib.Path(self.dir_tree['cert'], cert_file)
+        with open(file_path, "r") as C:
+            cert_lines = C.readlines()
+        cert_text = b"".join([line[:64] for line in cert_lines[1:-1]])
+        cert_decoded = base64.b64decode(cert_text)
+        return cert_decoded.hex()
         
     def import_certificate(self, sourceFile):
         sourcePath = pathlib.Path(sourceFile)

@@ -82,6 +82,9 @@ class Server(server.protocol.RequestHandler):
                                           'connectedPeers': len(self.connected_peers),
                                           'geolocationPeers': len(self.CACHE.geolocation_index)})
                     self.localControllerNetwork.sender(message)
+                elif bool(call) and call == 'handlernewcert':
+                    message = json.dumps({'certsaved': self.STORAGE.make_client_certificate('dummy')})
+                    self.localControllerNetwork.sender(message)
                 elif bool(call) and call == 'handlerstop':
                     self.LOGGER.add("server: received closure call", call)
                     self.localControllerNetwork.sender("handler server stopping now")
@@ -112,8 +115,6 @@ class Server(server.protocol.RequestHandler):
 
         self.LOGGER.add("server: shutdown completed")
         self.localControllerEvent.set() # this will cause server stop
-
-    
 
     def start_all(self):
         # self.autoCache.start()

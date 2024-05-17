@@ -44,6 +44,17 @@ class Storage(lib.storage.Base):
             raise OSError("Certificate corrupted! Server cannot be started!")
         self.certificate = self.load_certificate()
 
+    def make_client_certificate(self, client_name):
+        new_cert = self.derive_certificate(client_name)
+        encrypted_cert = self.crypto.encrypt(bytes.fromhex(new_cert))
+        return self.export_certificate_pem(bytes.fromhex(encrypted_cert), client_name)
+
+    def load_all_client_certificates(self):
+        server_cert_file = pathlib.Path(self.file_tree['cert'])
+        all_certs_name = [cert.stem for cert in self.get_dir_content(self.dir_tree['cert']) if pathlib.Path(cert) != server_cert_file]
+        all_certs = [self.crypto.decrypt(self.load_certificate_pem_byname(cert)) for cert in all_certs_name]
+        return all_certs
+
     def init_geolocation(self):
         if not bool(self.certificate):
             raise OSError("Missing certificate! You cannot init Geolocation without it!")

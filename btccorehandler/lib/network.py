@@ -150,6 +150,13 @@ class ClientRPC(Proto):
         self.sockClosure()
         return is_on
     
+    def make_new_client(self):
+        self.connect()
+        self.sender("handlernewcert")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
     def get_server_info(self):
         self.connect()
         self.sender("handlerinfo")

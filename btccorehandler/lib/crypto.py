@@ -64,7 +64,10 @@ class Storage:
 		return hashlib.blake2b(code.encode('utf-8'), key = self.certificate, digest_size = 2).hexdigest()
 
 	def encrypt(self, data):
-		msg = data.encode('utf-8').hex()
+		if type(data) is str:
+			msg = data.encode('utf-8').hex()
+		elif type(data) is bytes:
+			msg = data.hex()
 		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
 
 	def decrypt(self, hex_data):
@@ -77,6 +80,10 @@ class Utils:
 	@staticmethod
 	def get_random_bytes(size):
 		return secrets.token_bytes(int(size))
+	
+	@staticmethod
+	def get_derived_certificate(cert_name, certificate, nonce):
+		return hashlib.blake2b(cert_name, key = certificate, salt = nonce, digest_size = 64).hexdigest()
 
 	@staticmethod
 	def get_checksum(entropy, certificate):
