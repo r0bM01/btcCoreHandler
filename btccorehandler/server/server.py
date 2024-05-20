@@ -62,6 +62,7 @@ class Server(server.protocol.RequestHandler):
     def init_services(self):
         self.SERVICES.add_new_service('bitcoin', self.CACHE.get_bitcoin_info) # adds bitcoin 'info' service update
         self.SERVICES.add_new_service('geolocation', self.CACHE.get_geolocation_update) 
+        self.SERVICES.add_new_service('protonvpn_pf', server.MachineInterface.protonvpn_pf_test) # test for looping open port forward protonvpn
 
     def local_server_controller(self):
         # command line operation

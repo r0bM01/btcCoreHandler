@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import pathlib, time
+import pathlib, time, sys
 
 
 class Logger:
@@ -22,15 +22,29 @@ class Logger:
         self.verbose = verbose
         self.FILE = dirPath.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
         self.FILE.touch()
-        self.SESSION = []
+
+
+    def verbose_f(self, argument):
+        if type(argument) is bool and argument is True:
+            arg = str(f"\x1b[1;32m{argument}\x1b[0m")
+        elif type(argument) is bool and argument is False:
+            arg = str(f"\x1b[1;31m{argument}\x1b[0m")
+        else:
+            arg = argument
+        return arg
 
     def add(self, message, *args):
-        
-        log = str(f"{time.ctime(int(time.time()))} - {message}")
+        log = str(f"{time.ctime(int(time.time()))} - {message}: ")
         if args:
-            arguments = str([a for a in args])
-            log += str(f": {arguments}")
-        self.SESSION.append(log)
+            #arguments = str([a for a in args])
+            arguments = str([self.verbose_f(a) for a in args])
+            log = log + arguments
+
         with open(self.FILE, "a") as F:
             F.write(log + "\n")
-        if self.verbose: print(log)
+
+        if self.verbose:
+            sys.stdout.write(log + "\n")
+            sys.stdout.flush()
+
+            

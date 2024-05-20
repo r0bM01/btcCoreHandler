@@ -46,7 +46,7 @@ class RequestHandler:
         self.bitcoin_calls = {
             'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo',
             'getnettotals', 'getconnectioncount', 'getpeerinfo', 'addnode', 'getaddednodeinfo', 'disconnectnode', 'listbanned',
-            'getblockhash', 'getblockheader'
+            'getblockhash', 'getblockheader', 'getblockstats'
         }
 
 

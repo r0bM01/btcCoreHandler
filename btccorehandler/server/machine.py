@@ -69,6 +69,13 @@ class MachineInterface:
         return str(IP)
     
     @staticmethod
+    def protonvpn_pf_test(logger):
+        udp = subprocess.run(["natpmpc", "-a", "1", "0", "udp", "60", "-g", "10.2.0.1"]).stdout.decode()
+        tcp = subprocess.run(["natpmpc", "-a", "1", "0", "tcp", "60", "-g", "10.2.0.1"]).stdout.decode()
+        logger.add("UDP", udp)
+        logger.add("TCP", tcp)
+
+    @staticmethod
     def runBitcoindCall(command, arg = False):
         if command == 'uptime':
             call = subprocess.run(["bitcoin-cli", command], capture_output = True).stdout.decode()
