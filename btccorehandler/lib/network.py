@@ -180,6 +180,14 @@ class Utils:
         return ssl.create_default_context()
     
     @staticmethod
+    def get_local_IP():
+        external = socket.socket(family = socket.AF_INET, type = socket.SOCK_DGRAM)
+        external.connect("1.1.1.1", 80)
+        ip = external.getsockname()[0]
+        external.close()
+        return ip
+    
+    @staticmethod
     def getExternalIP():
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP

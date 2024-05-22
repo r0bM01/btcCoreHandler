@@ -19,13 +19,15 @@ import server.machine
 
 
 class Engine:
-    def __init__(self, logger):
+    def __init__(self, logger, daemon):
 
         self.services = []
 
         self.services_controller = threading.Event()
+        
 
         self.logger = logger
+        self.daemon_running = daemon
 
         self.worker = self.make_new_thread()
         self.worker_rest = 30
@@ -52,11 +54,24 @@ class Engine:
     def make_new_thread(self):
         return threading.Thread(target = self.services_worker, daemon = True)
     
-    def add_new_service(self, name, target):
-        self.services.append({'name': name, 'target': target, 'active': False})
+    def add_new_service(self, name, target, bitcoind):
+        self.services.append({'name': name, 'target': target, 'needbtcd': bitcoind, 'active': False})
+    
+    def services_running(self):
+        return [service for service in self.services if service['active']]
+    
+    def services_exec(self, service):
+        bitcoind_running = self.daemon_running()
+        if service['needbtcd']:
+            if bitcoind_running: service['target'](self.logger)
+            else: service['active'] = False # disables the service if bitcoind is not running and necessary
+        else:
+            service['target'](self.logger)
 
     def services_worker(self):
         while not self.services_controller.is_set():
             for service in self.services:
-                if service['active']: service['target'](self.logger) # execute the service if active
+                if service['active']: 
+                    self.services_exec(service) # execute the service if active
+
             self.services_controller.wait(self.worker_rest)

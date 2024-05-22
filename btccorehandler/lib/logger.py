@@ -26,11 +26,11 @@ class Logger:
 
     def verbose_f(self, argument):
         if type(argument) is bool and argument is True:
-            arg = str(f"\x1b[1;32m{argument}\x1b[0m")
+            arg = "\x1b[1;32m" + str(argument) + "\x1b[0m"
         elif type(argument) is bool and argument is False:
-            arg = str(f"\x1b[1;31m{argument}\x1b[0m")
+            arg = "\x1b[1;31m" + str(argument) + "\x1b[0m"
         else:
-            arg = argument
+            arg = str(argument)
         return arg
 
     def add(self, message, *args):

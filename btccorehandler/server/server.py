@@ -40,11 +40,11 @@ class Server(server.protocol.RequestHandler):
         self.STORAGE = storage
         self.LOGGER = logger
         self.NETWORK = server.network.Server(server.network.Settings(host = server.machine.MachineInterface.getLocalIP()))
-        self.SERVICES = server.services.Engine(self.LOGGER)
+        self.SERVICES = server.services.Engine(self.LOGGER, self.BITCOIN_DAEMON.daemon_running)
 
         self.maxCallSize = 256 #bytes
         self.maxPeersWorker = 5 # max 5 peers connected at the same time, which equals to max 5 child threads
-        self.connected_peers = [] # list of peer thread workers
+        self.connected_clients = [] # list of peer thread workers
 
         self.localControllerEvent = threading.Event()
         self.localControllerNetwork = server.network.ServerRPC()
@@ -60,9 +60,9 @@ class Server(server.protocol.RequestHandler):
         self.CACHE.geolocation_read = self.STORAGE.geolocation_load_entry
     
     def init_services(self):
-        self.SERVICES.add_new_service('bitcoin', self.CACHE.get_bitcoin_info) # adds bitcoin 'info' service update
-        self.SERVICES.add_new_service('geolocation', self.CACHE.get_geolocation_update) 
-        self.SERVICES.add_new_service('protonvpn_pf', server.MachineInterface.protonvpn_pf_test) # test for looping open port forward protonvpn
+        self.SERVICES.add_new_service('bitcoin', self.CACHE.get_bitcoin_info, True) # adds bitcoin 'info' service update
+        self.SERVICES.add_new_service('geolocation', self.CACHE.get_geolocation_update, True) 
+        self.SERVICES.add_new_service('protonvpn_pf', server.MachineInterface.protonvpn_pf_test, False) # test for looping open port forward protonvpn
 
     def local_server_controller(self):
         # command line operation
@@ -80,8 +80,9 @@ class Server(server.protocol.RequestHandler):
                 if bool(call) and call == 'handlerinfo':
                     message = json.dumps({'handlerUptime': self.initTime,
                                           'handlerMachine': self.CACHE.node_details,
-                                          'connectedPeers': len(self.connected_peers),
-                                          'geolocationPeers': len(self.CACHE.geolocation_index)})
+                                          'connectedClients': len(self.connected_clients),
+                                          'servicesRunning': self.SERVICES.services_running(),
+                                          'geolocationDb': len(self.CACHE.geolocation_index)})
                     self.localControllerNetwork.sender(message)
                 elif bool(call) and call == 'handlernewcert':
                     message = json.dumps({'certsaved': self.STORAGE.make_client_certificate('dummy')})
@@ -136,13 +137,13 @@ class Server(server.protocol.RequestHandler):
         self.LOGGER.add("server: network succesfully started")
     
     def available_workers(self):
-        return len(self.connected_peers) < self.maxPeersWorker
+        return len(self.connected_clients) < self.maxPeersWorker
     
     def cleanup_workers(self):
-        for peer in self.connected_peers:
+        for peer in self.connected_clients:
             if not peer.is_alive():
                 peer.join()
-                self.connected_peers.remove(peer)
+                self.connected_clients.remove(peer)
 
     def remote_peer_handler(self, new_peer):
         new_peer.set_waiting_mode() ## set socket max waiting time to 2 minutes
@@ -175,8 +176,8 @@ class Server(server.protocol.RequestHandler):
                 self.LOGGER.add("server: peer successfully connected", new_peer.address)
                 remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = [new_peer])
                 remotePeerThread.start()
-                self.connected_peers.append(remotePeerThread)
-                self.LOGGER.add("server: connected peers", len(self.connected_peers))
+                self.connected_clients.append(remotePeerThread)
+                self.LOGGER.add("server: connected clients", len(self.connected_clients))
             
             self.cleanup_workers()
             

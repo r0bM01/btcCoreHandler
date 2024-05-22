@@ -93,7 +93,7 @@ class RequestHandler:
                 result = {'error': 'missing ip address'}
         elif command == 'searchgeolocation': #experimental
             if bool(args_list):
-                search = " ".join(args_list)
+                search = args_list[0] # only 1 parameter per time is allowed
                 result = {'results': self.CACHE.get_geolocation_search(search)}
             else:
                 result = {'error': 'missing search input'}

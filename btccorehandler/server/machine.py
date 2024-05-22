@@ -34,10 +34,13 @@ class BitcoinDaemon:
         self.daemon = "bitcoind"
         self.client = "bitcoin-cli"
 
-        self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
+        self.is_running = self.daemon_running()
+    
+    def daemon_running(self):
+        return bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
     
     def start(self):
-        subprocess.run([self.daemon])
+        subprocess.run([self.daemon], capture_output = True)
         self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
         return {"start": self.is_running}
 
@@ -72,8 +75,8 @@ class MachineInterface:
     def protonvpn_pf_test(logger):
         udp = subprocess.run(["natpmpc", "-a", "1", "0", "udp", "60", "-g", "10.2.0.1"]).stdout.decode()
         tcp = subprocess.run(["natpmpc", "-a", "1", "0", "tcp", "60", "-g", "10.2.0.1"]).stdout.decode()
-        logger.add("UDP", udp)
-        logger.add("TCP", tcp)
+        #logger.add("UDP", udp)
+        #logger.add("TCP", tcp)
 
     @staticmethod
     def runBitcoindCall(command, arg = False):
