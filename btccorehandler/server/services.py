@@ -14,7 +14,7 @@
 #############################################################################
 
 
-import json, threading
+import json, threading, time
 import server.machine
 
 
@@ -25,12 +25,12 @@ class Engine:
 
         self.services_controller = threading.Event()
         
-
         self.logger = logger
         self.daemon_running = daemon
 
         self.worker = self.make_new_thread()
         self.worker_rest = 30
+        self.worker_last_round = None
 
     def start(self):
         for service in self.services:
@@ -51,6 +51,9 @@ class Engine:
             self.services_controller.set()
             self.worker.join()
 
+    def get_time(self):
+        return int(time.time())
+
     def make_new_thread(self):
         return threading.Thread(target = self.services_worker, daemon = True)
     
@@ -58,7 +61,7 @@ class Engine:
         self.services.append({'name': name, 'target': target, 'needbtcd': bitcoind, 'active': False})
     
     def services_running(self):
-        return [service for service in self.services if service['active']]
+        return [service['name'] for service in self.services if service['active']]
     
     def services_exec(self, service):
         bitcoind_running = self.daemon_running()
@@ -73,5 +76,4 @@ class Engine:
             for service in self.services:
                 if service['active']: 
                     self.services_exec(service) # execute the service if active
-
             self.services_controller.wait(self.worker_rest)

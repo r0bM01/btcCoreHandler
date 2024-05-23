@@ -96,9 +96,6 @@ class Server(server.protocol.RequestHandler):
             except Exception as E:
                 self.LOGGER.add("server error: local controller has encountered an error on receiving a call")
                 self.LOGGER.add("server error: error reported", E)
-                #self.LOGGER.add("server error: local socket", self.localControllerNetwork._remoteSock)
-                #self.LOGGER.add("server error: local call", call)
-                #self.LOGGER.add("server error: attempted message", message)
         else:
             self.nice_server_shutdown()
     
