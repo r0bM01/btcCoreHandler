@@ -118,11 +118,11 @@ class Handshake(Proto):
 
 
 class Peer(Handshake):
-    def __init__(self, new_peer_tuple):
+    def __init__(self, conn_details):
         ## inherits handshake object
-        if bool(new_peer_tuple):
-            self._remoteSock = new_peer_tuple[0]
-            self.address = new_peer_tuple[1]
+        if bool(conn_details):
+            self._remoteSock = conn_details[0]
+            self.address = conn_details[1]
 
         self.timeout = 120
         self.isConnected = False

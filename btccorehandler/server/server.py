@@ -74,24 +74,31 @@ class Server(server.protocol.RequestHandler):
         # cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
         stop = False
         while not stop:
-            self.localControllerNetwork.receiveClient() #blocking call for infinite time
-            if bool(self.localControllerNetwork._remoteSock):
-                call = self.localControllerNetwork.receiver()
-                if bool(call) and call == 'handlerinfo':
-                    message = json.dumps({'handlerUptime': self.initTime,
-                                          'handlerMachine': self.CACHE.node_details,
-                                          'connectedClients': len(self.connected_clients),
-                                          'servicesRunning': self.SERVICES.services_running(),
-                                          'geolocationDb': len(self.CACHE.geolocation_index)})
-                    self.localControllerNetwork.sender(message)
-                elif bool(call) and call == 'handlernewcert':
-                    message = json.dumps({'certsaved': self.STORAGE.make_client_certificate('dummy')})
-                    self.localControllerNetwork.sender(message)
-                elif bool(call) and call == 'handlerstop':
-                    self.LOGGER.add("server: received closure call", call)
-                    self.localControllerNetwork.sender("handler server stopping now")
-                    stop = True
-                self.localControllerNetwork.sockClosure() # closes the socket after each call
+            try:
+                self.localControllerNetwork.receiveClient() #blocking call for infinite time
+                if bool(self.localControllerNetwork._remoteSock):
+                    call = self.localControllerNetwork.receiver()
+                    if bool(call) and call == 'handlerinfo':
+                        message = json.dumps({'handlerUptime': self.initTime,
+                                            'handlerMachine': self.CACHE.node_details,
+                                            'connectedClients': len(self.connected_clients),
+                                            'servicesRunning': self.SERVICES.services_running(),
+                                            'geolocationDb': len(self.CACHE.geolocation_index)})
+                        self.localControllerNetwork.sender(message)
+                    elif bool(call) and call == 'handlernewcert':
+                        message = json.dumps({'certsaved': self.STORAGE.make_client_certificate('dummy')})
+                        self.localControllerNetwork.sender(message)
+                    elif bool(call) and call == 'handlerstop':
+                        self.LOGGER.add("server: received closure call", call)
+                        self.localControllerNetwork.sender("handler server stopping now")
+                        stop = True
+                    self.localControllerNetwork.sockClosure() # closes the socket after each call
+            except Exception as E:
+                self.LOGGER.add("server error: local controller has encountered an error on receiving a call")
+                self.LOGGER.add("server error: error reported", E)
+                #self.LOGGER.add("server error: local socket", self.localControllerNetwork._remoteSock)
+                #self.LOGGER.add("server error: local call", call)
+                #self.LOGGER.add("server error: attempted message", message)
         else:
             self.nice_server_shutdown()
     
@@ -140,45 +147,45 @@ class Server(server.protocol.RequestHandler):
         return len(self.connected_clients) < self.maxPeersWorker
     
     def cleanup_workers(self):
-        for peer in self.connected_clients:
-            if not peer.is_alive():
-                peer.join()
+        for client in self.connected_clients:
+            if not client.is_alive():
+                client.join()
                 self.connected_clients.remove(peer)
 
-    def remote_peer_handler(self, new_peer):
-        new_peer.set_waiting_mode() ## set socket max waiting time to 2 minutes
-        new_peer.init_crypto()
+    def remote_peer_handler(self, new_client):
+        new_client.set_waiting_mode() ## set socket max waiting time to 2 minutes
+        new_client.init_crypto()
         #connectedPeer = lib.server.network.Peer(remotePeerSocket, handshake.remote_certificate, handshake.handshake_code)
-        while new_peer._remoteSock and not self.localControllerEvent.is_set():
-            remote_request = new_peer.read(self.maxCallSize)
+        while new_client._remoteSock and not self.localControllerEvent.is_set():
+            remote_request = new_client.read(self.maxCallSize)
             if bool(remote_request):
-                self.LOGGER.add("peer: new request", new_peer.address, remote_request)
+                self.LOGGER.add("client: new request", new_client.address, remote_request)
                 result = self.handle_request(remote_request)
-                reply_sent = new_peer.write(result)
-                self.LOGGER.add("peer: reply sent", new_peer.address, reply_sent)
-                new_peer.session_calls.append({'time': int(time.time()), 'request': remote_request, 'success': reply_sent})
+                reply_sent = new_client.write(result)
+                self.LOGGER.add("client: reply sent", new_client.address, reply_sent)
+                new_client.session_calls.append({'time': int(time.time()), 'request': remote_request, 'success': reply_sent})
         else:
-            self.LOGGER.add("server: peer has disconnected", new_peer.address)
-            new_peer.sockClosure()
+            self.LOGGER.add("server: peer has disconnected", new_client.address)
+            new_client.sockClosure()
 
     def start_serving(self):
         self.isServing = True
         self.LOGGER.add("server: waiting for incoming connections")
         while self.isServing and not self.localControllerEvent.is_set(): 
 
-            new_peer = server.network.Peer(self.NETWORK.receiveClient()) ## waits 5 seconds for new peer
+            new_client = server.network.Peer(self.NETWORK.receiveClient()) ## waits 5 seconds for new peer
             ## handshake is managed by server daemon thread
-            if bool(new_peer._remoteSock):
-                self.LOGGER.add("server: peer is trying to connect", new_peer.address)
-                new_peer.make_handshake([self.STORAGE.certificate])
+            if bool(new_client._remoteSock):
+                self.LOGGER.add("server: client is trying to connect", new_client.address)
+                new_client.make_handshake([self.STORAGE.certificate])
             ## if handshake is successfull it will be created a thread to handle the remote peer requests
-            if bool(new_peer._remoteSock) and bool(new_peer.handshake_done) and self.available_workers():
-                self.LOGGER.add("server: peer successfully connected", new_peer.address)
-                remotePeerThread = threading.Thread(target = self.remote_peer_handler, args = [new_peer])
-                remotePeerThread.start()
-                self.connected_clients.append(remotePeerThread)
+            if bool(new_client._remoteSock) and bool(new_client.handshake_done) and self.available_workers():
+                self.LOGGER.add("server: client successfully connected", new_client.address)
+                remoteClientThread = threading.Thread(target = self.remote_peer_handler, args = [new_client])
+                remoteClientThread.start()
+                self.connected_clients.append(remoteClientThread)
                 self.LOGGER.add("server: connected clients", len(self.connected_clients))
-            
+            # cleaning operation after each new client connection
             self.cleanup_workers()
             
         else:

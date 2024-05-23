@@ -20,11 +20,10 @@ import pathlib, time, sys
 class Logger:
     def __init__(self, dirPath, verbose = False):
         self.verbose = verbose
-        self.FILE = dirPath.joinpath(f"debug_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
+        self.FILE = dirPath.joinpath(f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
         self.FILE.touch()
 
-
-    def verbose_f(self, argument):
+    def verbose_format(self, argument):
         if type(argument) is bool and argument is True:
             arg = "\x1b[1;32m" + str(argument) + "\x1b[0m"
         elif type(argument) is bool and argument is False:
@@ -34,17 +33,23 @@ class Logger:
         return arg
 
     def add(self, message, *args):
-        log = str(f"{time.ctime(int(time.time()))} - {message}: ")
+        # creates the log formatted with time
+        log = str(f"{time.ctime(int(time.time()))} - {message} ") 
+        # writes on disk
         if args:
-            #arguments = str([a for a in args])
-            arguments = str([self.verbose_f(a) for a in args])
+            arguments = ":" + str([a for a in args])
             log = log + arguments
-
         with open(self.FILE, "a") as F:
             F.write(log + "\n")
-
+        # print on screen
         if self.verbose:
-            sys.stdout.write(log + "\n")
+            arguments = [self.verbose_format(a) for a in args if bool(a)]
+            sys.stdout.write(log)
             sys.stdout.flush()
+            if arguments:
+                sys.stdout.write(":")
+                sys.stdout.flush()
+                sys.stdout.write(arguments)
+                sys.stdout.flush()
 
             
