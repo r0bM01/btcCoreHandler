@@ -23,33 +23,30 @@ class Logger:
         self.FILE = dirPath.joinpath(f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
         self.FILE.touch()
 
-    def verbose_format(self, argument):
-        if type(argument) is bool and argument is True:
-            arg = "\x1b[1;32m" + str(argument) + "\x1b[0m"
-        elif type(argument) is bool and argument is False:
-            arg = "\x1b[1;31m" + str(argument) + "\x1b[0m"
-        else:
-            arg = str(argument)
-        return arg
-
-    def add(self, message, *args):
-        # creates the log formatted with time
-        log = str(f"{time.ctime(int(time.time()))} - {message} ") 
-        # writes on disk
+    def write_on_disk(self, log, arg_list):
         if args:
-            arguments = ":" + str([a for a in args])
-            log = log + arguments
+            log += ": " + str([a for a in args])
         with open(self.FILE, "a") as F:
             F.write(log + "\n")
-        # print on screen
+
+    def verbose_print(self, log, arg_list):
+        for a in arg_list:
+            if type(a) is bool and a is True:
+                log += "[" + "\x1b[1;32m" + str(a) + "\x1b[0m" + "]"
+            elif type(a) is bool and a is False:
+                log += "[" + "\x1b[1;31m" + str(a) + "\x1b[0m" + "]"
+            else:
+                log += "[" + str(a) + "]"
+        print(log)
+
+    def add(self, message, *args):
+        log = str(f"{time.ctime(int(time.time()))} - {message} ") 
+        self.write_on_disk(log, args)
         if self.verbose:
-            arguments = [self.verbose_format(a) for a in args if bool(a)]
-            sys.stdout.write(log)
-            sys.stdout.flush()
-            if arguments:
-                sys.stdout.write(":")
-                sys.stdout.flush()
-                sys.stdout.write(arguments)
-                sys.stdout.flush()
+            self.verbose_print(log, args)
+        
+
+            
+            
 
             

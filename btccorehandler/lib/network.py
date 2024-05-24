@@ -164,6 +164,13 @@ class ClientRPC(Proto):
         self.sockClosure()
         return info
     
+    def get_bitcoin_info(self):
+        self.connect()
+        self.sender("bitcoininfo")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
     def server_stop(self):
         self.connect()
         self.sender("handlerstop")

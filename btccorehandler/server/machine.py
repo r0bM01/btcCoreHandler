@@ -21,7 +21,11 @@ class Node:
         self.allowed_commands = []
     
     def get_local_IP(self):
-        return str(subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip("\n"))
+        ip_list = str(subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip("\n")).split(" ")
+        return ip_list[0]
+    
+    def get_external_IP(self):
+        return str(subprocess.run(["curl", "ip.me"], capture_output = True).stdout.decode())
     
     def check_bitcoin_daemon(self):
         return bool(subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode())

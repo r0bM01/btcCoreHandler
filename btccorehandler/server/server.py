@@ -79,12 +79,21 @@ class Server(server.protocol.RequestHandler):
                 if bool(self.localControllerNetwork._remoteSock):
                     call = self.localControllerNetwork.receiver()
                     if bool(call) and call == 'handlerinfo':
-                        message = json.dumps({'handlerUptime': self.initTime,
-                                            'handlerMachine': self.CACHE.node_details,
-                                            'connectedClients': len(self.connected_clients),
-                                            'servicesRunning': self.SERVICES.services_running(),
-                                            'geolocationDb': len(self.CACHE.geolocation_index)})
+                        message = json.dumps({
+                            'started': time.ctime(self.initTime),
+                            'platform': self.CACHE.node_details,
+                            'clients': len(self.connected_clients),
+                            'services': self.SERVICES.services_running(),
+                            'bitcoind': self.BITCOIN_DAEMON.daemon_running(),
+                            'last_cache': time.ctime(self.CACHE.bitcoin_update_time),
+                            'geo_db_size': len(self.CACHE.geolocation_index) })
                         self.localControllerNetwork.sender(message)
+                    elif bool(call) and call == 'bitcoininfo':
+                        message = json.dumps({
+                            'uptime': self.CACHE.bitcoin_info['uptime'],
+                            'chain': self.CACHE.bitcoin_info['blockchaininfo']['chain'],
+                            'blocks': self.CACHE.bitcoin_info['blockchaininfo']['blocks'],
+                            'peers': self.CACHE.bitcoin_info['networkinfo']['connections'] })
                     elif bool(call) and call == 'handlernewcert':
                         message = json.dumps({'certsaved': self.STORAGE.make_client_certificate('dummy')})
                         self.localControllerNetwork.sender(message)
@@ -93,6 +102,7 @@ class Server(server.protocol.RequestHandler):
                         self.localControllerNetwork.sender("handler server stopping now")
                         stop = True
                     self.localControllerNetwork.sockClosure() # closes the socket after each call
+                    self.LOGGER.add("server: local controller call", call)
             except Exception as E:
                 self.LOGGER.add("server error: local controller has encountered an error on receiving a call")
                 self.LOGGER.add("server error: error reported", E)
