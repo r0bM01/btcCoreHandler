@@ -66,8 +66,14 @@ class Engine:
     def services_exec(self, service):
         bitcoind_running = self.daemon_running()
         if service['needbtcd']:
-            if bitcoind_running: service['target'](self.logger)
-            else: service['active'] = False # disables the service if bitcoind is not running and necessary
+            if bitcoind_running:
+                try: 
+                    service['target'](self.logger)
+                except Exception as error_code:
+                    self.logger.add("server: service error", service['name'], error_code)
+                    service['active'] = False
+            else: 
+                service['active'] = False # disables the service if bitcoind is not running and necessary
         else:
             service['target'](self.logger)
 

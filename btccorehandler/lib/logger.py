@@ -24,8 +24,8 @@ class Logger:
         self.FILE.touch()
 
     def write_on_disk(self, log, arg_list):
-        if args:
-            log += ": " + str([a for a in args])
+        if arg_list:
+            log += ": " + str([a for a in arg_list])
         with open(self.FILE, "a") as F:
             F.write(log + "\n")
 

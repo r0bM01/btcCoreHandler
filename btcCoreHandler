@@ -68,7 +68,7 @@ elif args.start:
         print("handler server starting")
         subprocess.Popen(["btccorehandler/run_server"])
     else:
-        print("Server is already running. Use: 'server -i' to check the status")
+        print("Server is already running. Use: 'server -info' to check the status")
 elif args.stop:
     # checks with clientRPC if daemon is running then stops server
     if server_on:

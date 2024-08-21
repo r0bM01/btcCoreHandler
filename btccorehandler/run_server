@@ -65,7 +65,7 @@ def main():
     
     ## init Server instance
     SERVER = server.server.Server(logger, storage)
-    logger.add("server: init time", SERVER.initTime)
+    logger.add("server: init time", time.ctime(SERVER.initTime))
     logger.add("server: network ip address", SERVER.NETWORK.settings.host)
     logger.add("server: network open port", SERVER.NETWORK.settings.port)
     logger.add("server: internet is reachable", bool(SERVER.internetIsOn) )

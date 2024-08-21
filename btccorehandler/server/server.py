@@ -49,6 +49,7 @@ class Server(server.protocol.RequestHandler):
         self.localControllerEvent = threading.Event()
         self.localControllerNetwork = server.network.ServerRPC()
         self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
+        self.localControllerStop = True
 
         self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
         self.isServing = False
@@ -62,7 +63,7 @@ class Server(server.protocol.RequestHandler):
     def init_services(self):
         self.SERVICES.add_new_service('bitcoin', self.CACHE.get_bitcoin_info, True) # adds bitcoin 'info' service update
         self.SERVICES.add_new_service('geolocation', self.CACHE.get_geolocation_update, True) 
-        self.SERVICES.add_new_service('protonvpn_pf', server.MachineInterface.protonvpn_pf_test, False) # test for looping open port forward protonvpn
+        # self.SERVICES.add_new_service('protonvpn_pf', server.MachineInterface.protonvpn_pf_test, False) # test for looping open port forward protonvpn
 
     def local_server_controller(self):
         # command line operation
@@ -72,8 +73,8 @@ class Server(server.protocol.RequestHandler):
         self.LOGGER.add("server: local controller started", not self.localControllerEvent.is_set())
         # self.LOGGER.add("server: local event controller is waiting")
         # cmds = ['handlerstop', 'handlerinfo'] # command line accepts only 2 words
-        stop = False
-        while not stop:
+        self.localControllerStop = False
+        while not self.localControllerStop:
             try:
                 self.localControllerNetwork.receiveClient() #blocking call for infinite time
                 if bool(self.localControllerNetwork._remoteSock):
@@ -100,7 +101,7 @@ class Server(server.protocol.RequestHandler):
                     elif bool(call) and call == 'handlerstop':
                         self.LOGGER.add("server: received closure call", call)
                         self.localControllerNetwork.sender("handler server stopping now")
-                        stop = True
+                        self.localControllerStop = True
                     self.localControllerNetwork.sockClosure() # closes the socket after each call
                     self.LOGGER.add("server: local controller call", call)
             except Exception as E:
@@ -110,13 +111,16 @@ class Server(server.protocol.RequestHandler):
             self.nice_server_shutdown()
     
     def signal_server_shutdown(self, signum, frame):
-        self.LOGGER.add("server: shutdown called by signal", signum)
-        self.nice_server_shutdown()
+        if not self.localControllerStop:
+            self.LOGGER.add("server: shutdown called by signal", signum)
+            self.localControllerStop = True
+            #self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
         # server closure procedure
         # self.LOGGER.verbose = True
         self.LOGGER.add("server: nice shutdown started")
+        
 
         # self.LOGGER.add("server: closing network sockets")
         # self.NETWORK.sockClosure() #closes the connected socket if any
