@@ -65,31 +65,45 @@ class Cache:
         self.bitcoin_info['peersinfo'] = json.loads(server.machine.MachineInterface.runBitcoindCall("getpeerinfo"))
         self.bitcoin_update_time = int(time.time()) 
 
-        if not all(bool(value) for key, value in self.bitcoin_info.items()):
-            logger.add("server: a bitcoin call didn't work")
+        for info, value in self.bitcoin_info.items():
+            if not bool(value):
+                logger.add("data: bitcoin call didn't work", info)
+
+        #if not all(bool(value) for key, value in self.bitcoin_info.items()):
+        #    logger.add("server: a bitcoin call didn't work")
 
     def get_geolocation_update(self, logger):
         all_peers = self.bitcoin_info['peersinfo']
+        known_ips = []
+        batch_ips = []
+        geo_data = []
         for peer in all_peers:
             ip = peer['addr'].split(":")[0]
-            if ip in self.geolocation_index:
-                # retrieve geodata from database
-                geo_data = self.geolocation_read(self.geolocation_index[ip])
-            else:
-                # get geodata from web and writes it into database
-                geo_data = json.loads(Utils.getGeolocation(ip))
-                self.geolocation_index[ip] = self.geolocation_write(geo_data)
-                logger.add("geolocation: new node found", geo_data['ip'], geo_data['country_name'])  
-            # adds geodata to peer details
-            geo_data.pop('ip') # removes 'ip' field
-            peer.update(geo_data)
+            known_ips.append(ip) if ip in self.geolocation_index else batch_ips.append(ip)
+
+        if len(batch_ips) > 0:
+            logger.add("geolocation: found new nodes", len(batch_ips))
+            for x in range(0, len(batch_ips), 100):
+                geo_data.extend(Utils.getBatchGeolocation(batch_ips[x:x+100]))
+        
+        for geo in geo_data:
+            self.geolocation_index[geo['ip']] = self.geolocation_write(geo)
+
+        geo_data = [self.geolocation_read(self.geolocation_index[ip]) for ip in known_ips]
+        
+        for peer in all_peers:
+            ip = peer['addr'].split(":")[0]
+            for geo in geo_data:
+                if geo['ip'] == ip:
+                    peer.update(geo)
+
         self.connectedInfo = all_peers
 
     def get_geolocation_entry(self, ip):
         if not Utils.getCheckedIp(ip): 
             result = {'error': 'ip address not valid'}
         elif ip in self.geolocation_index:
-            result = self.geolocation.read(self.geolocation_index[ip])
+            result = self.geolocation_read(self.geolocation_index[ip])
         else:
             result = {'error': 'ip address not found'}
         return result

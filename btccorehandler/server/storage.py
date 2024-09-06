@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import pathlib
+import pathlib, json
 
 import lib.storage
 import lib.crypto
@@ -71,23 +71,27 @@ class Storage(lib.storage.Base):
         database = {}
         for entry in full_data_file:
             entry_file_pos = entry['dataPos']
-            geolocation_data = self.crypto.decrypt(entry['dataBytes'].hex()).split("#")
-            database[geolocation_data[0]] = entry['dataPos']
+            geolocation_data = json.loads(self.crypto.decrypt(entry['dataBytes'].hex())) # self.crypto.decrypt(entry['dataBytes'].hex()).split("#")
+            database[geolocation_data['ip']] = entry['dataPos'] #database[geolocation_data[0]] = entry['dataPos']
         return database # returns a dict "ip_bytes_key" : "peer_file_position_value"
     
     def geolocation_load_entry(self, file_pos):
         single_entry = self.read_single_entry(self.file_tree['geoDbContent'], file_pos)
-        retrieved_data = self.crypto.decrypt(single_entry.hex()).split("#")
+        retrieved_data = self.crypto.decrypt(single_entry.hex())  # self.crypto.decrypt(single_entry.hex()).split("#")
+        """
         geolocation_data = {
             'ip': retrieved_data[0],
             'country_code2': retrieved_data[1].upper(),
             'country_name': retrieved_data[2].capitalize(),
             'isp': retrieved_data[3].capitalize()
             }
+        """
+        geolocation_data = json.loads(retrieved_data)
         return geolocation_data
     
     def geolocation_write_entry(self, entry_data):
-        concat = str(entry_data['ip']) + "#" + entry_data['country_code2'] + "#" + entry_data['country_name'] + "#" + entry_data['isp']
+        # concat = str(entry_data['ip']) + "#" + entry_data['country_code2'] + "#" + entry_data['country_name'] + "#" + entry_data['isp']
+        concat = json.dumps(entry_data)
         encrypted_data = self.crypto.encrypt(concat)
         entry_pos = self.write_append(self.file_tree['geoDbContent'], bytes.fromhex(encrypted_data))
         return entry_pos

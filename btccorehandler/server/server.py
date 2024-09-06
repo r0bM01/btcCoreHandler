@@ -16,6 +16,7 @@
 
 
 import time, threading, sys, signal, json
+
 import lib.network
 
 import server.machine
@@ -111,16 +112,14 @@ class Server(server.protocol.RequestHandler):
             self.nice_server_shutdown()
     
     def signal_server_shutdown(self, signum, frame):
-        if not self.localControllerStop:
-            self.LOGGER.add("server: shutdown called by signal", signum)
-            self.localControllerStop = True
-            #self.nice_server_shutdown()
+        self.LOGGER.add("server: shutdown called by signal", signum)
+        self.nice_server_shutdown()
 
     def nice_server_shutdown(self):
         # server closure procedure
         # self.LOGGER.verbose = True
         self.LOGGER.add("server: nice shutdown started")
-        
+        self.localControllerStop = True
 
         # self.LOGGER.add("server: closing network sockets")
         # self.NETWORK.sockClosure() #closes the connected socket if any
@@ -142,7 +141,27 @@ class Server(server.protocol.RequestHandler):
         self.autoServing.start()
         self.LOGGER.verbose = False
 
-        self.localControllerEvent.wait() # main thread server hangs here!! 
+        self.main_thread_control_room() # main thread server hangs here!! 
+        
+    
+    def main_thread_control_room(self):
+        # main thread hangs here with periodically check the child threads
+        while not self.localControllerEvent.is_set():
+            self.localControllerEvent.wait(120) 
+            if not self.localControllerThread.is_alive() and not self.localControllerEvent.is_set():
+                self.LOGGER.add("server: local RPC server has stopped; will be restarted")
+                self.localControllerThread = threading.Thread(target = self.local_server_controller, daemon = True)
+                self.localControllerThread.start()
+            if not self.autoServing.is_alive() and not self.localControllerEvent.is_set():
+                self.LOGGER.add("server: remote server has stopped; will be restarted")
+                self.autoServing = threading.Thread(target = self.start_serving, daemon = True)
+                self.autoServing.start()
+            if not self.SERVICES.worker.is_alive() and not self.localControllerEvent.is_set():
+                self.LOGGER.add("server: services worker has stopped; will be restarted")
+                self.LOGGER.add("server: last services round", self.SERVICES.worker_last_round)
+                for service, error in self.SERVICES.services_errors().items():
+                    self.LOGGER.add("server: service error", service, error )
+                self.SERVICES.start()
         # when activated it will stop the application
         sys.exit(0) 
 
@@ -150,7 +169,7 @@ class Server(server.protocol.RequestHandler):
         self.NETWORK.openSocket()
         self.isOnline = bool(self.NETWORK.socket)
         self.LOGGER.add("server: socket ready", self.isOnline)
-        self.LOGGER.add("server: socket bind to address", self.NETWORK.settings.host)
+        self.LOGGER.add("server: socket bound to address", self.NETWORK.settings.host)
         #self.LOGGER.add("bind to IP", self.NETWORK.settings.host)
         self.LOGGER.add("server: network succesfully started")
     
@@ -161,7 +180,7 @@ class Server(server.protocol.RequestHandler):
         for client in self.connected_clients:
             if not client.is_alive():
                 client.join()
-                self.connected_clients.remove(peer)
+                self.connected_clients.remove(client)
 
     def remote_peer_handler(self, new_client):
         new_client.set_waiting_mode() ## set socket max waiting time to 2 minutes

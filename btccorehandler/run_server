@@ -17,6 +17,7 @@
 #############################################################################
 
 import time, sys
+from multiprocessing import current_process
 import lib.settings
 import lib.logger
 import server.storage
@@ -37,6 +38,12 @@ def main():
 
     logger = lib.logger.Logger(storage.dir_tree['debug'], verbose = True)
     logger.add("server: version running", lib.settings.VERSION)
+
+    main_process = current_process()
+    main_process.name = "btcCoreHandler"
+    
+    logger.add("server: process", main_process.name)
+    logger.add("server: PID", main_process.pid)
 
     ## checks if certificate is available
     if not storage.check_certificate():
@@ -88,9 +95,8 @@ def main():
     if SERVER.bitcoindRunning and SERVER.internetIsOn:
         ## loads known geolocation data from storage
         SERVER.init_geolocation_cache()
-        logger.add("geolocation: data loaded from storage", bool(SERVER.CACHE.geolocation_index))
+        logger.add("geolocation: data loaded from storage", len(SERVER.CACHE.geolocation_index))
         ## sends a single update on geolocation
-        logger.add("geolocation: updating data. It might take up to 2 minutes")
         SERVER.CACHE.get_geolocation_update(logger)   
         ## init auto update services
         SERVER.init_services()

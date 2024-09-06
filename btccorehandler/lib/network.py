@@ -239,6 +239,17 @@ class Utils:
         return json.dumps(geo_data)
 
     @staticmethod
+    def getBatchGeolocation(ips_list):
+        ips = json.dumps(ips_list).encode('utf-8')
+        endpoint = "http://ip-api.com/batch?fields=26139"
+        request = urllib.request.Request(url = endpoint, data = ips, headers = {'User-Agent': 'Mozilla/5.0'})
+        response = json.loads(urllib.request.urlopen(request).read().decode())
+        for geo in response:
+            geo['ip'] = geo['query']
+            del geo['query']
+        return response
+
+    @staticmethod
     def getCheckedIp(ip):
         try:
             ipaddress.ip_address(ip)

@@ -54,32 +54,53 @@ class Engine:
     def get_time(self):
         return int(time.time())
 
+    def set_pause(self, seconds):
+        return self.get_time() + int(seconds)
+
     def make_new_thread(self):
         return threading.Thread(target = self.services_worker, daemon = True)
     
     def add_new_service(self, name, target, bitcoind):
-        self.services.append({'name': name, 'target': target, 'needbtcd': bitcoind, 'active': False})
+        service = {'name': name, 'target': target, 'needbtcd': bitcoind, 'active': False}
+        service['last_run'] = 0
+        service['pause'] = 0
+        service['errors'] = 0
+        self.services.append(service)
+
+    def services_errors(self):
+        return {service['name'] : service['errors'] for service in self.services}
     
     def services_running(self):
         return [service['name'] for service in self.services if service['active']]
-    
+
+    def services_sanitizer(self, service, error_code):
+        self.logger.add("server: service error", service['name'], error_code)
+        if service['needbtcd']:
+            service['active'] = True if self.daemon_running() else False
+
+        if service['errors'] < 5:
+            service['pause'] = self.set_pause(120)
+        else:
+            service['pause'] = self.set_pause(300)
+        service['errors'] += 1
+        self.logger.add("server: service sanitizing attempt", service['errors'])
+
     def services_exec(self, service):
         bitcoind_running = self.daemon_running()
-        if service['needbtcd']:
-            if bitcoind_running:
-                try: 
-                    service['target'](self.logger)
-                except Exception as error_code:
-                    self.logger.add("server: service error", service['name'], error_code)
-                    service['active'] = False
-            else: 
-                service['active'] = False # disables the service if bitcoind is not running and necessary
-        else:
-            service['target'](self.logger)
+        if (service['needbtcd'] and bitcoind_running) or not service['needbtcd']:
+            try: 
+                service['target'](self.logger)
+                service['last_run'] = self.get_time()
+                service['pause'] = 0
+            except Exception as error_code:
+                self.services_sanitizer(service, error_code)
+        else: 
+            service['active'] = False # disables the service if bitcoind is not running and necessary
 
     def services_worker(self):
         while not self.services_controller.is_set():
             for service in self.services:
-                if service['active']: 
+                if service['active'] and service['pause'] < self.get_time(): 
                     self.services_exec(service) # execute the service if active
+            self.worker_last_round = self.get_time()
             self.services_controller.wait(self.worker_rest)
