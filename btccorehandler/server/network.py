@@ -13,57 +13,74 @@
 # limitations under the License.                                            #
 #############################################################################
 
+## new imports
+from time import time
+from lib.base_network import Server, SimplePeer
+from lib.base_crypto import Utils
+
+
+class NetworkServer(Server):
+    def __init__(self, bind_addr, open_port):
+        self.server_addr = bind_addr
+        self.server_port = open_port
+
+        self.server_ready = False
+        
+        self.max_peers = 5
+        self.connected_peers = []
+
+    def start_serving(self):
+        self.create_server()
+        self.server_ready = bool(self.server_socket)
+    
+    def stop_serving(self):
+        self.disconnect_all_peers()
+        self.close_server()
+        self.server_ready = False
+    
+    def disconnect_all_peers(self):
+        for peer in self.connected_peers:
+            peer.disconnect()
+
+    def get_new_peer(self):
+        peer = False
+        peer_socket, peer_addr = self.accept_new_client()
+        peer_hello = self.recv_data(peer_socket)
+        if bool(peer_socket) and bool(peer_hello):
+            peer = Peer(peer_socket, peer_addr)
+            peer.hello_msg = peer_hello
+        else:
+            self.raw_closure(peer_socket)
+        return peer
+
+
+class Peer(SimplePeer):
+    def __init__(self, peer_socket, peer_addr):
+        self.peer_socket = peer_socket
+        self.peer_addr = peer_addr
+        self.encryption_key = None
+        self.hello_msg = False
+        self.is_connected = False
+
+        self.first_seen = int(time())
+        self.last_seen = self.first_seen
+
+        self.data_exchanged = 0
+    
+    def init_handshake(self):
+        random_bytes = Utils.get_random_bytes(16)
+        if self.send_data(self.peer_socket, random_bytes):
+            return self.recv_data(self.peer_socket)
+        
+
+
+## older imports
 import socket, time
 from lib.network import Proto
 from lib.crypto import (Network, Utils)
 
 
-###########################################################################################################
-###########################################################################################################
 
-class Settings:
-    def __init__(self, host = False, port = False):
-        self.host = str(host) if host else "" # if not provided binds it to all interfaces # socket.gethostbyname(socket.gethostname()) 
-        self.port = int(port) if port else 46800
-
-        self.socketTimeout = 5
-        self.remoteSockTimeout = 120
-        self.backlog = 5
-        self.maxSockets = 1
-
-
-class Server(Proto):
-    def __init__(self, settings):
-        self.settings = settings
-        self.socket = False
-        self.remoteAddr = None
-        
-    def openSocket(self):
-        try:
-            self.socket = socket.create_server((self.settings.host, self.settings.port), family = socket.AF_INET,
-                                               backlog = self.settings.backlog, reuse_port = True)
-            self.socket.settimeout(self.settings.socketTimeout)
-        except OSError:
-            self.socket = False
-
-    def closeSocket(self):
-        try: 
-            self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
-        except (OSError, AttributeError):
-            pass
-        self.socket = False
-
-    def receiveClient(self):
-        try:
-            remote_sock, remote_addr = self.socket.accept()
-            remote_sock.settimeout(self._opTimeout) 
-            return (remote_sock, remote_addr)
-        except OSError:
-            self.sockClosure()
-            return False
-
-      
 ###########################################################################################################
 ###########################################################################################################
 
@@ -117,7 +134,7 @@ class Handshake(Proto):
         ## final: if peer received the confirmation, handshake is considered done
 
 
-class Peer(Handshake):
+class OLD_Peer(Handshake):
     def __init__(self, conn_details):
         ## inherits handshake object
         if bool(conn_details):

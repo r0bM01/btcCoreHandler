@@ -13,77 +13,45 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import hmac, hashlib, secrets
+import lib.base_crypto
+from hashlib import blake2b
+from secrets import token_bytes
 
+class Messages(lib.base_crypto.ScrumbledEggsProto):
+	def __init__(self):
+		self.xor_rounds = 4
 
-class Network:
-	def __init__(self, peerCert, handshakeCode):
-		self.certificate = bytes.fromhex(peerCert)
-		self.handshake_code = bytes.fromhex(handshakeCode)
-
-		self.encryption_dict = False
-		self.decryption_dict = False
-
+	def encrypt_message(self, message, password):
+		bytes_data = self.data_to_bytes(message)
+		bytes_passw = self.data_to_bytes(password)
+		return self.encrypt_bytes(bytes_data, bytes_pasw)
 	
-	def make_handshake_code(self, entropy):
-		if type(entropy) is not bytes:
-			entropy = bytes.fromhex(entropy)
-		return hashlib.blake2b(entropy, key = bytes.fromhex(certificate), digest_size = 16).hexdigest()
+	def decrypt_message(self, encrypted_data, password):
+		bytes_data = self.data_to_bytes(encrypted_data)
+		bytes_passw = self.data_to_bytes(password)
+		return self.decrypt_bytes(bytes_data, bytes_passw)
 
-	def make_cryptography_dict(self):
-		key = self.certificate
-		psw = self.handshake_code
-		enc = {} # thread safe encryption dict
-		dec = {} # thread safe decryption dict
-		for num in range(256):
-			code = hex(num)[2:].zfill(2)
-			value = hashlib.blake2b(code.encode('utf-8'), key = key, salt = psw, digest_size = 2).hexdigest()
-			enc[code] = value
-			dec[value] = code
-		# can now add it to class property
-		self.encryption_dict = enc
-		self.decryption_dict = dec
-			
-	def encrypt(self, message):
-		msg = message.encode('utf-8').hex()
-		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
-
-	def decrypt(self, hex_message):
-		msg = hex_message # message.encode('utf-8').hex()
-		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+4]) for x in range(0, len(msg), 4) ]))
-		return hex_decrypt.decode('utf-8')
-
-
-class Storage:
-	def __init__(self, certificate):
-		self.certificate = bytes.fromhex(certificate)
-		self.encryption_dict = { hex(num)[2:].zfill(2) : self.hash_func(hex(num)[2:].zfill(2)) for num in range(256) }
-		self.decryption_dict = { self.hash_func(hex(num)[2:].zfill(2)) : hex(num)[2:].zfill(2) for num in range(256) }
-
-	def hash_func(self, code):
-		return hashlib.blake2b(code.encode('utf-8'), key = self.certificate, digest_size = 2).hexdigest()
-
-	def encrypt(self, data):
-		if type(data) is str:
-			msg = data.encode('utf-8').hex()
-		elif type(data) is bytes:
-			msg = data.hex()
-		return "".join([ self.encryption_dict.get(msg[x:x+2]) for x in range(0, len(msg), 2) ])
-
-	def decrypt(self, hex_data):
-		msg = hex_data #data.encode('utf-8').hex()
-		hex_decrypt = bytes.fromhex("".join([ self.decryption_dict.get(msg[x:x+4]) for x in range(0, len(msg), 4) ]))
-		return hex_decrypt.decode('utf-8')
+	def data_to_bytes(self, data):
+		match data:
+			case int():
+				result = str(data).encode('utf-8')
+			case str():
+				result = data.encode('utf-8')
+			case bytes():
+				result = data
+		return result
 
 
 class Utils:
 	@staticmethod
 	def get_random_bytes(size):
-		return secrets.token_bytes(int(size))
+		return token_bytes(int(size))
 	
 	@staticmethod
-	def get_derived_certificate(cert_name, certificate, nonce):
-		return hashlib.blake2b(cert_name, key = certificate, salt = nonce, digest_size = 64).hexdigest()
+	def get_derived_bytes(bytes_data, rounds):
+		for r in range(int(rounds)):
+			bytes_data = blake2b(bytes_data, key = str(r).encode('utf-8')).digest()
+		return bytes_data
 
 	@staticmethod
 	def get_checksum(entropy, certificate):
