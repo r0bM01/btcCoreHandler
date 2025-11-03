@@ -1,0 +1,17 @@
+
+
+import server
+
+def main():
+    print("testing btcCoreHandler")
+    handler = server.Controller()
+
+    handler.init_network()
+    handler.init_services()
+
+    handler.graceful_shutdown()
+    print("test done")
+
+
+if __name__ == "main":
+    main()

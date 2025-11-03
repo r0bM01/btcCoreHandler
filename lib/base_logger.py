@@ -15,18 +15,26 @@
 
 
 import pathlib, time, sys
+import queue
 
 
-class Logger:
+class BaseLogger:
     def __init__(self, dirPath, verbose = False):
+        self.base_dir = dirPath
         self.verbose = verbose
-        self.FILE = dirPath.joinpath(f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log")
-        self.FILE.touch()
+        self.log_file = self.new_log_file()
+                
+
+    def new_log_file(self):
+        filename = f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log"
+        filepath = self.base_dir.joinpath(filename)
+        filepath.touch()
+        return filepath
 
     def write_on_disk(self, log, arg_list):
-        if arg_list:
+        if bool(arg_list):
             log += ": " + str([a for a in arg_list])
-        with open(self.FILE, "a") as F:
+        with open(self.log_file, "a") as F:
             F.write(log + "\n")
 
     def verbose_print(self, log, arg_list):
@@ -39,11 +47,12 @@ class Logger:
                 log += "[" + str(a) + "]"
         print(log)
 
-    def add(self, message, *args):
-        log = str(f"{time.ctime(int(time.time()))} - {message} ") 
+    def add(self, type, message, *args):
+        log = str(f"{type.upper()} - {time.ctime(int(time.time()))} - {message} ") 
         self.write_on_disk(log, args)
         if self.verbose:
             self.verbose_print(log, args)
+        
         
 
             

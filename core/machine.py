@@ -15,34 +15,36 @@
 
 import subprocess, json
 
-
 class Node:
     def __init__(self):
         self.allowed_commands = []
-    
+
     def get_local_IP(self):
         ip_list = str(subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip("\n")).split(" ")
         return ip_list[0]
-    
+
     def get_external_IP(self):
         return str(subprocess.run(["curl", "ip.me"], capture_output = True).stdout.decode())
-    
+
     def check_bitcoin_daemon(self):
         return bool(subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode())
 
-    def run_command(self, command):
-        if command not in self.allowed_commands: return {"error", "command not allowed"}
+    def run_command(self, command_list):
+        return str(subprocess.run(command_list, capture_output = True).stdout.decode())
+
 
 class BitcoinDaemon:
     def __init__(self):
         self.daemon = "bitcoind"
         self.client = "bitcoin-cli"
-
         self.is_running = self.daemon_running()
-    
+
+    def get_data(self, command, *args):
+        return self.run_command(command, args)
+
     def daemon_running(self):
         return bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
-    
+
     def start(self):
         subprocess.run([self.daemon], capture_output = True)
         self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
@@ -53,49 +55,8 @@ class BitcoinDaemon:
         self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
         return {"stop": self.is_running}
 
-    def run_command(self, command, args_list):
+    def run_command(self, command, *args):
         full_call = [self.client]
         full_call.append(command)
-        full_call.extend(args_list)
-        result = subprocess.run(full_call, capture_output = True).stdout.decode()
-        return result
-
-
-
-
-class MachineInterface:
-    
-    @staticmethod
-    def checkDaemon():
-        PID = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
-        return bool(PID)
-
-    @staticmethod
-    def getLocalIP():
-        IP = subprocess.run(["hostname", "-I"], capture_output = True).stdout.decode().strip(" \n")
-        return str(IP)
-    
-    @staticmethod
-    def protonvpn_pf_test(logger):
-        udp = subprocess.run(["natpmpc", "-a", "1", "0", "udp", "60", "-g", "10.2.0.1"], capture_output = True).stdout.decode()
-        tcp = subprocess.run(["natpmpc", "-a", "1", "0", "tcp", "60", "-g", "10.2.0.1"], capture_output = True).stdout.decode()
-        #logger.add("UDP", udp)
-        #logger.add("TCP", tcp)
-
-    @staticmethod
-    def runBitcoindCall(command, arg = False):
-        if command == 'uptime':
-            call = subprocess.run(["bitcoin-cli", command], capture_output = True).stdout.decode()
-            call = json.dumps({"uptime": int(call)})
-        elif command == 'stop':
-            subprocess.run(["bitcoin-cli", "stop"])
-            call = json.dumps({"stop": bool(self.checkDaemon())})
-        elif command == 'start':
-            subprocess.run(["bitcoind"])
-            call = json.dumps({"start": bool(self.checkDaemon())})
-        else:
-            caller = ["bitcoin-cli", command] 
-            if bool(arg): caller.extend(arg)
-            call = subprocess.run(caller, capture_output = True).stdout.decode()
-            if not bool(call): call = {command: "True"}
-        return call
+        full_call.extend(args)
+        return json.loads(subprocess.run(full_call, capture_output = True).stdout.decode())

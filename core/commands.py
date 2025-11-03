@@ -13,29 +13,14 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import ui.utils as utils
-from lib.shared.crypto import getMiniHash
-from PySide6.QtCore import Qt, QSize 
-from PySide6.QtGui import QPixmap, QIcon
-from PySide6.QtWidgets import ( QApplication, QMainWindow, QMenuBar, QMenu, QStatusBar, QPushButton,
-                            QLabel, QLineEdit, QGridLayout, QWidget, QFormLayout, QVBoxLayout, QHeaderView,
-                            QHBoxLayout, QGroupBox, QTextEdit, QMessageBox, QTableWidget, QTableWidgetItem, QScrollArea )
+COMMANDS = {
+    'control': {'handlerstop', 'handlerlogs', 'keepalive', 'bitcoindrunning', 'test'},
+    'cached': {'systeminfo','blockchaininfo', 'networkinfo', 'nettotalsinfo', 'mempoolinfo', 'mininginfo', 'peerinfo'},
+    'bitcoin': {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+                'addnode', 'getaddednodeinfo'},
+    'stored': {'geobyip'}
+}
 
 
-class BannedNodes(QWidget):
-    def __init__(self, bannedControl):
-        super().__init__()
-
-        self.bannedControl = bannedControl
-
-
-        self.setWindowTitle("Banned Nodes")
-        self.setFixedSize(640, 500)
-
-        self.RESULT = {}
-        self.BUTTON = {}
-        self.edit = {}
-
-        layout = QVBoxLayout()
-
-        self.setLayout(layout)
+def verify_command(request):
+    return (request['method'] in COMMANDS and request['call'] in COMMANDS[request['method']])
