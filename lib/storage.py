@@ -14,25 +14,25 @@
 #############################################################################
 
 
-import os, pathlib, time, json
-import lib.shared.settings
-import lib.shared.crypto
-from lib.shared.network import Utils
+import os, pathlib, time, json, base64
+import lib.settings
+import lib.crypto
+from lib.network import Utils
 
 class Base:
     def __init__(self):
-        self.saveDir = pathlib.Path.home().joinpath(".btcCoreHandler")
+        self.base_dir = pathlib.Path.home().joinpath(".btcCoreHandler")
 
-        self.saveDirs = {'cert': self.saveDir.joinpath('cert'),
-                         'debug': self.saveDir.joinpath('debug'), 
-                         'geoDb': self.saveDir.joinpath('geoDb'),
-                         'statsDb': self.saveDir.joinpath('statsDb'),}
+        self.dir_tree = {'cert': self.base_dir.joinpath('cert'),
+                         'debug': self.base_dir.joinpath('debug'), 
+                         'geoDb': self.base_dir.joinpath('geoDb'),
+                         'statsDb': self.base_dir.joinpath('statsDb'),}
         
-        self.saveFiles = {'cert': self.saveDir.joinpath(self.saveDirs['cert'], 'cert.r0b'),
-                          'geoDbIndex': self.saveDir.joinpath(self.saveDirs['geoDb'], 'index.r0b'),
-                          'geoDbContent': self.saveDir.joinpath(self.saveDirs['geoDb'], 'addresses.r0b'),
-                          'statsDbIndex': self.saveDir.joinpath(self.saveDirs['statsDb'], 'index.r0b'),
-                          'statsDbContent': self.saveDir.joinpath(self.saveDirs['statsDb'], 'statistics.r0b')}
+        self.file_tree = {'cert': self.dir_tree['cert'].joinpath('cert.r0b'),
+                          'geoDbIndex': self.dir_tree['geoDb'].joinpath('index.r0b'),
+                          'geoDbContent': self.dir_tree['geoDb'].joinpath('addresses.r0b'),
+                          'statsDbIndex': self.dir_tree['statsDb'].joinpath('index.r0b'),
+                          'statsDbContent': self.dir_tree['statsDb'].joinpath('statistics.r0b')}
     
     def check_exists(self, filePath):
         realPath = pathlib.Path(filePath)
@@ -47,67 +47,101 @@ class Base:
         realPath.touch(exist_ok = True)
         
     def init_all(self):
-        [self.init_dir(d) for d in self.saveDirs] # init and rewrites directories
-        [self.init_file(f) for f in self.saveFiles] #init and rewrites files
+        [self.init_dir(self.dir_tree[d]) for d in self.dir_tree] # init and rewrites directories
+        [self.init_file(f) for f in self.file_tree] #init and rewrites files
+    
+    def get_dir_content(self, dir_path):
+        realPath = pathlib.Path(dir_path)
+        return [f for f in realPath.iterdir()]
         
     def generate_certificate(self):
-        self.init_file(self.saveFiles['cert']) # avoid previous certificate
-        certBytes = lib.shared.crypto.getRandomBytes(lib.shared.settings.CERT_SIZE)
-        with open(self.saveFiles['cert'], "wb") as F:
+        self.init_file(self.file_tree['cert']) # avoid previous certificate
+        certBytes = lib.crypto.Utils.get_random_bytes(lib.settings.CERT_SIZE)
+        with open(self.file_tree['cert'], "wb") as F:
             F.write(certBytes)
+    
+    def derive_certificate(self, client_name):
+        name = client.name.lower()
+        derived_cert = lib.crypto.Utils.get_derived_certificate(b'client', bytes.fromhex(self.load_certificate), name.encode('utf-8'))
+        return derived_cert
+    
+    def export_certificate_pem(self, cert_bytes, cert_name):
+        cert_encoded = base64.b64encode(cert_bytes)
+        cert_text = cert_encoded.decode('utf-8')
+        cert_lines = [cert_text[i:i+64] for i in range(0, len(cert_text), 64)]
+        cert_file = cert_name.upper() + ".pem"
+        file_path = pathlib.Path(self.dir_tree['cert'], cert_file)
+        with open(file_path, "w") as C:
+            C.write("-----BEGIN CERTIFICATE-----\n")
+            [C.write(line + "\n") for line in cert_lines]
+            C.write("-----END CERTIFICATE-----")
+        return file_path
+    
+    def load_certificate_pem_byname(self, cert_name):
+        cert_file = cert_name.upper() + ".pem"
+        file_path = pathlib.Path(self.dir_tree['cert'], cert_file)
+        with open(file_path, "r") as C:
+            cert_lines = C.readlines()
+        cert_text = b"".join([line[:64] for line in cert_lines[1:-1]])
+        cert_decoded = base64.b64decode(cert_text)
+        return cert_decoded.hex()
         
     def import_certificate(self, sourceFile):
         sourcePath = pathlib.Path(sourceFile)
-        self.init_file(self.saveFiles['cert']) # avoid previous certificate
+        self.init_file(self.file_tree['cert']) # avoid previous certificate
         with open(sourcePath, "rb") as F:
             source = F.read()
-        with open(self.saveFiles['cert'], "wb") as F:
+        with open(self.file_tree['cert'], "wb") as F:
             F.write(source)
     
     def load_certificate(self):
-        with open(self.saveFiles['cert'], "rb") as F:
+        with open(self.file_tree['cert'], "rb") as F:
             certBytes = F.read()
         return certBytes.hex()
     
-    def check_certificate(self):
+    def verify_certificate(self):
         return len(self.load_certificate()) == 128
+    
+    def write_append(self, filePath, dataBytes):
+        realPath = pathlib.Path(filePath)
+        dataLenght = bytes.fromhex(str(hex(len(dataBytes))[2:]).zfill(4))
+        with open(realPath, "ab") as F:
+            dataPos = F.tell()
+            F.write(dataLenght + dataBytes)
+        return dataPos
+    
+    def write_new(self, filePath, dataBytes):
+        realPath = pathlib.Path(filePath)
+        dataLenght = bytes.fromhex(str(hex(len(dataBytes))[2:]).zfill(4))
+        with open(realPath, "wb") as F:
+            dataPos = F.tell()
+            F.write(dataLenght + dataBytes)
+        return dataPos
 
-class Server(Base):
+    def read_all_file(self, filePath):
+        realPath = pathlib.Path(filePath)
+        data_array = []
+        with open(realPath, "rb") as F:
+            while True:
+                data_pos = F.tell()
+                data_size = F.read(2)
+                if bool(data_size):
+                    data_bytes = F.read(int(data_size.hex(), 16))
+                    data_array.append({'dataPos': data_pos, 'dataBytes': data_bytes})
+                    #F.seek(data_size, 1)
+                else:
+                    break
+        return data_array
+    
+    def read_single_entry(self, filePath, dataPos):
+        realPath = pathlib.Path(filePath)
+        with open(realPath, "rb") as F:
+            F.seek(dataPos)
+            data_size = F.read(2)
+            data_bytes = F.read(int(data_size.hex(), 16))
+        return data_bytes
 
-    def check_base_dir(self):
-        return self.check_exists(self.saveDir)
 
-    def init_certificate(self):
-        if not pathlib.Path.exists(self.saveFiles['cert']):
-            raise OSError("Missing certificate! You cannot start server without it!")
-        if not self.check_certificate():
-            raise OSError("Certificate corrupted! Server cannot be started!")
-        self.certificate = self.load_certificate()
-
-    def init_geolocation(self):
-        if not bool(self.certificate):
-            raise OSError("Missing certificate! You cannot init Geolocation without it!")
-        if not pathlib.Path.exists(self.saveDirs['geoDb']):
-            raise OSError("Geolocation database folder missing!")
-        if not pathlib.Path.exists(self.saveFiles['geoDbIndex']):
-            raise OSError("Missing geolocation databse index!")
-        if not pathlib.Path.exists(self.saveFiles['geoDbContent']):
-            raise OSError("Missing geolocation database!")
-        self.geolocation = Geolocation(self.certificate, self.saveDirs['geoDb'])
-
-
-class Client(Base):
-
-    def check_base_dir(self):
-        return self.check_exists(self.saveDir)
-
-    def init_certificate(self):
-        if self.check_exists(self.saveDirs['cert']) and self.check_exists(self.saveFiles['cert']):
-            return self.load_certificate() if self.check_certificate() else False
-        else:
-            self.init_dir(self.saveDirs['cert'])
-            self.init_file(self.saveFiles['cert'])
-            return False
     
 
 class Geolocation:

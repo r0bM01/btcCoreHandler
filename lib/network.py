@@ -14,8 +14,7 @@
 #############################################################################
 
 
-import lib.shared.crypto
-import socket, ssl, time, ipaddress
+import socket, ssl, time, ipaddress, json
 import urllib.request
 
 class Proto:
@@ -48,8 +47,6 @@ class Proto:
         except (OSError, AttributeError):
             pass
         self._remoteSock = False
-    #################################################
-   
     
     ###########################################################################################################
         # MESSAGE SEND/RECEIVE WITH CONFIRM
@@ -116,147 +113,70 @@ class Proto:
 ###########################################################################################################
 ###########################################################################################################
 
-class Client(Proto):
-    def __init__(self):
-        self.remoteHost = None # has to be given by UI  
-        self.remotePort = 4600 # default port
-        self.timeout = 120
-        self.isConnected = False
-        self.handshakeCode = False
-        
-
-    def connectToServer(self, certificate):
-        try:
-            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
-            #self._remoteSock.settimeout(10)
-            # self.handshakeCode = self.receiver()
-            # self.isConnected = True if len(self.handshakeCode) == 32 else False
-        except (OSError, TimeoutError):
-            self.isConnected = False
-            self._remoteSock = False
-        
-        if bool(self._remoteSock): 
-            self.handshakeProcess(certificate)
-
-    def disconnectServer(self):
-        #self._remoteSock.close()
-        #self._remoteSock = False
-        self.sockClosure()
-        self.isConnected = False
-        self.handshakeCode = False
-    
-    def handshakeProcess(self, certificate):
-        clientRandom = lib.shared.crypto.getRandomBytes(16)
-        serverRandom = self.dataRecv(16) if self.dataSend(clientRandom) else False
-        entropy = clientRandom + serverRandom
-        if bool(serverRandom):
-            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
-            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
-            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
-            if self.dataSend(bytes.fromhex(request)) and self.dataRecv(8) == bytes.fromhex(confirm):
-                self.handshakeCode = handshakeCode
-                self.isConnected = True
-                self._remoteSock.settimeout(self.timeout)
-        if not bool(self.handshakeCode): self.sockClosure() 
 
 ###########################################################################################################
 ###########################################################################################################
 
-class Settings:
-    def __init__(self, host = False, port = False):
-        self.host = str(host) if host else "" # if not provided binds it to all interfaces # socket.gethostbyname(socket.gethostname()) 
-        self.port = int(port) if port else 4600
-
-        self.socketTimeout = 30
-        self.remoteSockTimeout = 120
-        self.backlog = 5
-        self.maxSockets = 1
-
-
-class Server(Proto):
-    def __init__(self, settings):
-        self.settings = settings
-        self.socket = False
-        self.remoteAddr = None
-        self.handshakeCode = False
-        
-
-    def openSocket(self):
-        try:
-            self.socket = socket.create_server((self.settings.host, self.settings.port), family = socket.AF_INET,
-                                               backlog = self.settings.backlog, reuse_port = True)
-            self.socket.settimeout(self.settings.socketTimeout)
-        except OSError:
-            self.socket = False
-
-    def receiveClient(self, certificate):
-        try:
-            self._remoteSock, self.remoteAddr = self.socket.accept()
-            self._remoteSock.settimeout(self._opTimeout)
-            # self.sender(handshakeCode)
-            # self.handshakeCode = handshakeCode
-        except OSError:
-            self.sockClosure()
-            self.handshakeCode = False
-        if bool(self._remoteSock): self.handshakeProcess(certificate)
-        if bool(self.handshakeCode): self._remoteSock.settimeout(self.settings.remoteSockTimeout)
-    
-    def handshakeProcess(self, certificate):
-        clientRandom = self.dataRecv(16)
-        serverRandom = lib.shared.crypto.getRandomBytes(16)
-        entropy = clientRandom + serverRandom
-        if bool(clientRandom) and self.dataSend(serverRandom):
-            handshakeCode = lib.shared.crypto.getHandshakeCode(entropy, certificate)
-            request = lib.shared.crypto.getHashedCommand("handshake", certificate, handshakeCode)
-            confirm = lib.shared.crypto.getHashedCommand("handshakeaccepted", certificate, handshakeCode)
-            if self.dataRecv(16) == bytes.fromhex(request):
-                self.handshakeCode = handshakeCode if self.dataSend(bytes.fromhex(confirm)) else False
-        if not bool(self.handshakeCode): self.sockClosure()
-        
-            
         
 ###########################################################################################################
 ###########################################################################################################
 
-class ServerRPC(Proto):
-    def __init__(self, port = 46001):
-        self.host = "127.0.0.1"
-        self.port = int(port)
 
-    def openSocket(self):
-        try:
-            self.socket = socket.create_server((self.host, self.port), family = socket.AF_INET,
-                                                backlog = 1, reuse_port = True)
-            self.socket.settimeout(self._opTimeout)
-        except OSError:
-            self.socket = False
+###########################################################################################################
+###########################################################################################################
 
-    def receiveClient(self):
-        try:
-            self._remoteSock, self.remoteAddr = self.socket.accept()
-            self._remoteSock.settimeout(self._opTimeout)
-            # self.sender(handshakeCode)
-            # self.handshakeCode = handshakeCode
-        except OSError:
-            self.sockClosure()
-            
 
 class ClientRPC(Proto):
     def __init__(self, port = 46001):
         self.host = "127.0.0.1"
         self.port = int(port)
+
+        self.isConnected = False
     
     def connect(self):
         try:
-            self._remoteSock = socket.create_connection((self.remoteHost, self.remotePort), timeout = self._opTimeout)
-            #self._remoteSock.settimeout(10)
-            # self.handshakeCode = self.receiver()
-            # self.isConnected = True if len(self.handshakeCode) == 32 else False
+            self._remoteSock = socket.create_connection((self.host, self.port), timeout = self._opTimeout)
+            self.isConnected = True
         except (OSError, TimeoutError):
             self.isConnected = False
             self._remoteSock = False
-        
-        return bool(self._remoteSock)
+    
+    def disconnect(self):
+        self.sockClosure()
+    
+    def is_server_running(self):
+        self.connect()
+        is_on = self.isConnected
+        self.sockClosure()
+        return is_on
+    
+    def make_new_client(self):
+        self.connect()
+        self.sender("handlernewcert")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
+    def get_server_info(self):
+        self.connect()
+        self.sender("handlerinfo")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
+    def get_bitcoin_info(self):
+        self.connect()
+        self.sender("bitcoininfo")
+        info = self.receiver()
+        self.sockClosure()
+        return info
+    
+    def server_stop(self):
+        self.connect()
+        self.sender("handlerstop")
+        confirm = self.receiver()
+        self.sockClosure()
+
 
 ###########################################################################################################
 ###########################################################################################################
@@ -267,9 +187,33 @@ class Utils:
         return ssl.create_default_context()
     
     @staticmethod
+    def get_local_IP():
+        external = socket.socket(family = socket.AF_INET, type = socket.SOCK_DGRAM)
+        external.connect("1.1.1.1", 80)
+        ip = external.getsockname()[0]
+        external.close()
+        return ip
+    
+    @staticmethod
     def getExternalIP():
         extIP = urllib.request.urlopen("https://ident.me").read().decode('utf-8')
         return extIP
+
+    @staticmethod
+    def checkInternet(dest = False):
+        addr = dest or 'https://8.8.8.8'
+        if 'https://' not in addr and 'http://' not in addr: 
+            addr = 'https://' + addr
+        if 'https://' in addr:
+            context = ssl.create_default_context()
+        else:
+            context = False 
+        try:
+            request = urllib.request.Request(url = addr, headers = {'User-Agent': 'Mozilla/5.0'})
+            test = urllib.request.urlopen(request, context = context, timeout = 2).read().decode('utf-8')
+            return True
+        except urllib.request.URLError as e: 
+            return False
     
     @staticmethod
     def getBitnodesInfo(extIP, port):
@@ -284,10 +228,26 @@ class Utils:
     @staticmethod
     def getGeolocation(ip):
         context = ssl.create_default_context()
+        """
         baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
+        """
+        baseUrl = "http://ip-api.com/json/" + str(ip) + str("?fields=26139")
         request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
-        locationData = urllib.request.urlopen(request, context = context).read().decode()
-        return locationData
+        locationData = json.loads(urllib.request.urlopen(request).read().decode())
+        ## format data to old mode
+        geo_data = {'ip': locationData['query'], 'country_code2': locationData['countryCode'], 'country_name': locationData['country'], 'isp': locationData['isp']}
+        return json.dumps(geo_data)
+
+    @staticmethod
+    def getBatchGeolocation(ips_list):
+        ips = json.dumps(ips_list).encode('utf-8')
+        endpoint = "http://ip-api.com/batch?fields=26139"
+        request = urllib.request.Request(url = endpoint, data = ips, headers = {'User-Agent': 'Mozilla/5.0'})
+        response = json.loads(urllib.request.urlopen(request).read().decode())
+        for geo in response:
+            geo['ip'] = geo['query']
+            del geo['query']
+        return response
 
     @staticmethod
     def getCheckedIp(ip):

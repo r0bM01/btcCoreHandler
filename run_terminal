@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+
+import lib.crypto
+import client.network
+import client.storage
+import sys, json, pprint
+
+
+def terminal_exit():
+    print("terminal stopping")
+    sys.exit(0)
+
+def main():
+    # init storage
+    storage = client.storage.Client()
+    storage.init_certificate()
+    storage.init_cryptography()
+    # init network
+    network = client.network.Client()
+
+    # start terminal interface
+    print("\n#### Bitcoin Core Handler terminal ####\n")
+
+    server_addr = input("insert server ip >> ")
+    server_port = int(input("insert server port >> "))
+
+    print(f"connecting to {server_addr}: ", end = "", flush = True)
+    network.remoteHost = server_addr
+    network.remotePort = server_port
+    # connecting to server
+    network.connectToServer()
+    # handshake
+    if network.isConnected:
+        network.make_handshake(storage.certificate)
+    else:
+        print(f"couldn't connect to server {server_addr}")
+        terminal_exit()
+    
+    if not network.handshake_done:
+        print(f"handshake to server {server_addr} refused")
+        terminal_exit()
+    
+    print(f"[{bool(network.handshake_done)}]")
+
+    network.set_waiting_mode()
+    # init network crypto
+    network.init_crypto()
+
+    # open terminal calls interface
+    print("\nInsert a call request or digit 'exit' to close the terminal\n")
+    while network.isConnected:
+        request = str(input("\n>> ")).lower()
+        result = None
+        if request == 'exit': terminal_exit()
+        if network.write(request.replace(" ", "#")):
+            result = network.read()
+        if bool(result):
+            result = json.loads(result)
+            pprint.pp(result)
+
+if __name__ == '__main__':
+    main()

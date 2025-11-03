@@ -15,6 +15,15 @@
 
 import lib.shared.crypto
 
+CMD_CONTROL = {'start', 'stop', 'keepalive', 'advancedcall', 'bitcoindrunning', 'getserverlogs', 'test'}
+CMD_CACHED = {'getsysteminfo', 'getstatusinfo', 'getconnectedinfo'}
+CMD_GEOLOCATION = {'getgeolocation'}
+CMD_BITCOIN = {
+    'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
+    'addnode', 'getaddednodeinfo'}
+
+
+
 class Control:
     def __init__(self):
         

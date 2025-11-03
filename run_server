@@ -16,105 +16,102 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import time
-import lib.server.server
-import lib.server.machine
-import lib.shared.storage
+import time, sys
+from multiprocessing import current_process
+import lib.settings
+import lib.logger
+import server.storage
+import server.server
+import server.machine
 
-tempLogs = [] # we need to store logs before checking directory tree
 
-def addTempLog(log):
-        tempLogs.append(log)
-        print(f"{str(time.ctime(time.time()))} - {log}")
-
-def check_dirs_files(storage):
-    firstRun = False
-    certNotValid = False
-    success = False
-
-    def certificate_choice():   
-        c = input("Type \n'I' to import \n'G' to generate \n'Q' to quit \n>> ").upper()
-        if c == 'I': storage.import_certificate(input("Certificate path >> "))
-        elif c == 'G': storage.generate_certificate()
-        return storage.check_certificate()
-
-    addTempLog("Checking base directory")
-    if not storage.check_base_dir():
-        firstRun = True
-        addTempLog("Server first run")
-        storage.init_dir(storage.saveDir)
-        #storage.init_all()
-
-    addTempLog("Checking directory tree integrity")
-    for d, p in storage.saveDirs.items():
-        check = storage.check_exists(p)
-        addTempLog(f"dir [{d}]: [{check}]")
-        if not check: 
-            storage.init_dir(p)
-            addTempLog(f"{d} created")
-
-    addTempLog("Checking files")
-    for f, p in storage.saveFiles.items():
-        check = storage.check_exists(p)
-        addTempLog(f"file [{f}]: [{p}]")
-        if not check:
-            storage.init_file(p)
-            addTempLog(f"{f} created")
-        if f == 'cert' and not check: certNotValid = True
-
-    success = True 
-
-    if firstRun or certNotValid:
-        addTempLog("Certificate must be generated or imported")
-        if not certificate_choice():
-            success = False 
-            addTempLog("Certificate not imported/generated. Server stopping and exit.")
-        else:
-            addTempLog("Certificate valid!")
-    
-    return success
+def certificate_choice(storage):   
+    c = input("Type \n'I' to import \n'G' to generate \n'Q' to quit \n>> ").upper()
+    if c == 'I': storage.import_certificate(input("Certificate path >> "))
+    elif c == 'G': storage.generate_certificate()
+    # return storage.check_certificate()
 
 
 def main():
-    storage = lib.shared.storage.Server()
-    if check_dirs_files(storage):
-        #adds the temporary log to the actual logger
-        logger = lib.shared.storage.Logger(storage.saveDirs['debug'], verbose = False)
-        [logger.add(log) for log in tempLogs]
+    storage = server.storage.Storage()
+    storage.init_base()
 
-        logger.add("loading certificate")
-        storage.init_certificate()
-        logger.add("Certificate: " + str(storage.certificate))
-        logger.add("geolocation init")
-        storage.init_geolocation()
+    logger = lib.logger.Logger(storage.dir_tree['debug'], verbose = True)
+    logger.add("server: version running", lib.settings.VERSION)
 
-        # server init with actual logger
-        logger.verbose = True
-        SERVER = lib.server.server.Server(logger, storage)
-
-        
-        if SERVER.bitcoindRunning:
-            logger.add("updating base cache data")
-            SERVER.updateCacheData()
-
-            logger.add("BitcoinCore uptime", SERVER.BITCOIN_DATA.uptime['uptime'])
-            logger.add("BitcoinCore chain", SERVER.BITCOIN_DATA.blockchainInfo['chain'])
-            logger.add("BitcoinCore blocks", SERVER.BITCOIN_DATA.blockchainInfo['blocks'])
-            logger.add("BitcoinCore peers", SERVER.BITCOIN_DATA.networkInfo['connections'])
-
-            logger.add("updating geolocation data... wait until complete (up to 2 minutes)")
-            SERVER.updateGeolocationData(logger)    
-        else:
-            logger.add("Bitcoin Daemon is not running")
+    main_process = current_process()
+    main_process.name = "btcCoreHandler"
     
-        logger.add("starting network")
-        SERVER.start_network()
+    logger.add("server: process", main_process.name)
+    logger.add("server: PID", main_process.pid)
 
-        if SERVER.isOnline: SERVER.start_all()
-        else: logger.add("Server socket not working")
+    ## checks if certificate is available
+    if not storage.check_certificate():
+        logger.add("Certificate must be generated or imported")
+        certificate_choice(storage)
+    logger.add("storage: certificate is available", storage.verify_certificate())
+    storage.init_certificate()
+    storage.init_cryptography()
+
+    ## checks directories and files
+    logger.add("storage: checking directory tree integrity")
+    for directory in storage.dir_tree:
+        check = storage.check_exists(storage.dir_tree[directory])
+        logger.add(f"storage: [{storage.dir_tree[directory]}]", check)
+        if not check: 
+            storage.init_dir(storage.dir_tree[directory])
+            logger.add(f"storage: dir [{storage.dir_tree[directory]}] created")
     
-    else:
-        print("Directories and Files check has failed. Exiting server application")
+    for file in storage.file_tree:
+        check = storage.check_exists(storage.file_tree[file])
+        logger.add(f"storage: [{storage.file_tree[file]}]", check)
+        if not check:
+            storage.init_file(storage.file_tree[file])
+            logger.add(f"storage: file [{storage.file_tree[file]}] created")
+    
+    
+    ## init Server instance
+    SERVER = server.server.Server(logger, storage)
+    logger.add("server: init time", time.ctime(SERVER.initTime))
+    logger.add("server: network ip address", SERVER.NETWORK.settings.host)
+    logger.add("server: network open port", SERVER.NETWORK.settings.port)
+    logger.add("server: internet is reachable", bool(SERVER.internetIsOn) )
+    logger.add("server: bitcoin daemon is running", bool(SERVER.bitcoindRunning) )
+    
+    ## init Server RPC local controller
+    SERVER.localControllerThread.start()
+
+
+    if SERVER.bitcoindRunning:
+        logger.add("server: updating bitcoin cached data")
+        SERVER.CACHE.get_bitcoin_info(logger)
+
+        logger.add("bitcoin: client", SERVER.CACHE.bitcoin_info['networkinfo']['subversion'])
+        logger.add("bitcoin: uptime", SERVER.CACHE.bitcoin_info['uptime']['uptime'])
+        logger.add("bitcoin: chain", SERVER.CACHE.bitcoin_info['blockchaininfo']['chain'])
+        logger.add("bitcoin: blocks", SERVER.CACHE.bitcoin_info['blockchaininfo']['blocks'])
+        logger.add("bitcoin: peers", SERVER.CACHE.bitcoin_info['networkinfo']['connections'])
+    
+    if SERVER.bitcoindRunning and SERVER.internetIsOn:
+        ## loads known geolocation data from storage
+        SERVER.init_geolocation_cache()
+        logger.add("geolocation: data loaded from storage", len(SERVER.CACHE.geolocation_index))
+        ## sends a single update on geolocation
+        SERVER.CACHE.get_geolocation_update(logger)   
+        ## init auto update services
+        SERVER.init_services()
+        time.sleep(1) # waits for services to start
+
+    logger.add("server: starting network")
+    SERVER.start_network()
+
+    if SERVER.isOnline: 
+        SERVER.start_all()
+    else: 
+        logger.add("server: socket not working")
+        logger.add("server: stopping application and exit")
+
+
 
 if __name__ == '__main__':
     main()
