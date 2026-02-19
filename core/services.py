@@ -19,6 +19,17 @@ from threading import Event
 from core.shared import Log
 
 class Engine:
+    """ service structure:
+        service = { 
+                    'name': char,
+                    'target': obj,
+                    'active': bool,
+                    'last_run': int,
+                    'pause': int,
+                    'errors': int 
+                }
+
+        """
     def __init__(self):
 
         self.services = dict()
@@ -54,8 +65,8 @@ class Engine:
     def set_pause(self, seconds):
         return self.get_time() + int(seconds)
 
-    def add_new_service(self, name, target, bitcoind):
-        service = {'name': name, 'target': target, 'bitcoind': bitcoind, 'active': False}
+    def add_new_service(self, name, target):
+        service = {'name': name, 'target': target, 'active': False}
         service['last_run'] = None
         service['pause'] = None
         service['errors'] = None
@@ -89,7 +100,7 @@ class Engine:
                 pass
 
     def worker(self):
-        while self.is_working:
+        while self.worker_on:
             [self.run_service(name) for name in self.services]
             self.worker_last_round = self.get_time()
             self.controller.wait(self.worker_rest)
