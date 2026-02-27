@@ -45,8 +45,8 @@ class Controller:
         self.is_serving = False
 
         self.logger_thread = threading.Thread(target = self.LOGGER.worker, name = "logger-thread", daemon = True)
-        self.serving_thread = threading.Thread(target = self.peers_receiver, name = "serving-thread", daemon = True)
-        self.service_thread = threading.Thread(target = self.SERVICES.worker, name = "service-thread", daemon = True)
+        self.server_thread = threading.Thread(target = self.peers_receiver, name = "server-thread", daemon = True)
+        self.services_thread = threading.Thread(target = self.SERVICES.worker, name = "services-thread", daemon = True)
 
         self.max_peers = 5
         self.active_peers = [] # list of dicts {'peer': peer, 'worker': worker}
