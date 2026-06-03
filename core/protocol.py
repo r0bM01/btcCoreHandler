@@ -20,15 +20,15 @@ import core.machine
 
 class RequestHandler:
     """default request --> {'method': 'cached', 'call': 'systeminfo', 'args': []} """
-    def __init__(self, get_data):
+    def __init__(self):
         self.keepalive = {'keepalive'}
 
-        self.get_data = get_data
+        self.get_data = False
 
     def validate_request(self, request):
         valid = False
         if 'method' and 'call' in request:
-                valid = server.commands.verify_command(request)
+            valid = core.commands.verify_command(request)
         return valid
 
     def handle_request(self, request):

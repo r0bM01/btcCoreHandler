@@ -39,7 +39,7 @@ class BitcoinDaemon:
         self.client = "bitcoin-cli"
         self.is_running = self.daemon_running()
 
-    def get_data(self, command, *args):
+    def rpc(self, command, *args):
         return self.run_command(command, args)
 
     def daemon_running(self):
@@ -55,8 +55,8 @@ class BitcoinDaemon:
         self.is_running = bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())
         return {"stop": self.is_running}
 
-    def run_command(self, command, *args):
-        full_call = [self.client]
-        full_call.append(command)
-        full_call.extend(args)
-        return json.loads(subprocess.run(full_call, capture_output = True).stdout.decode())
+    def run_command(self, command, params = []):
+        call = [self.client, command]
+        call.extend(params)
+        return {command : json.loads(subprocess.run(call, capture_output = True).stdout.decode())}
+    

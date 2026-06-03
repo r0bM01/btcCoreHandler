@@ -14,93 +14,125 @@
 #############################################################################
 
 
-import time
+from time import time
 from threading import Event
-from core.shared import Log
+
+
+class BaseService:
+    name: str = None
+    active: int = 0
+    pause: int = 0
+    last_run: int = 0
+    errors: int = 0
+
+    def run(self):
+        """ Override """
+        pass
+
 
 class Engine:
-    """ service structure:
-        service = { 
-                    'name': char,
-                    'target': obj,
-                    'active': bool,
-                    'last_run': int,
-                    'pause': int,
-                    'errors': int 
-                }
+    def __init__(self, logger, interface):
+        self.logger = logger
+        self.interface = interface
 
-        """
-    def __init__(self):
+        self.services = list()
 
-        self.services = dict()
-
-        self.controller = Event()
-
-        self.logger = Log.info
-
-        self.worker_on = False
+        self.worker = Event()
         self.worker_rest = 30
         self.worker_last_round = None
 
-    def start_service(self, name):
-        self.services[name]['active'] = True
+    def activate_service(self, service):
+        service.active = True
+        self.logger.info(f"service {service.name}", "activated")
+    
+    def deactivate_service(self, service):
+        service.active = False
+        self.logger.info(f"service {service.name}", "deactivated")
 
-    def stop_service(self, name):
-        self.services[name]['active'] = False
-
-    def start_all(self):
-        for name in self.services:
-            self.services[name]['active'] = True
-
-    def stop_all(self):
-        for name in self.services:
-            self.services[name]['active'] = False
+    def activate_all(self):
+        for service in self.services:
+            self.activate_service(service)
+            
+    def deactivate_all(self):
+        for service in self.services:
+            self.deactivate_service(service)
 
     def is_working(self):
-        return self.worker_on
+        return not self.worker.is_set()
 
     def get_time(self):
-        return int(time.time())
+        return int(time())
 
     def set_pause(self, seconds):
         return self.get_time() + int(seconds)
 
-    def add_new_service(self, name, target):
-        service = {'name': name, 'target': target, 'active': False}
-        service['last_run'] = None
-        service['pause'] = None
-        service['errors'] = None
-        self.services[name] = service
-
-    def errors(self):
-        return {self.services[service]['name'] : self.services[service]['errors'] for service in self.services}
-
-    def running(self):
-        return [self.services[service]['name'] for service in self.services if self.services[service]['active']]
+    def add_new_service(self, service):
+        new_service = service(self.interface)
+        self.services.append(new_service)
+        self.logger.info("service added", new_service.name)
 
     def sanitizer(self, service, error_code):
-        self.logger.add("server: service error", service['name'], error_code)
-        if service['errors'] < 5:
-            service['pause'] = self.set_pause(120)
+        self.logger.info("server: service error", service.name, error_code)
+        if service.errors < 5:
+            service.pause = self.set_pause(120)
         else:
-            service['pause'] = self.set_pause(300)
-        service['errors'] += 1
-        self.logger.add("server: service sanitizing attempt", service['errors'])
+            service.pause = self.set_pause(300)
+        service.errors += 1
+        self.logger.info("server: service sanitizing attempt", service.errors)
 
-    def run_service(self, name):
-        service = self.services[name]
-        if service['active'] and (service['pause'] < self.get_time()):
+    def run_service(self, service):
+        self.logger.info("service running", service.name)
+        if service.active and (service.pause < self.get_time()):
             try:
-                service['target']() # executes the callback function
-                service['last_run'] = self.get_time()
-                service['pause'] = 0
+                start_time = self.get_time()
+                self.logger.info("Service start time: ", start_time)
+                service.run() # executes the callback function
+                service.pause = 0
+                service.last_run = self.get_time()
+                service.run_time = service.last_run - start_time
             except Exception as error_code:
                 # log the error and try to sanitaze
+                self.logger.info("error while running a service", error_code)
                 self.sanitizer(service, error_code)
                 pass
 
-    def worker(self):
-        while self.worker_on:
-            [self.run_service(name) for name in self.services]
+    def work(self):
+        self.worker.wait() 
+        self.worker.clear() # reset worker condition to false
+        while self.is_working():
+            [self.run_service(service) for service in self.services]
             self.worker_last_round = self.get_time()
-            self.controller.wait(self.worker_rest)
+            self.worker.wait(self.worker_rest)
+        else:
+            self.logger.info("services worked has stopped")
+
+
+class BitcoinCacheUpdater:
+    def __init__(self, interface):
+        self.name = "BitcoinCacheUpdater"
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+        self.automated_calls = ['uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals']
+
+    def run(self):
+        for call in self.automated_calls:
+            data = self.interface.daemon_call(call)
+            self.interface.update_cache(call, data[call])
+        
+
+class BitcoinDaemonChecker:
+    def __init__(self, interface):
+        self.name = "BitcoinDaemonChecker"
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+    
+    def run(self):
+        self.interface.daemon.is_running = self.interface.daemon.daemon_running()
+
+
