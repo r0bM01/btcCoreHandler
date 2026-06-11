@@ -46,6 +46,7 @@ class Interface:
         
     def cleanup_cache(self):
         self.cache.clear()
+
     
     def daemon_call(self, method, *args):
         if self.control.acquire(timeout = 3):

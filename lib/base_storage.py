@@ -78,6 +78,14 @@ class SimpleDB:
         sq3.commit()
         sq3.close()
 
+    def exists(self, table, value_dict):
+        field = [k for k in value_dict.keys()][0]
+        value = [v for v in value_dict.values()][0]
+        query = f"SELECT EXISTS (SELECT 1 FROM {table} WHERE :{field} = :{value}) as record_exists;"
+        sq3 = sqlite3.connect(self.db_file)
+        cur = sq3.cursor()
+        
+
     def insert(self, table, values_dict):
         f = ', '.join(values_dict.keys())
         v = ', '.join([':' + str(k) for k in values_dict.values()])

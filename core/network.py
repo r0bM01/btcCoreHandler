@@ -17,6 +17,9 @@
 from lib.base_network import Server, SimplePeer
 from lib.base_crypto import ScrumbledEggsProto, Utils
 from time import time
+from urllib import request
+
+import ssl, json
 
 class NetworkServer(Server):
     def __init__(self, bind_addr, open_port):
@@ -112,3 +115,50 @@ class Peer(SimplePeer):
 
 ###########################################################################################################
 ###########################################################################################################
+
+"""
+class GeoLocation:
+    def __init__(self):
+        self.endpoints = {
+            'geoiplookupio': {'endpoint': "https://json.geoiplookup.io/", 'context': ssl.create_default_context()},
+            'ip-api': {'endpoint': "http://ip-api.com/batch?fields=61439", 'context': None}
+        } ## to be use in future
+
+    def get_geolocation(ip_list = []):
+        result = []
+        for ip in ip_list:
+            req = request.Request(url = "https://json.geoiplookup.io/" + str(ip), headers = {'User-Agent': 'Mozilla/5.0'})
+            res = request.urlopen(url = req, context = ssl.create_default_context())
+"""
+
+def get_geolocation(ip_addr):
+    req = request.Request(url = "https://json.geoiplookup.io/" + str(ip_addr), headers = {'User-Agent': 'Mozilla/5.0'})
+    res = request.urlopen(url = req, context = ssl.create_default_context()).read().decode()
+    return json.loads(res)
+
+
+"""
+@staticmethod
+    def getGeolocation(ip):
+        context = ssl.create_default_context()
+        
+        #baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
+        
+        baseUrl = "http://ip-api.com/json/" + str(ip) + str("?fields=26139")
+        request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
+        locationData = json.loads(urllib.request.urlopen(request).read().decode())
+        ## format data to old mode
+        geo_data = {'ip': locationData['query'], 'country_code2': locationData['countryCode'], 'country_name': locationData['country'], 'isp': locationData['isp']}
+        return json.dumps(geo_data)
+
+    @staticmethod
+    def getBatchGeolocation(ips_list):
+        ips = json.dumps(ips_list).encode('utf-8')
+        endpoint = "http://ip-api.com/batch?fields=26139"
+        request = urllib.request.Request(url = endpoint, data = ips, headers = {'User-Agent': 'Mozilla/5.0'})
+        response = json.loads(urllib.request.urlopen(request).read().decode())
+        for geo in response:
+            geo['ip'] = geo['query']
+            del geo['query']
+        return response
+    """

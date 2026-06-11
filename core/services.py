@@ -13,10 +13,10 @@
 # limitations under the License.                                            #
 #############################################################################
 
-
+import json
 from time import time
 from threading import Event
-
+from core.network import get_geolocation
 
 class BaseService:
     name: str = None
@@ -81,15 +81,16 @@ class Engine:
         self.logger.info("server: service sanitizing attempt", service.errors)
 
     def run_service(self, service):
-        self.logger.info("service running", service.name)
         if service.active and (service.pause < self.get_time()):
+            self.logger.info("service running", service.name)
             try:
                 start_time = self.get_time()
-                self.logger.info("Service start time: ", start_time)
                 service.run() # executes the callback function
                 service.pause = 0
                 service.last_run = self.get_time()
                 service.run_time = service.last_run - start_time
+                if service.run_time > 30:
+                    self.logger.info("services long run", service.name, service.run_time)
             except Exception as error_code:
                 # log the error and try to sanitaze
                 self.logger.info("error while running a service", error_code)
@@ -100,9 +101,10 @@ class Engine:
         self.worker.wait() 
         self.worker.clear() # reset worker condition to false
         while self.is_working():
+            start_time = self.get_time()
             [self.run_service(service) for service in self.services]
             self.worker_last_round = self.get_time()
-            self.worker.wait(self.worker_rest)
+            self.worker.wait(self.worker_rest - (self.worker_last_round - start_time))
         else:
             self.logger.info("services worked has stopped")
 
@@ -136,3 +138,34 @@ class BitcoinDaemonChecker:
         self.interface.daemon.is_running = self.interface.daemon.daemon_running()
 
 
+class BitcoinPeersGeolocation:
+    def __init__(self, interface):
+        self.name = "BitcoinPeersGeolocation"
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+        self.interface.cache['getpeergeo'] = dict()
+    
+    def run(self):
+        active_ips = [peer['addr'].rpartition(":")[0].strip("[]") for peer in self.interface.cache['getpeerinfo']]
+        new_geo_data = {ip: get_geolocation(ip) for ip in active_ips if ip not in self.interface.cache['getpeergeo']}
+        [self.interface.cache['getpeergeo'].pop(geo) for geo in self.interface.cache['getpeergeo'] if geo not in active_ips]
+        
+                
+        
+        self.interface.update_cache('getpeergeo', peer_geo_data)
+
+
+class RecordPeersGeolocation:
+    def __init__(self, interface):
+        self.name = "RecordPeersGeolocation"
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+    
+    def run(self):
+        pass

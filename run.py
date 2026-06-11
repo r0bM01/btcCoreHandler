@@ -3,38 +3,55 @@
 import time
 from core import server
 from core import data
+from threading import Event
 
 def main():
-    print("testing btcCoreHandler")
+    print("#### testing btcCoreHandler")
+    waiter = Event()
     handler = server.Controller()
 
+    waiter.wait(2)
     handler.init_network()
     handler.init_services()
 
-    time.sleep(2)
-
+    waiter.wait(2)
     handler.run_all()
 
-    time.sleep(5)
 
-
+    waiter.wait(5)
+    handler.SERVICES.deactivate_all()
+    print("#### now printing some cached info")
     
-    print("now printing some cached info")
-    time.sleep(3)
-    print(f"Cache last round: {handler.data_interface.cache_timestamp}")
-
-    print("A little bit of this system: ")
-    print(handler.data_interface.system)
+    waiter.wait(2)
+    print(f"Cache last round: {time.ctime(handler.data_interface.cache_timestamp)}")
     
-    time.sleep(1)
-
-    print("Some cache: ")
+    waiter.wait(2)
     print("Cache size: ", len(handler.data_interface.cache))
     print("Saved cache: ", handler.data_interface.cache.keys())
 
+
+    waiter.wait(2)
+    print("#### Lets wait a little bit to get geolocation data")
+    for x in range(40):
+        print(f"{40 - x}", sep=".", end="\r", flush=True)
+        waiter.wait(1)
+
+    
+    print("Len Geo: ", len(handler.data_interface.cache['getpeergeo']))
+
+    waiter.wait(2)
+    for ip in handler.data_interface.cache['getpeergeo']:
+        print(f"IP: {ip} »= COUNTRY: {handler.data_interface.cache['getpeergeo'][ip].get('country_code')}")
+
+    waiter.wait(2)
+    print("#### Services deactivation")
+    
+    handler.SERVICES.worker.set()
+
+    waiter.wait(2)
     handler.graceful_shutdown()
 
-    print("all closed")
+    print("#### all closed")
 
 
 

@@ -76,6 +76,7 @@ class Controller:
         self.SERVICES.worker.clear()
         self.SERVICES.add_new_service(core.services.BitcoinDaemonChecker)
         self.SERVICES.add_new_service(core.services.BitcoinCacheUpdater)
+        self.SERVICES.add_new_service(core.services.BitcoinPeersGeolocation)
         self.SERVICES.activate_all()
         
     

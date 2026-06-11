@@ -31,13 +31,13 @@ class BaseLogger:
         filepath.touch()
         return filepath
 
-    def write_on_disk(self, log, arg_list):
+    def write_on_disk(self, log, arg_list = []):
         if bool(arg_list):
             log += ": " + str([a for a in arg_list])
         with open(self.log_file, "a") as F:
             F.write(log + "\n")
 
-    def verbose_print(self, log, arg_list):
+    def verbose_print(self, log, arg_list = []):
         for a in arg_list:
             if type(a) is bool and a is True:
                 log += "[" + "\x1b[1;32m" + str(a) + "\x1b[0m" + "]"

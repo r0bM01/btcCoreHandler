@@ -13,6 +13,7 @@ class Logger:
         while self.is_working:
             log = self.queue.get()
             self.base_logger.add(log['type'], log['message'], log['args'])
+            self.queue.task_done()
     
     def info(self, message, *args):
         log = {
