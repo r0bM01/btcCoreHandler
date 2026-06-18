@@ -19,7 +19,7 @@ from lib.base_crypto import ScrumbledEggsProto, Utils
 from time import time
 from urllib import request
 
-import ssl, json
+import ssl, json, base64
 
 class NetworkServer(Server):
     def __init__(self, bind_addr, open_port):
@@ -134,6 +134,19 @@ class GeoLocation:
 def get_geolocation(ip_addr):
     req = request.Request(url = "https://json.geoiplookup.io/" + str(ip_addr), headers = {'User-Agent': 'Mozilla/5.0'})
     res = request.urlopen(url = req, context = ssl.create_default_context()).read().decode()
+    geo = json.loads(res)
+    geo['checksum'] = Utils.make_checksum(str("".join([str(geo[v]) for v in geo if v != 'ip'])).encode('utf-8'))
+    return geo
+
+def get_bitcoin_daemon(command):
+    url = "http://127.0.0.1:8332"
+    usr = "btcuser".encode('utf-8')
+    psw = "f0rza.btc".encode('utf-8')
+    auth = base64.b64encode(usr + b':' + psw)
+    auth = auth.decode()
+    header = {'content-type': 'application/json', 'Authorization': 'Basic ' + auth}
+    req = request.Request(url = url, data = json.dumps(command).encode('utf-8'), headers = header)
+    res = request.urlopen(req).read().decode()
     return json.loads(res)
 
 

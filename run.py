@@ -32,7 +32,8 @@ def main():
 
     waiter.wait(2)
     print("#### Lets wait a little bit to get geolocation data")
-    for x in range(40):
+    for x in range(0, 40):
+        print("   ", end = "\r", flush = True)
         print(f"{40 - x}", sep=".", end="\r", flush=True)
         waiter.wait(1)
 
@@ -41,7 +42,14 @@ def main():
 
     waiter.wait(2)
     for ip in handler.data_interface.cache['getpeergeo']:
-        print(f"IP: {ip} »= COUNTRY: {handler.data_interface.cache['getpeergeo'][ip].get('country_code')}")
+        print(f"IP: {ip} »» COUNTRY: {handler.data_interface.cache['getpeergeo'][ip].get('country_code')}")
+
+
+    print("lets try to get something out of the database")
+    ip = input("insert ip: ")
+ 
+    foo = handler.data_interface.database.select_geolocation([ip])
+    print(foo)
 
     waiter.wait(2)
     print("#### Services deactivation")

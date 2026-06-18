@@ -15,7 +15,10 @@
 
 import pathlib, json
 import lib.base_storage
-from lib.base_crypto import Utils
+
+
+DEFAULT_ROOT_FOLDER = pathlib.Path.home().joinpath("btchandler")
+
 
 class Storage:
     def __init__(self, custom_dir = False):
@@ -23,8 +26,7 @@ class Storage:
         self.storage_dir = self.init_dir("storage")
         self.logs_dir = self.init_dir("logs")
         self.export_dir = self.init_dir("export")
-        self.certificates = lib.base_storage.SimpleDB(self.storage_dir, "certificates.db")
-        self.peers_data = lib.base_storage.SimpleDB(self.storage_dir, "peers_data.db")
+
 
     def init_base_dir(self, default_dir):
         dir = pathlib.Path(default_dir).joinpath("HANDLER")
@@ -36,70 +38,69 @@ class Storage:
         dir.mkdir(exist_ok = True)
         return dir
 
-    def init_databases(self):
-        self.init_db_certificates()
-        self.init_db_peers_data()
 
-    def init_db_certificates(self):
-        if not self.certificates.check_db():
-            base_cert = Utils.get_random_bytes(64) 
-            self.certificates.create_db()
-            self.certificates.create_table("certificates", ['id', 'cert', 'client'])
-            self.certificates.insert( 'certificates', 
-                                     {'id': Utils.get_hash(base_cert, size = 16),
-                                      'cert': base_cert,
-                                      'client': 'master'} )
+class BitcoinPeers(lib.base_storage.BaseDB):
+    def __init__(self, custom_dir = False):
+        self.db_path = custom_dir or DEFAULT_ROOT_FOLDER 
+        self.db_file = "bitcoinpeers.db"
+        self.db = self.db_path.joinpath(self.db_file)
 
-    def init_db_peers_data(self):
-        if not self.peers_data.check_db():
-            self.peers_data.create_db()
-            self.peers_data.create_table('geoinfo', ['id', 'addr', 'full_country', 'short_country', 'city', 'asn'])
-            self.peers_data.create_table('peerinfo', ['id', 'version', 'subver', 'services'] )
+        self.table_name = "geolocation"
 
-            
-    def load_master_certificate(self):
-        return self.certificates.select("certificates", ['cert'], {'client': 'master'})[0]
+        self.make_db_file() # init the db file if not existing
+        self.create_geolocation_table() # init the table if not existing
+    
+    def create_geolocation_table(self):
+        sql = f'''CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    ip CHAR PRIMARY KEY,
+                    isp, org, hostname, latitude, longitude, 
+                    postal_code, city, country_code, country_name, 
+                    continent_code, continent_name, region, 
+                    district, timezone_name, connection_type, 
+                    asn_number, asn_org, asn, currency_code, 
+                    currency_name, language_code, language_name, 
+                    success, premium,
+                    checksum CHAR NOT NULL );'''
+        self.make_db_table(sql)
 
-    def load_certificate(self, peer_id):
-        return self.certificates.select("certificates", ['id', 'cert', 'client'], {'id': peer_id})[0]
+    def make_geolocation_dict(self, row: tuple):
+        return {
+            'ip':               row[0],
+            'isp':              row[1],
+            'org':              row[2],
+            'hostname':         row[3],
+            'latitude':         row[4],
+            'longitude':        row[5],
+            'postal_code':      row[6],
+            'city':             row[7],
+            'country_code':     row[8],
+            'country_name':     row[9],
+            'continent_code':   row[10],
+            'continent_name':   row[11],
+            'region':           row[12],
+            'district':         row[13],
+            'timezone_name':    row[14],
+            'connection_type':  row[15],
+            'asn_number':       row[16],
+            'asn_org':          row[17],
+            'asn':              row[18],
+            'currency_code':    row[19],
+            'currency_name':    row[20],
+            'language_code':    row[21],
+            'language_name':    row[22],
+            'success':          row[23],
+            'premium':          row[24],
+            'checksum':         row[25],
+        }
         
-    def generate_certificate(self, peer_client):
-        m = self.load_master_certificate()
-        p = len(self.certificates.select("certificates")) + 1
-        cert = Utils.get_derived_bytes(m, p) # generates a new certificate
-        id = Utils.get_hash(cert, size = 16) # build cert id
-        ## add the new certificate to the database
-        values = {'id': id, 'cert': cert, 'client': peer_client.lower()} 
-        self.certificates.insert("certificates", ['id', 'cert', 'client'], values)
-        return id
-
-    def export_certificate(self, peer_id):
-        row = self.load_certificate(peer_id)
-        C = open(self.export_dir.joinpath(row['id']), "wb") # creates a new file with "id" as name
-        C.write(row['cert'])
-        C.close()
-
-
-class PeersData:
-    def __init__(self):
-        self.database = lib.base_storage.SimpleDB(self.storage_dir, "peers_data.db")
+    def insert_geolocation(self, geo: dict):
+        columns = ", ".join([":"+str(k) for k in geo.keys()])
+        sql = f'''INSERT OR IGNORE INTO {self.table_name} VALUES({columns})'''
+        self.raw_insert(sql, geo)
     
-    def insert(self, id, addr, full_country, short_country, city, asn, version, subver, services):
-        geovalues = {
-            'id': id,
-            'add': addr,
-            'full_contry': full_country,
-            'short_country': short_country,
-            'city': city,
-            'asn': asn
-        }
-        peervalues = {
-            'id': id,
-            'version': version, 
-            'subver': subver,
-            'services': services
-        }
-        self.database.insert('geoinfo', geovalues)
-        self.database.insert('peerinfo', peervalues)
-    
+    def select_geolocation(self, ipaddrs: list ):
+        sql = f'''SELECT * FROM {self.table_name} WHERE ip IN ({", ".join('?' * len(ipaddrs))})'''
+        res = self.raw_select(sql, ipaddrs)
+        geo = [self.make_geolocation_dict(row) for row in res] if bool(res) else []
+        return geo
     

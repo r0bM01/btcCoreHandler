@@ -58,54 +58,53 @@ class BaseStorage:
         return file_path.stat().st_size
 
 
-class SimpleDB:
-    def __init__(self, db_dir, db_name):
-        self.db_dir = pathlib.Path(db_dir)
-        self.db_file = self.db_dir.joinpath(db_name)
 
-    def check_db(self):
-        return self.db_file.exists()
-
-    def create_db(self):
-        sq3 = sqlite3.connect(self.db_name)
-        sq3.close()
+class BaseDB:
+    db_path = pathlib.Path.home().joinpath("database")
+    db_file = "default.db"
+    db = db_path.joinpath(db_file)
     
-    def create_table(self, table, fields):
-        query = f"CREATE TABLE {table}({', '.join(fields)})"
-        sq3 = sqlite3.connect(self.db_file)
-        cur = sq3.cursor()
-        cur.execute(query)
-        sq3.commit()
-        sq3.close()
+    def make_db_file(self):
+        try:
+            sqlite = sqlite3.connect(self.db)
+            sqlite.close()
+        except sqlite3.OperationalError as err:
+            assert f"impossible to create database file: {err}"
+    
+    def make_db_table(self, sql: str):
+        try:
+            with sqlite3.connect(self.db) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql)
+                conn.commit()
+        except sqlite3.OperationalError as err:
+            assert f"error while creating tables: {err}"
+    
+    def raw_insert(self, sql: str, data):
+        try:
+            with sqlite3.connect(self.db) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql, data)
+                conn.commit()
+        except sqlite3.OperationalError as err:
+            assert f"operation failed: {err}"
 
-    def exists(self, table, value_dict):
-        field = [k for k in value_dict.keys()][0]
-        value = [v for v in value_dict.values()][0]
-        query = f"SELECT EXISTS (SELECT 1 FROM {table} WHERE :{field} = :{value}) as record_exists;"
-        sq3 = sqlite3.connect(self.db_file)
-        cur = sq3.cursor()
+    def raw_insert_many(self, sql: str, data_list: list):
+        try:
+            with sqlite3.connect(self.db) as conn:
+                cursor = conn.cursor()
+                cursor.executemany(sql, data_list)
+                conn.commit()
+        except sqlite3.OperationalError as err:
+            assert f"error while creating tables: {err}"
+    
+    def raw_select(self, sql: str, data: list = []):
+        try:
+            with sqlite3.connect(self.db) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql, data)
+                rows = cursor.fetchall()
+                return rows
+        except sqlite3.OperationalError as err:
+            assert f"operation failed: {err}"
         
-
-    def insert(self, table, values_dict):
-        f = ', '.join(values_dict.keys())
-        v = ', '.join([':' + str(k) for k in values_dict.values()])
-        query = f"INSERT INTO {table} ({f}) VALUES({v})"
-        sq3 = sqlite3.connect(self.db_file)
-        cur = sq3.cursor()
-        cur.execute(query, values_dict)
-        sq3.commit()
-        sq3.close()
-    
-    def select(self, table, fields = None, cond_dict = None):
-        f = ', '.join(fields) if bool(fields) else '*'
-        query = f"SELECT {f} FROM {table}" 
-        if bool(cond_dict):
-            c = [str(key) + "=" + "?" for key in cond_dict]
-            v = list(cond_dict.values())
-            query += f" WHERE {' AND '.join(c)}"              
-        sq3 = sqlite3.connect(self.db_file)
-        cur = sq3.cursor()
-        cur.execute(query, v) if bool(cond_dict) else cur.execute(query)
-        result = cur.fetchall()
-        sq3.close()
-        return result

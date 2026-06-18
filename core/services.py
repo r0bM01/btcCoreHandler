@@ -13,21 +13,8 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import json
-from time import time
 from threading import Event
-from core.network import get_geolocation
-
-class BaseService:
-    name: str = None
-    active: int = 0
-    pause: int = 0
-    last_run: int = 0
-    errors: int = 0
-
-    def run(self):
-        """ Override """
-        pass
+from time import time
 
 
 class Engine:
@@ -44,7 +31,7 @@ class Engine:
     def activate_service(self, service):
         service.active = True
         self.logger.info(f"service {service.name}", "activated")
-    
+
     def deactivate_service(self, service):
         service.active = False
         self.logger.info(f"service {service.name}", "deactivated")
@@ -52,7 +39,7 @@ class Engine:
     def activate_all(self):
         for service in self.services:
             self.activate_service(service)
-            
+
     def deactivate_all(self):
         for service in self.services:
             self.deactivate_service(service)
@@ -85,12 +72,14 @@ class Engine:
             self.logger.info("service running", service.name)
             try:
                 start_time = self.get_time()
-                service.run() # executes the callback function
+                service.run()  # executes the callback function
                 service.pause = 0
                 service.last_run = self.get_time()
                 service.run_time = service.last_run - start_time
                 if service.run_time > 30:
-                    self.logger.info("services long run", service.name, service.run_time)
+                    self.logger.info(
+                        "services long run", service.name, service.run_time
+                    )
             except Exception as error_code:
                 # log the error and try to sanitaze
                 self.logger.info("error while running a service", error_code)
@@ -98,8 +87,8 @@ class Engine:
                 pass
 
     def work(self):
-        self.worker.wait() 
-        self.worker.clear() # reset worker condition to false
+        self.worker.wait()
+        self.worker.clear()  # reset worker condition to false
         while self.is_working():
             start_time = self.get_time()
             [self.run_service(service) for service in self.services]
@@ -117,13 +106,21 @@ class BitcoinCacheUpdater:
         self.last_run = 0
         self.errors = 0
         self.interface = interface
-        self.automated_calls = ['uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals']
+        self.automated_calls = [
+            "uptime",
+            "getblockchaininfo",
+            "getnetworkinfo",
+            "getmempoolinfo",
+            "getmininginfo",
+            "getpeerinfo",
+            "getnettotals",
+        ]
 
     def run(self):
         for call in self.automated_calls:
             data = self.interface.daemon_call(call)
             self.interface.update_cache(call, data[call])
-        
+
 
 class BitcoinDaemonChecker:
     def __init__(self, interface):
@@ -133,7 +130,7 @@ class BitcoinDaemonChecker:
         self.last_run = 0
         self.errors = 0
         self.interface = interface
-    
+
     def run(self):
         self.interface.daemon.is_running = self.interface.daemon.daemon_running()
 
@@ -146,26 +143,24 @@ class BitcoinPeersGeolocation:
         self.last_run = 0
         self.errors = 0
         self.interface = interface
-        self.interface.cache['getpeergeo'] = dict()
-    
-    def run(self):
-        active_ips = [peer['addr'].rpartition(":")[0].strip("[]") for peer in self.interface.cache['getpeerinfo']]
-        new_geo_data = {ip: get_geolocation(ip) for ip in active_ips if ip not in self.interface.cache['getpeergeo']}
-        [self.interface.cache['getpeergeo'].pop(geo) for geo in self.interface.cache['getpeergeo'] if geo not in active_ips]
-        
-                
-        
-        self.interface.update_cache('getpeergeo', peer_geo_data)
+        self.interface.cache["getpeergeo"] = dict()
 
-
-class RecordPeersGeolocation:
-    def __init__(self, interface):
-        self.name = "RecordPeersGeolocation"
-        self.active = False
-        self.pause = 0
-        self.last_run = 0
-        self.errors = 0
-        self.interface = interface
-    
     def run(self):
-        pass
+        active_ips = [
+            peer["addr"].rpartition(":")[0].strip("[]")
+            for peer in self.interface.cache["getpeerinfo"]
+        ]
+        geo_data = {
+            ip: self.interface.cache["getpeergeo"].get(ip)
+            for ip in active_ips
+            if ip in self.interface.cache["getpeergeo"].keys()
+        }
+        ip_list = [
+            ip
+            for ip in active_ips
+            if ip not in self.interface.cache["getpeergeo"].keys()
+        ]
+        geo_data.update(
+            {geo.get("ip"): geo for geo in self.interface.load_geolocation(ip_list)}
+        )
+        self.interface.update_cache("getpeergeo", geo_data)

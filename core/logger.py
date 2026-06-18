@@ -17,9 +17,9 @@ class Logger:
     
     def info(self, message, *args):
         log = {
-            'type': "info",
+            'type': "log",
             'message': message,
-            'args': args}
+            'args': [a for a in args]}
         self.queue.put(log)
 
     def warning(self):

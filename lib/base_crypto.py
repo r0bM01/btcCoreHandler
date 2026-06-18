@@ -106,21 +106,29 @@ class Messages(ScrumbledEggsProto):
 
 
 class Utils:
-	@staticmethod
-	def get_random_bytes(size):
-		return token_bytes(int(size))
+    @staticmethod
+    def get_random_bytes(size):
+        return token_bytes(int(size))
 
-	@staticmethod
-	def get_hash(data, key = b"", salt = b"", size = 64):
-	    return blake2b(data, key = key, salt = salt, digest_size = size).digest()
+    @staticmethod
+    def get_hash(data, key = b"", salt = b"", size = 64):
+        return blake2b(data, key = key, salt = salt, digest_size = size).digest()
 
-	@staticmethod
-	def get_checksum(entropy, certificate):
-		return blake2b(entropy, key = certificate, digest_size = 16).hexdigest()
+    @staticmethod
+    def get_checksum(entropy, certificate):
+        return blake2b(entropy, key = certificate, digest_size = 16).hexdigest()
 
-	@staticmethod
-	def get_encryption_key(bytes_certificate, bytes_solution):
-	    return blake2b(blake2b(bytes_certificate).digest(), key = bytes_solution).digest()
+    @staticmethod
+    def get_encryption_key(bytes_certificate, bytes_solution):
+        return blake2b(blake2b(bytes_certificate).digest(), key = bytes_solution).digest()
+
+    @staticmethod
+    def make_id(data: bytes) -> hex:
+        return blake2b(data, digest_size = 4).hexdigest()
+
+    @staticmethod
+    def make_checksum(data: bytes) -> hex:
+        return blake2b(data, digest_size = 32).hexdigest()
 
 #   @staticmethod
 #	def get_derived_bytes(bytes_data, rounds):

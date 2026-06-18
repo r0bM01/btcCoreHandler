@@ -14,6 +14,7 @@
 #############################################################################
 
 import subprocess, json
+from core.network import get_bitcoin_daemon
 
 class Node:
     def __init__(self):
@@ -39,8 +40,11 @@ class BitcoinDaemon:
         self.client = "bitcoin-cli"
         self.is_running = self.daemon_running()
 
-    def rpc(self, command, *args):
-        return self.run_command(command, args)
+    def rpc(self, command, params = []):
+        request = {'jsonrpc': '2.0', 'id': 'machinereq', 'method': command, 'params': params}
+        response = get_bitcoin_daemon(request)
+        return {command: response['result']}
+        #return self.run_command(command, args)
 
     def daemon_running(self):
         return bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())

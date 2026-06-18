@@ -16,7 +16,11 @@
 import platform, time
 from threading import BoundedSemaphore
 
+from lib.base_crypto import Utils
+
 from core.machine import BitcoinDaemon
+from core.network import get_geolocation
+from core.storage import BitcoinPeers
 
 
 class Interface:
@@ -28,6 +32,7 @@ class Interface:
     def __init__(self, storage):
         self.control = BoundedSemaphore(value = 1)
         self.daemon = BitcoinDaemon()
+        self.database = BitcoinPeers(storage.storage_dir)
 
         self.system = {
             'started': int(time.time()),
@@ -41,16 +46,23 @@ class Interface:
         self.cache_timestamp = None
     
     def update_cache(self, key, data):
+        #self.cache[key].clear()
         self.cache[key] = data
         self.cache_timestamp = int(time.time())
         
     def cleanup_cache(self):
         self.cache.clear()
 
+    def load_geolocation(self, ip_list: list)-> list:
+        geo_from_db = self.database.select_geolocation(ip_list)
+        [ip_list.remove(geo.get('ip')) for geo in geo_from_db if geo.get('ip') in ip_list]
+        geo_from_web = [get_geolocation(ip) for ip in ip_list]
+        [self.database.insert_geolocation(geo) for geo in geo_from_web]
+        return geo_from_db + geo_from_web
     
     def daemon_call(self, method, *args):
         if self.control.acquire(timeout = 3):
-            response = self.daemon.run_command(method, args)
+            response = self.daemon.rpc(method, [a for a in args])
             self.control.release()
         else:
             response = {'error': 'bitcoin daemon is busy and cannot process your request'}
@@ -58,7 +70,7 @@ class Interface:
 
     # data calls will arrive here already checked
     def get_data(method, *args):
-        if method in self.cache:
+        if method in self.cache.keys():
             response = self.cache[method]
         elif method in self.system:
             response = self.system[method]
