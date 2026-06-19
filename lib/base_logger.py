@@ -49,9 +49,9 @@ class BaseLogger:
 
     def add(self, type, message, *args):
         log = str(f"{type.upper()} - {time.ctime(int(time.time()))} - {message} ") 
-        self.write_on_disk(log, args)
+        self.write_on_disk(log, [a for a in args])
         if self.verbose:
-            self.verbose_print(log, args)
+            self.verbose_print(log, [a for a in args])
         
         
 

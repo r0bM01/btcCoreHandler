@@ -11,3 +11,9 @@ default_folder = "" # it must be a full path. Leave empty for default (user home
 host = "0.0.0.0" # set the host where btchandler will be running. Leave empty to autodetect own ip address
 port = 46850 
 
+
+[bitcoin]
+host = "127.0.0.1"
+port = 8332
+user =
+pass = 

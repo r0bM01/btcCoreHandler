@@ -131,6 +131,13 @@ class GeoLocation:
             res = request.urlopen(url = req, context = ssl.create_default_context())
 """
 
+
+BTCDAEMON_HOST = None
+BTCDAEMON_PORT = None
+BTCDAEMON_USER = ""
+BTCDAEMON_PASS = ""
+
+
 def get_geolocation(ip_addr):
     req = request.Request(url = "https://json.geoiplookup.io/" + str(ip_addr), headers = {'User-Agent': 'Mozilla/5.0'})
     res = request.urlopen(url = req, context = ssl.create_default_context()).read().decode()
@@ -139,9 +146,9 @@ def get_geolocation(ip_addr):
     return geo
 
 def get_bitcoin_daemon(command):
-    url = "http://127.0.0.1:8332"
-    usr = "btcuser".encode('utf-8')
-    psw = "f0rza.btc".encode('utf-8')
+    url = "http://" + BTCDAEMON_HOST + ":" + BTCDAEMON_PORT
+    usr = BTCDAEMON_USER.encode('utf-8')
+    psw = BTCDAEMON_PASS.encode('utf-8')
     auth = base64.b64encode(usr + b':' + psw)
     auth = auth.decode()
     header = {'content-type': 'application/json', 'Authorization': 'Basic ' + auth}
@@ -150,28 +157,3 @@ def get_bitcoin_daemon(command):
     return json.loads(res)
 
 
-"""
-@staticmethod
-    def getGeolocation(ip):
-        context = ssl.create_default_context()
-        
-        #baseUrl = "https://api.iplocation.net/?ip=" + str(ip)
-        
-        baseUrl = "http://ip-api.com/json/" + str(ip) + str("?fields=26139")
-        request = urllib.request.Request(url=baseUrl, headers={'User-Agent': 'Mozilla/5.0'})
-        locationData = json.loads(urllib.request.urlopen(request).read().decode())
-        ## format data to old mode
-        geo_data = {'ip': locationData['query'], 'country_code2': locationData['countryCode'], 'country_name': locationData['country'], 'isp': locationData['isp']}
-        return json.dumps(geo_data)
-
-    @staticmethod
-    def getBatchGeolocation(ips_list):
-        ips = json.dumps(ips_list).encode('utf-8')
-        endpoint = "http://ip-api.com/batch?fields=26139"
-        request = urllib.request.Request(url = endpoint, data = ips, headers = {'User-Agent': 'Mozilla/5.0'})
-        response = json.loads(urllib.request.urlopen(request).read().decode())
-        for geo in response:
-            geo['ip'] = geo['query']
-            del geo['query']
-        return response
-    """

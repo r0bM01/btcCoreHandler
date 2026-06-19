@@ -82,7 +82,6 @@ class Engine:
                     )
             except Exception as error_code:
                 # log the error and try to sanitaze
-                self.logger.info("error while running a service", error_code)
                 self.sanitizer(service, error_code)
                 pass
 
@@ -95,7 +94,7 @@ class Engine:
             self.worker_last_round = self.get_time()
             self.worker.wait(self.worker_rest - (self.worker_last_round - start_time))
         else:
-            self.logger.info("services worked has stopped")
+            self.logger.info("services worker has stopped")
 
 
 class BitcoinCacheUpdater:

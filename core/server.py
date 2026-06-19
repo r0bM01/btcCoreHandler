@@ -28,9 +28,11 @@ class ThreadMan:
     pass
 
 class Controller:
-    def __init__(self):
+    def __init__(self, config):
         signal.signal(signal.SIGINT, self.signal_shutdown)
         signal.signal(signal.SIGTERM, self.signal_shutdown)
+
+        self.CONFIG = config
 
         self.STORAGE = core.storage.Storage()
         self.LOGGER = core.logger.Logger(self.STORAGE.logs_dir)
@@ -66,7 +68,7 @@ class Controller:
         self.external_ip_addr = self.NODE.get_external_IP()
         self.is_serving = True
         self.NETWORK.start_serving()
-        self.LOGGER.info("network socket ready", self.NETWORK.server_ready)
+        self.LOGGER.info("network socket ready", bool(self.NETWORK.server_ready))
         self.LOGGER.info("network server address", self.local_ip_addr)
         self.LOGGER.info("network external ip", self.external_ip_addr)
         self.LOGGER.info("bitcoin daemon ready", self.service_daemon())

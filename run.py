@@ -12,7 +12,7 @@ def main():
         config = tomllib.load(f)
     
 
-    waiter = Event()
+    waiter = Event(config)
     handler = server.Controller()
 
     waiter.wait(2)

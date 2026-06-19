@@ -103,4 +103,12 @@ class BitcoinPeers(lib.base_storage.BaseDB):
         res = self.raw_select(sql, ipaddrs)
         geo = [self.make_geolocation_dict(row) for row in res] if bool(res) else []
         return geo
-    
+
+
+class HandlerDB(lib.base_storage.BaseDB):
+    def __init__(self, custom_dir):
+        self.db_path = custom_dir or DEFAULT_ROOT_FOLDER 
+        self.db_file = "handler.db"
+        self.db = self.db_path.joinpath(self.db_file)
+
+        self.tables = ["certificates"]
