@@ -45,7 +45,7 @@ class BaseLogger:
                 log += "[" + "\x1b[1;31m" + str(a) + "\x1b[0m" + "]"
             else:
                 log += "[" + str(a) + "]"
-        print(log)
+        print(log, flush = True)
 
     def add(self, type, message, *args):
         log = str(f"{type.upper()} - {time.ctime(int(time.time()))} - {message} ") 

@@ -1,12 +1,17 @@
 
 
-import time
+import time, tomllib
 from core import server
-from core import data
 from threading import Event
+from pprint import pp
 
 def main():
-    print("#### testing btcCoreHandler")
+    print("#### testing btcHandler started")
+
+    with open("config.toml", "rb") as f:
+        config = tomllib.load(f)
+    
+
     waiter = Event()
     handler = server.Controller()
 

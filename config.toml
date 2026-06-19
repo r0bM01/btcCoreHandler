@@ -1,0 +1,13 @@
+
+
+# CONFIGURATION FOR BTCHANDLER
+
+[storage]
+default_folder = "" # it must be a full path. Leave empty for default (user home -> 'btchandler')
+
+
+
+[network]
+host = "0.0.0.0" # set the host where btchandler will be running. Leave empty to autodetect own ip address
+port = 46850 
+

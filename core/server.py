@@ -113,12 +113,11 @@ class Controller:
                         worker = threading.Thread(target = self.protocol.peers_worker, args = [peer], name = f"peer-{peer.peer_id}")
                         self.active_peers.append({'peer': peer, 'worker': worker})
                         worker.start()
+                    elif not peer.is_connected:
+                        pass
+                    
                     else:
-                        if not peer.is_connected:
-                            # peer couldn't pass handshake
-                            pass
-                        else:
-                            peer.send_msg({'error': 'server has reached the maximum peers'})
+                        peer.send_msg({'error': 'server has reached the maximum peers'})
             else:
                 # no peer received
                 # might do something
