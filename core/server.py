@@ -32,7 +32,10 @@ class Controller:
         signal.signal(signal.SIGINT, self.signal_shutdown)
         signal.signal(signal.SIGTERM, self.signal_shutdown)
 
-        self.CONFIG = config
+        core.network.BTCDAEMON_HOST = config['bitcoin']['host']
+        core.network.BTCDAEMON_PORT = config['bitcoin']['port']
+        core.network.BTCDAEMON_USER = config['bitcoin']['user']
+        core.network.BTCDAEMON_PASS = config['bitcoin']['pass']
 
         self.STORAGE = core.storage.Storage()
         self.LOGGER = core.logger.Logger(self.STORAGE.logs_dir)

@@ -31,27 +31,28 @@ class BaseLogger:
         filepath.touch()
         return filepath
 
-    def write_on_disk(self, log, arg_list = []):
+    def write_on_disk(self, log, arg_list):
         if bool(arg_list):
             log += ": " + str([a for a in arg_list])
         with open(self.log_file, "a") as F:
             F.write(log + "\n")
 
-    def verbose_print(self, log, arg_list = []):
-        for a in arg_list:
-            if type(a) is bool and a is True:
-                log += "[" + "\x1b[1;32m" + str(a) + "\x1b[0m" + "]"
-            elif type(a) is bool and a is False:
-                log += "[" + "\x1b[1;31m" + str(a) + "\x1b[0m" + "]"
-            else:
-                log += "[" + str(a) + "]"
+    def verbose_print(self, log, arg_list):
+        if bool(arg_list):
+            for a in arg_list:
+                if type(a) is bool and a is True:
+                    log += "[" + "\x1b[1;32m" + str(a) + "\x1b[0m" + "]"
+                elif type(a) is bool and a is False:
+                    log += "[" + "\x1b[1;31m" + str(a) + "\x1b[0m" + "]"
+                else:
+                    log += "[" + str(a) + "]"
         print(log, flush = True)
 
-    def add(self, type, message, *args):
+    def add(self, type, message, arg_list):
         log = str(f"{type.upper()} - {time.ctime(int(time.time()))} - {message} ") 
-        self.write_on_disk(log, [a for a in args])
+        self.write_on_disk(log, arg_list)
         if self.verbose:
-            self.verbose_print(log, [a for a in args])
+            self.verbose_print(log, arg_list)
         
         
 

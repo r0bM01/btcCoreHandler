@@ -19,7 +19,8 @@ class Logger:
         log = {
             'type': "log",
             'message': message,
-            'args': [a for a in args]}
+            'args': [a for a in args] if bool(args) else False
+        }
         self.queue.put(log)
 
     def warning(self):
