@@ -41,10 +41,9 @@ class BitcoinDaemon:
         self.is_running = self.daemon_running()
 
     def rpc(self, command, params = []):
-        request = {'jsonrpc': '2.0', 'id': 'machinereq', 'method': command, 'params': params}
+        request = {'jsonrpc': '2.0', 'id': 'btchandlerreq', 'method': command, 'params': params}
         response = get_bitcoin_daemon(request)
         return {command: response['result']}
-        #return self.run_command(command, args)
 
     def daemon_running(self):
         return bool(subprocess.run(["pidof", self.daemon], capture_output = True).stdout.decode())

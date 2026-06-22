@@ -19,25 +19,28 @@ import core.commands
 import core.machine
 
 class RequestHandler:
-    """default request --> {'method': 'cached', 'call': 'systeminfo', 'args': []} """
-    def __init__(self):
-        self.keepalive = {'keepalive'}
+    """default request --> {'method': 'call_for_bitcoin_daemon', 'args': []} """
+    def __init__(self, logger, interface):
 
-        self.get_data = False
+        self.logger = logger
+        self.interface = interface
+
 
     def validate_request(self, request):
-        valid = False
-        if 'method' and 'call' in request:
-            valid = core.commands.verify_command(request)
-        return valid
+        return core.commands.verify_command(request)
+
 
     def handle_request(self, request):
         request = json.loads(request)
-        if request['method'] == 'control' and request['call'] == 'keepalive':
-            loaded_data = {"control": "keepalive"}
+        if request['method'] == 'keepalive':
+            reply = {'method': 'keepalive'}
+        elif request['method'] == 'nocache' and self.validated_request(request['args'][0]):
+            reply = self.interface.daemon_call(request['args'][0], request['args'][1:])
+        elif request['method'] == 'handlerstop':
+            reply = {'error': 'btcHandler can be stopped by local command only'}
         else:
-            loaded_data = self.get_data(request['method'], request['call'], request['args'])
-        return loaded_data
+            reply = self.interface.get_data(request['method'], request['args'])
+        return reply
 
     # threading method handled by Controller class
     def peers_worker(self, peer):

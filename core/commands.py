@@ -13,14 +13,23 @@
 # limitations under the License.                                            #
 #############################################################################
 
+
 COMMANDS = {
-    'control': {'handlerstop', 'handlerlogs', 'keepalive', 'bitcoindrunning', 'test'},
-    'cached': {'systeminfo','blockchaininfo', 'networkinfo', 'nettotalsinfo', 'mempoolinfo', 'mininginfo', 'peerinfo'},
-    'bitcoin': {'uptime', 'getblockchaininfo', 'getnetworkinfo', 'getmempoolinfo', 'getmininginfo', 'getpeerinfo', 'getnettotals',
-                'addnode', 'getaddednodeinfo'},
-    'stored': {'geobyip'}
+    'keepalive',
+    'systeminfo',
+    'handlerstop',
+    'nocache',
+    'uptime', 
+    'getblockchaininfo', 
+    'getnetworkinfo', 
+    'getmempoolinfo', 
+    'getmininginfo', 
+    'getpeerinfo', 
+    'getnettotals',
+    'getaddednodeinfo',
+    'getpeergeo'
+    'addnode', 
 }
 
-
 def verify_command(request):
-    return (request['method'] in COMMANDS and request['call'] in COMMANDS[request['method']])
+    return request['method'] in COMMANDS

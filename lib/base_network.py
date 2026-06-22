@@ -86,11 +86,11 @@ class Server(SocketOperations):
        This class has to be extented with a custom Server Class"""
 
     # server default values
-    server_addr = 'localhost'
-    server_port = 45000
+    server_addr = None
+    server_port = None
     server_backlog = 5
     server_socket = None
-    default_server_timeout = 5
+    default_server_timeout = 15
     default_remote_timeout = 5
     default_hello_msg = b"\xadR1\xa8\x8c)9\xc2\x11\xb1=\xcb\xc6\x14\xe0\xb8" # 16 bytes
 
@@ -108,7 +108,8 @@ class Server(SocketOperations):
         try:
             remote_socket, remote_addr = self.server_socket.accept()
             remote_socket.settimeout(self.default_remote_timeout)
-        except OSError:
+            remote_addr = remote_addr[0]
+        except OSError as e:
             remote_socket = None
             remote_addr = None
             self.disconnect_remote_client(remote_socket)
@@ -166,7 +167,7 @@ class Client(SocketOperations):
     def connect_to_remote(self):
         try:
             self.client_socket = socket.create_connection((self.remote_addr, self.remote_port), timeout = self.default_client_timeout)
-        except OSError:
+        except OSError as e:
             self.client_socket = None
 
     def disconnect_from_remote(self):

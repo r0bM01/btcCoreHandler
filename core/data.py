@@ -35,7 +35,9 @@ class Interface:
         self.daemon = BitcoinDaemon()
         self.database = BitcoinPeers(storage.storage_dir)
 
-        self.system = {
+        self.cache = dict()
+
+        self.cache['systeminfo'] = {
             "started": int(time.time()),
             "node": platform.node(),
             "machine": platform.machine(),
@@ -43,7 +45,7 @@ class Interface:
             "release": platform.release(),
         }
 
-        self.cache = dict()
+
         self.cache_timestamp = None
 
     def update_cache(self, key, data):
@@ -79,8 +81,6 @@ class Interface:
     def get_data(self, method, *args):
         if method in self.cache.keys():
             response = self.cache[method]
-        elif method in self.system:
-            response = self.system[method]
         else:
             response = self.daemon_call(method, *args)
         return response
