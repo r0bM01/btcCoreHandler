@@ -27,6 +27,7 @@ class Engine:
         self.worker = Event()
         self.worker_rest = 30
         self.worker_last_round = None
+        self.worker_nums_round = 0
 
     def activate_service(self, service):
         service.active = True
@@ -69,7 +70,8 @@ class Engine:
 
     def run_service(self, service):
         if service.active and (service.pause < self.get_time()):
-            self.logger.info("service running", service.name)
+            if not (self.worker_nums_round % 100):
+                self.logger.info("service running", service.name)
             try:
                 start_time = self.get_time()
                 service.run()  # executes the callback function
@@ -92,6 +94,7 @@ class Engine:
             start_time = self.get_time()
             [self.run_service(service) for service in self.services]
             self.worker_last_round = self.get_time()
+            self.worker_nums_round += 1
             self.worker.wait(self.worker_rest - (self.worker_last_round - start_time))
         else:
             self.logger.info("services worker has stopped")

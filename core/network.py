@@ -19,7 +19,7 @@ from lib.base_crypto import ScrumbledEggsProto, Utils
 from time import time
 from urllib import request
 
-import ssl, json, base64
+import ssl, json, base64, ipaddress
 
 class NetworkServer(Server):
     def __init__(self, bind_addr, open_port):
@@ -31,12 +31,12 @@ class NetworkServer(Server):
         self.max_peers = 5
         self.connected_peers = []
 
-    def start_serving(self):
+    def server_enable(self):
         self.create_server()
         self.server_ready = bool(self.server_socket)
 
-    def stop_serving(self):
-        self.disconnect_all_peers()
+    def server_disable(self):
+        #self.disconnect_all_peers()
         self.close_server()
         self.server_ready = False
 
@@ -54,44 +54,45 @@ class NetworkServer(Server):
         peer = False
         peer_socket, peer_addr = self.accept_new_client()
         if bool(peer_socket):
-            peer_id = self.raw_recv(peer_socket, 16)
-            peer = Peer(peer_socket, peer_addr, peer_id)
-            peer.is_local_cli = self.is_loopback(peer_addr)
+            #peer_id = self.raw_recv(peer_socket, 16)
+            peer = Peer(peer_socket, peer_addr[0])
+            peer.is_local_cli = self.is_loopback(peer_addr[0])
         else:
             self.raw_closure(peer_socket)
         return peer
 
 
 class Peer(SimplePeer):
-    def __init__(self, peer_socket, peer_addr, peer_id):
+    def __init__(self, peer_socket, peer_addr):
         self.peer_socket = peer_socket
         self.peer_addr = peer_addr
         self.peer_crypto = ScrumbledEggsProto()
-        self.peer_id = peer_id
+        self.peer_id = None
         self.encryption_key = None
         self.is_connected = False
         self.is_local_cli = False
-        self.waiting_mode = 120
+        self.waiting_mode = 60
         self.first_seen = int(time())
         self.last_seen = self.first_seen
         self.data_exchanged = 0
         self.reputation = 5
 
 
-    def set_waiting_mode(self, wait_seconds = False):
-        self.peer_socket.settimeout(wait_seconds or self.waiting_mode)
+    def set_waiting_mode(self, wait_seconds = 0):
+        self.peer_socket.settimeout(wait_seconds if bool(wait_seconds) else self.waiting_mode)
 
     def handshake(self, certificate):
         random_bytes = Utils.get_random_bytes(16)
-        solution_bytes = self.peer_crypto.double_hash(certificate, random_bytes)
+        solution_bytes = Utils.get_hash(certificate, random_bytes)
+        self.peer_id = self.recv_data() # not processed yet // for the future
         if self.send_data(random_bytes) and self.recv_data() == solution_bytes:
-            self.encryption_key = self.peer_crypto.double_hash(certificate, solution_bytes)
+            self.encryption_key = Utils.get_hash(certificate, solution_bytes)
             self.is_connected = True
 
     def is_alive(self):
-        return (int(time()) - self.last_seen) < 120
+        return (int(time()) - self.last_seen) < self.waiting_mode
 
-    def send_msg(self, msg) -> bool:
+    def send_msg(self, msg: str) -> bool:
         if type(msg) is str:
             msg = msg.encode('utf-8')
         encrypted_msg = self.peer_crypto.encrypt_bytes(msg, self.encryption_key)
@@ -137,6 +138,16 @@ BTCDAEMON_PORT = None
 BTCDAEMON_USER = ""
 BTCDAEMON_PASS = ""
 
+def get_external_ips():
+    endpoints = ["https://api.ipify.org", "https://api64.ipify.org"]
+    ips = list()
+    for ep in endpoints:
+        req = request.urlopen(url = ep, context = ssl.create_default_context())
+        if req.status == 200:
+            ip = ipaddress.ip_address(req.read().decode())
+            if ip not in ips:
+                ips.append(ip)
+    return ips
 
 def get_geolocation(ip_addr):
     req = request.Request(url = "https://json.geoiplookup.io/" + str(ip_addr), headers = {'User-Agent': 'Mozilla/5.0'})

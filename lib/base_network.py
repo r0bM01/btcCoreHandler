@@ -21,8 +21,9 @@ class SocketOperations:
        This class is extended by Server and Client classes"""
 
 
-    _buffer = 4096 # bytes size
-    _header = 2 # bytes size
+    _buffer = 4096 #bytes size
+    _header = 4 # bytes size
+    _maxsize = 2097152 # bytes
     _timeout = 2 # seconds
 
     def raw_send(self, connected_socket, bytes_msg):
@@ -48,35 +49,31 @@ class SocketOperations:
         connected_socket = None
 
     def send_proto(self, connected_socket, bytes_msg):
-        # pre-sending ops
-        connected_socket.settimeout(self._timeout) #reset operation timeout to low value
+        #connected_socket.settimeout(self._timeout) #reset operation timeout to low value
         header_msg = bytes.fromhex(hex(len(bytes_msg))[2:].zfill(self._header * 2))
         # data sending ops
         header_sent = self.raw_send(connected_socket, header_msg)
-        msg_sent = self.raw_send(connected_socket, bytes_msg)
+        msg_sent = 0
+        while msg_sent < len(bytes_msg):
+            msg_sent += self.raw_send(connected_socket, bytes_msg[msg_sent:])
         # sending verification
-        if (header_sent == self._header) and (msg_sent == len(bytes_msg)):
-            return True
-        else:
-            return False
-
+        return True if (header_sent == self._header) and (msg_sent == len(bytes_msg)) else False
+            
     def recv_proto(self, connected_socket):
-        # pre-receiving ops
-        connected_socket.settimeout(self._timeout) #reset operation timeout to low value
         # receiving header message
         header_recv = self.raw_recv(connected_socket, self._header)
         header_msg = int.from_bytes(header_recv)
         # receving data
         msg_recv = []
-        bytes_left = header_msg
-        while b"" not in msg_recv and bool(bytes_left):
+        bytes_left = min(header_msg, self._maxsize)
+        while b"\n" not in msg_recv and bool(bytes_left):
             msg_recv.append(self.raw_recv(connected_socket, min(bytes_left, self._buffer)))
             bytes_left -= len(msg_recv[-1])
         # joins bytes vector into a single bytes message
         bytes_msg = b"".join(msg_recv)
         # receiving verification
-        result = bytes_msg if header_msg == len(bytes_msg) else b""
-        return result
+        return bytes_msg if header_msg == len(bytes_msg) else b""
+        
 
     def is_loopback(self, ipaddr):
         return ipaddress.ip_address(ipaddr).is_loopback
@@ -108,10 +105,9 @@ class Server(SocketOperations):
         try:
             remote_socket, remote_addr = self.server_socket.accept()
             remote_socket.settimeout(self.default_remote_timeout)
-            remote_addr = remote_addr[0]
         except OSError as e:
-            remote_socket = None
-            remote_addr = None
+            remote_socket = 0
+            remote_addr = 0
             self.disconnect_remote_client(remote_socket)
         return remote_socket, remote_addr
 

@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import json
+import json, time
 import core.data
 import core.commands
 import core.machine
@@ -31,10 +31,7 @@ class RequestHandler:
 
 
     def handle_request(self, request):
-        request = json.loads(request)
-        if request['method'] == 'keepalive':
-            reply = {'method': 'keepalive'}
-        elif request['method'] == 'nocache' and self.validated_request(request['args'][0]):
+        if request['method'] == 'nocache' and self.validate_request(request['args'][0]):
             reply = self.interface.daemon_call(request['args'][0], request['args'][1:])
         elif request['method'] == 'handlerstop':
             reply = {'error': 'btcHandler can be stopped by local command only'}
@@ -44,30 +41,44 @@ class RequestHandler:
 
     # threading method handled by Controller class
     def peers_worker(self, peer):
+        peer.set_waiting_mode(60)
         while peer.is_connected and peer.reputation:
-            request = peer.recv_msg() # waits 5 seconds as per socket timeout default
-            if self.validate_request(request):
-                peer.send_msg(json.dumps(self.handle_request(request)))
-            else:
-                if bool(request):
+            request = peer.recv_msg() # waits n seconds as per socket timeout default
+            if bool(request):
+                start_time = time.time()
+                request = json.loads(request)
+                if self.validate_request(request):
+                    if request.get('method') != 'keepalive':
+                        reply = json.dumps(self.handle_request(request))
+                        peer.send_msg(reply)
+                        self.logger.info("protocol request", peer.peer_addr, request['method'], f"bytes {len(reply)}", f"{int(time.time() - start_time)} secs" )
+                else:
                     # data received but invalid
                     peer.send_msg(json.dumps({'error': 'invalid request'}))
                     peer.reputation -= 1
-            peer.is_connected = peer.is_alive()
+            else:
+                self.logger.info("client disconnected", peer.peer_addr)
+                peer.disconnect()
+                #peer.is_connected = peer.is_alive()
         if not bool(peer.reputation):
             peer.is_connected = False
 
     # dedicated thread for btcHandlerCli managed by Controller class
-    def local_cli_handler(self, peer_cli, graceful_shutdown):
-        request = json.loads(peer_cli.recv_msg())
-        if self.validate_request(request):
-            if request['method'] == 'handlerstop':
-                # shut the server down
-                response = {'control': 'handlerstop'}
-                graceful_shutdown()
-            else:
+    def local_cli_handler(self, peer_cli, shutdown):
+        peer_cli.set_waiting_mode(15)
+        request = peer_cli.recv_data().decode('utf-8')
+        if bool(request) and self.validate_request(json.loads(request)):
+            request = json.loads(request)
+            self.logger.info("protocol", "LOCAL", request['method'])
+            if request['method'] != 'handlerstop':
                 response = self.handle_request(request)
+            else:
+                # shut the server down
+                response = {'confirm': 'handlerstop'}
         else:
             response = {'error': 'invalid request'}
-        peer_cli.send_msg(json.dumps(response))
+        peer_cli.send_data(json.dumps(response).encode('utf-8'))
         peer_cli.disconnect()
+        if request['method'] == 'handlerstop':
+            self.logger.info("client local shutdown started")
+            shutdown = True

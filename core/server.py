@@ -32,52 +32,64 @@ class Controller:
         signal.signal(signal.SIGINT, self.signal_shutdown)
         signal.signal(signal.SIGTERM, self.signal_shutdown)
 
+        self.shutdown_notification = threading.Event()
+        self.shutdown_notification.clear()
+        self.shutdown_flag = False
+
+        self.storage = core.storage.Storage()
+        self.logger = core.logger.Logger(self.storage.logs_dir)
+        self.interface = core.data.Interface(self.storage)
+
+
         core.network.BTCDAEMON_HOST = config['bitcoin']['host']
         core.network.BTCDAEMON_PORT = config['bitcoin']['port']
         core.network.BTCDAEMON_USER = config['bitcoin']['user']
         core.network.BTCDAEMON_PASS = config['bitcoin']['pass']
 
-        self.STORAGE = core.storage.Storage()
-        self.LOGGER = core.logger.Logger(self.STORAGE.logs_dir)
-        self.BITCOIN = core.machine.BitcoinDaemon()
-        self.NODE = core.machine.Node()
-        self.NETWORK = core.network.NetworkServer("0.0.0.0", 46850)
+        self.certificate = config['network']['certificate']
+
         
-        self.data_interface = core.data.Interface(self.STORAGE)
-        self.SERVICES = core.services.Engine(self.LOGGER, self.data_interface)
-        self.protocol = core.protocol.RequestHandler()
+        self.NODE = core.machine.Node()
+        self.network = core.network.NetworkServer(config['network']['host'], config['network']['port'])
+        
+        
+        self.SERVICES = core.services.Engine(self.logger, self.interface)
+        self.protocol = core.protocol.RequestHandler(self.logger, self.interface)
 
-        self.internet_on = False
-        self.local_ip_addr = None
-        self.bitcoind_running = False
-        self.is_serving = False
 
-        #self.shutdown_notify = threading.Event()
-        self.logger_thread = threading.Thread(target = self.LOGGER.worker, name = "logger-thread", daemon = True)
+        self.logger_thread = threading.Thread(target = self.logger.worker, name = "logger-thread", daemon = True)
         self.server_thread = threading.Thread(target = self.peers_receiver, name = "server-thread", daemon = True)
         self.services_thread = threading.Thread(target = self.SERVICES.work, name = "services-thread", daemon = True)
+
+
+        self.is_serving = False
+        self.internet_on = False
+        self.local_ip_addr = None
+        self.external_ip_addr = None
 
         self.max_peers = 5
         self.active_peers = [] # list of dicts {'peer': peer, 'worker': worker}
 
-        ## logger init
-        self.LOGGER.is_working = True
+        ##.logger init
+        self.logger.is_working = True
         self.logger_thread.start()
-        self.LOGGER.info("server starting")
+        self.logger.info("server starting")
 
     def init_network(self):
-        self.LOGGER.info("init network")
+        self.logger.info("init network")
         self.local_ip_addr = self.NODE.get_local_IP()
-        self.external_ip_addr = self.NODE.get_external_IP()
+        self.external_ip_addr = core.network.get_external_ips()
+        self.network.server_enable()
+        self.logger.info("network socket ready", bool(self.network.server_ready))
+        self.logger.info("network bind address", self.network.server_addr)
+        self.logger.info("network port open", self.network.server_port)
+        self.logger.info("network local address", self.local_ip_addr)
+        for ip in self.external_ip_addr:
+            self.logger.info("network external address",  f"IPv{ip.version}", ip.exploded)
         self.is_serving = True
-        self.NETWORK.start_serving()
-        self.LOGGER.info("network socket ready", bool(self.NETWORK.server_ready))
-        self.LOGGER.info("network server address", self.local_ip_addr)
-        self.LOGGER.info("network external ip", self.external_ip_addr)
-        self.LOGGER.info("bitcoin daemon ready", self.service_daemon())
 
     def init_services(self):
-        self.LOGGER.info("init services")
+        self.logger.info("init services")
         self.SERVICES.worker.clear()
         self.SERVICES.add_new_service(core.services.BitcoinDaemonChecker)
         self.SERVICES.add_new_service(core.services.BitcoinCacheUpdater)
@@ -86,15 +98,18 @@ class Controller:
         
     
     def run_all(self):
-        self.LOGGER.info("starting threads")
+        self.logger.info(f"bitcoin daemon running", self.interface.daemon.is_running)
+        if self.interface.daemon.is_running:
+            self.logger.info("starting threads")
+            self.server_thread.start()
+            self.services_thread.start()
+            self.logger.info(f"{self.server_thread.name}", "active", self.server_thread.is_alive())
+            self.logger.info(f"{self.services_thread.name}", "active", self.services_thread.is_alive())
+            self.SERVICES.worker.set() # starts working here
+        else:
+            self.logger.info("btcCoreHandler cannot work without the bitcoin daemon!")
 
-        self.server_thread.start()
-        self.services_thread.start()
-
-        self.LOGGER.info(f"{self.server_thread.name}", "active", self.server_thread.is_alive())
-        self.LOGGER.info(f"{self.services_thread.name}", "active", self.services_thread.is_alive())
-
-        self.SERVICES.worker.set() # starts working here
+        
 
     def is_server_on(self):
         if bool(self.serving_thread):
@@ -105,21 +120,27 @@ class Controller:
 
     def peers_receiver(self):
         while self.is_serving:
-            peer = self.NETWORK.get_new_peer()
-            if bool(peer):
+            peer = self.network.get_new_peer()
+            if isinstance(peer, core.network.Peer):
+                self.logger.info("server client connecting", peer.peer_addr)
                 if peer.is_local_cli:
-                    local_cli_worker = threading.Thread(target = self.protocol.local_cli_handler, args = [peer])
+                    self.logger.info("server client connected", "LOCAL")
+                    local_cli_worker = threading.Thread(target = self.protocol.local_cli_handler, args = [peer, self.shutdown_flag])
                     local_cli_worker.start()
+                    local_cli_worker.join()
                 else:
-                    peer_cert = self.STORAGE.load_certificate(peer.peer_id)
+                    #peer_cert = self.storage.load_certificate(peer.peer_id)
+                    #self.logger.info("server handshaking with client", peer.peer_id.hex())
+                    peer_cert = bytes.fromhex(self.certificate)
                     peer.handshake(peer_cert)
                     if peer.is_connected and self.available_slots():
-                        #self.NETWORK.connected_peers.append(peer)
-                        worker = threading.Thread(target = self.protocol.peers_worker, args = [peer], name = f"peer-{peer.peer_id}")
+                        self.logger.info("server client connected", peer.peer_addr, peer.is_connected)
+                        worker = threading.Thread(target = self.protocol.peers_worker, args = [peer], name = f"peer-{peer.peer_id.hex()}")
                         self.active_peers.append({'peer': peer, 'worker': worker})
                         worker.start()
                     elif not peer.is_connected:
-                        pass
+                        self.logger.info("server client refused", peer.peer_addr)
+                        peer.disconnect()
                     
                     else:
                         peer.send_msg({'error': 'server has reached the maximum peers'})
@@ -129,7 +150,7 @@ class Controller:
                 pass
             self.cleanup_peers()
         else:
-            """stopped serving"""
+            self.logger.info("server shutting down")
             pass
 
     def available_slots(self):
@@ -145,26 +166,44 @@ class Controller:
         return self.NODE.check_bitcoin_daemon()
 
 
+    def wait_for_shutdown(self):
+        self.logger.info("btcCoreHandler server fully started")
+        while not self.shutdown_notification.is_set() and not self.shutdown_flag:
+            if not self.interface.daemon.is_running: 
+                self.logger.info("bitcoin daemon is not running!")
+                self.shutdown_notification.set()
+            self.shutdown_notification.wait(15) # <-- main thread waits here
+        else:
+            self.graceful_shutdown()
+        
+
     def signal_shutdown(self, signum, frame):
-        # shutdown by signal
-        # to log it
-        self.graceful_shutdown()
+        self.logger.info("shutdown from signal", signum)
+        self.shutdown_notification.set()
+    
 
     def graceful_shutdown(self):
-        self.LOGGER.info("shutting down gracefully")
-        self.is_serving = False
-        #self.serving_thread.join()
+        self.logger.info("shutting down gracefully")
+        
         for peer_ in self.active_peers:
             peer_['peer'].disconnect()
-            peer_['worker'].join()
+            peer_['worker'].join(3)
+
+        self.is_serving = False
+        self.server_thread.join(3)
+
+        self.network.server_disable()
+        self.logger.info("network shutting down")
+        self.logger.info("services shutting down")
         self.SERVICES.deactivate_all()
         self.SERVICES.worker.set()
-        #self.server_thread.join()
-        #self.services_thread.join()
-        self.LOGGER.info(f"{self.server_thread.name}", self.server_thread.is_alive())
-        self.LOGGER.info(f"{self.services_thread.name}", self.services_thread.is_alive())
+        self.services_thread.join()
+        #self.shutdown_notification.set()
+        
+        self.logger.info(f"{self.server_thread.name}", self.server_thread.is_alive())
+        self.logger.info(f"{self.services_thread.name}", self.services_thread.is_alive())
 
-
-        self.LOGGER.is_working = False
+        self.logger.queue.join()
+        self.logger.is_working = False
         #self.service_thread.join()
-        #sys.exit(0)
+        sys.exit(0)

@@ -25,7 +25,7 @@ class Node:
         return ip_list[0]
 
     def get_external_IP(self):
-        return str(subprocess.run(["curl", "ip.me"], capture_output = True).stdout.decode())
+        return str(subprocess.run(["curl", "ip.me"], capture_output = True).stdout.decode().strip("\n"))
 
     def check_bitcoin_daemon(self):
         return bool(subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode())
