@@ -54,7 +54,6 @@ class NetworkServer(Server):
         peer = False
         peer_socket, peer_addr = self.accept_new_client()
         if bool(peer_socket):
-            #peer_id = self.raw_recv(peer_socket, 16)
             peer = Peer(peer_socket, peer_addr[0])
             peer.is_local_cli = self.is_loopback(peer_addr[0])
         else:
@@ -113,6 +112,20 @@ class Peer(SimplePeer):
         self.is_connected = False
         self.close_socket()
 
+
+class LocalCli(SimplePeer):
+    def __init__(self, cli_socket, cli_addr):
+        self.peer_socket = cli_socket
+        self.peer_addr = cli_addr
+        self.peer_socket.settimeout(30)
+
+    def send_msg(self, msg: str) -> bool:
+        msg = msg.encode('utf-8')
+        return self.send_data(msg)
+
+    def recv_msg(self) -> str:
+        msg = self.recv_data().decode('utf-8')
+        return msg
 
 ###########################################################################################################
 ###########################################################################################################

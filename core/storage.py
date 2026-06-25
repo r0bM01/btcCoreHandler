@@ -49,7 +49,7 @@ class BitcoinPeers(lib.base_storage.BaseDB):
 
         self.make_db_file() # init the db file if not existing
         self.create_geolocation_table() # init the table if not existing
-    
+
     def create_geolocation_table(self):
         sql = f'''CREATE TABLE IF NOT EXISTS {self.table_name} (
                     ip CHAR PRIMARY KEY,
@@ -95,15 +95,34 @@ class BitcoinPeers(lib.base_storage.BaseDB):
         
     def insert_geolocation(self, geo: dict):
         columns = ", ".join([":"+str(k) for k in geo.keys()])
-        sql = f'''INSERT OR IGNORE INTO {self.table_name} VALUES({columns})'''
+        sql = f'''INSERT OR IGNORE INTO {self.table_name} VALUES({columns});'''
         self.raw_insert(sql, geo)
     
     def select_geolocation(self, ipaddrs: list ):
-        sql = f'''SELECT * FROM {self.table_name} WHERE ip IN ({", ".join('?' * len(ipaddrs))})'''
+        sql = f'''SELECT * FROM {self.table_name} WHERE ip IN ({", ".join('?' * len(ipaddrs))});'''
         res = self.raw_select(sql, ipaddrs)
         geo = [self.make_geolocation_dict(row) for row in res] if bool(res) else []
         return geo
 
+    def select_num_countries(self):
+        sql = '''SELECT COUNT(DISTINCT country_name) FROM geolocation;'''
+        res = self.raw_select(sql)
+        return res
+    
+    def select_num_cities(self):
+        sql = '''SELECT COUNT(DISTINCT city) FROM geolocation;'''
+        res = self.raw_select(sql)
+        return res
+    
+    def select_num_nodes(self):
+        sql = '''SELECT COUNT(ip) FROM geolocation;'''
+        res = self.raw_select(sql)
+        return res
+    
+    def select_top_countries_by_nodes(self, top: int = 0):
+        sql = '''SELECT country_name, COUNT(ip) FROM geolocation GROUP BY country_name ORDER BY COUNT(ip) DESC;'''
+        res = self.raw_select(sql)
+        return res if not top else res[:top]
 
 class HandlerDB(lib.base_storage.BaseDB):
     def __init__(self, custom_dir):

@@ -96,7 +96,6 @@ class Controller:
         self.SERVICES.add_new_service(core.services.BitcoinPeersGeolocation)
         self.SERVICES.activate_all()
         
-    
     def run_all(self):
         self.logger.info(f"bitcoin daemon running", self.interface.daemon.is_running)
         if self.interface.daemon.is_running:
@@ -108,8 +107,6 @@ class Controller:
             self.SERVICES.worker.set() # starts working here
         else:
             self.logger.info("btcCoreHandler cannot work without the bitcoin daemon!")
-
-        
 
     def is_server_on(self):
         if bool(self.serving_thread):
@@ -185,9 +182,10 @@ class Controller:
     def graceful_shutdown(self):
         self.logger.info("shutting down gracefully")
         
+        """"
         for peer_ in self.active_peers:
             peer_['peer'].disconnect()
-            peer_['worker'].join(3)
+            peer_['worker'].join(3)"""
 
         self.is_serving = False
         self.server_thread.join(3)
@@ -197,8 +195,7 @@ class Controller:
         self.logger.info("services shutting down")
         self.SERVICES.deactivate_all()
         self.SERVICES.worker.set()
-        self.services_thread.join()
-        #self.shutdown_notification.set()
+        self.services_thread.join(3)
         
         self.logger.info(f"{self.server_thread.name}", self.server_thread.is_alive())
         self.logger.info(f"{self.services_thread.name}", self.services_thread.is_alive())
