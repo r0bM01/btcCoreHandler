@@ -17,7 +17,7 @@ import pathlib, json
 import lib.base_storage
 
 
-DEFAULT_ROOT_FOLDER = pathlib.Path.home().joinpath("btchandler")
+DEFAULT_ROOT_FOLDER = pathlib.Path.home().joinpath("btcCoreHandlerData")
 
 
 class Storage:
@@ -26,7 +26,6 @@ class Storage:
         self.storage_dir = self.init_dir("storage")
         self.logs_dir = self.init_dir("logs")
         self.export_dir = self.init_dir("export")
-
 
     def init_base_dir(self, default_dir):
         dir = pathlib.Path(default_dir).joinpath("HANDLER")

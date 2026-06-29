@@ -69,6 +69,8 @@ with open("config.toml", "rb") as f:
 
 
 client = Test("192.168.1.225", 46850)
+
+print("connecting...")
 client.connect_to_remote()
 
 print("socket: ", bool(client.client_socket))

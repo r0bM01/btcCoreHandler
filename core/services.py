@@ -13,6 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
+import gc
 from threading import Event
 from time import time
 
@@ -66,12 +67,14 @@ class Engine:
         else:
             service.pause = self.set_pause(300)
         service.errors += 1
-        self.logger.info("server: service sanitizing attempt", service.errors)
+        self.logger.info("service sanitizing attempt", service.errors)
 
     def run_service(self, service):
         if service.active and (service.pause < self.get_time()):
             if not (self.worker_nums_round % 100):
-                self.logger.info("service running", service.name)
+                garbage = gc.collect()
+                self.logger.info("services garbage collected", f"{garbage} objects")
+                self.logger.info("service still running", service.name)
             try:
                 start_time = self.get_time()
                 service.run()  # executes the callback function
@@ -79,9 +82,8 @@ class Engine:
                 service.last_run = self.get_time()
                 service.run_time = service.last_run - start_time
                 if service.run_time > 30:
-                    self.logger.info(
-                        "services long run", service.name, service.run_time
-                    )
+                    self.logger.info("services long run", service.name, service.run_time)
+                    service.errors += 1
             except Exception as error_code:
                 # log the error and try to sanitaze
                 self.sanitizer(service, error_code)
@@ -97,7 +99,7 @@ class Engine:
             self.worker_nums_round += 1
             self.worker.wait(self.worker_rest - (self.worker_last_round - start_time))
         else:
-            self.logger.info("services worker has stopped")
+            self.logger.info("services engine worker has stopped")
 
 
 class BitcoinCacheUpdater:

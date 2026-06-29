@@ -5,7 +5,7 @@ from core import server
 
 
 def main():
-    print("####################################")
+    print("bitcoin Core Handler is starting...")
 
     with open("config.toml", "rb") as f:
         config = tomllib.load(f)
@@ -15,15 +15,10 @@ def main():
     if handler.interface.daemon.is_running:
 
         handler.init_network()
-        handler.init_services()
-
-        try:
-            handler.run_all()
-            handler.wait_for_shutdown()
-        except Exception as e:
-            print(f"Handler cannot be run due to error: {e}")
-            print("####################################")
-
+        handler.init_services()    
+        handler.run_all()
+        handler.wait_for_shutdown()
+        
     else:
         print("ERROR! BITCOIN DAEMON NOT RUNNING!")
 

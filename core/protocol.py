@@ -64,9 +64,9 @@ class RequestHandler:
             peer.is_connected = False
 
     # dedicated thread for btcHandlerCli managed by Controller class
-    def local_cli_handler(self, peer_cli, shutdown):
-        peer_cli.set_waiting_mode(15)
-        request = peer_cli.recv_data().decode('utf-8')
+    def local_cli_handler(self, local_cli, shutdown):
+        local_cli.set_waiting_mode(15)
+        request = local_cli.recv_data()
         if bool(request) and self.validate_request(json.loads(request)):
             request = json.loads(request)
             self.logger.info("protocol", "LOCAL", request['method'])
@@ -77,8 +77,8 @@ class RequestHandler:
                 response = {'confirm': 'handlerstop'}
         else:
             response = {'error': 'invalid request'}
-        peer_cli.send_data(json.dumps(response).encode('utf-8'))
-        peer_cli.disconnect()
+        local_cli.send_data(json.dumps(response))
+        local_cli.disconnect()
         if request['method'] == 'handlerstop':
             self.logger.info("client local shutdown started")
-            shutdown = True
+            shutdown.set()

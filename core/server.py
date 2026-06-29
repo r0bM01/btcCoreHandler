@@ -34,7 +34,7 @@ class Controller:
 
         self.shutdown_notification = threading.Event()
         self.shutdown_notification.clear()
-        self.shutdown_flag = False
+        
 
         self.storage = core.storage.Storage()
         self.logger = core.logger.Logger(self.storage.logs_dir)
@@ -122,7 +122,7 @@ class Controller:
                 self.logger.info("server client connecting", peer.peer_addr)
                 if peer.is_local_cli:
                     self.logger.info("server client connected", "LOCAL")
-                    local_cli_worker = threading.Thread(target = self.protocol.local_cli_handler, args = [peer, self.shutdown_flag])
+                    local_cli_worker = threading.Thread(target = self.protocol.local_cli_handler, args = [peer, self.shutdown_notification])
                     local_cli_worker.start()
                     local_cli_worker.join()
                 else:
@@ -165,7 +165,7 @@ class Controller:
 
     def wait_for_shutdown(self):
         self.logger.info("btcCoreHandler server fully started")
-        while not self.shutdown_notification.is_set() and not self.shutdown_flag:
+        while not self.shutdown_notification.is_set():
             if not self.interface.daemon.is_running: 
                 self.logger.info("bitcoin daemon is not running!")
                 self.shutdown_notification.set()
