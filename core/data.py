@@ -68,10 +68,12 @@ class Interface:
             if geo.get("ip") in ip_list
         ]
         geo_from_web = [get_geolocation(ip) for ip in ip_list]
-        [self.database.insert_geolocation(geo) for geo in geo_from_web]
+        if self.control_database.acquire(timeout = 3):
+            [self.database.insert_geolocation(geo) for geo in geo_from_web]
+            self.control_database.release()
         return geo_from_db + geo_from_web
 
-    def daemon_call(self, method, *args):
+    def daemon_call(self, method, *args) -> dict:
         if self.control_bitcoind.acquire(timeout = 3):
             response = self.daemon.rpc(method, [a for a in args])
             self.control_bitcoind.release()
