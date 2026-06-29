@@ -198,7 +198,10 @@ class NextcloudNotifications:
     def run(self):
         self.build_timestamps()
         if dt.datetime.now().timestamp() >= self.timestamps[0]:
-            ## exect the call to nextcloud
+            message = "Some info regarding bitcoin code node\n"
+            message += f"BitcoinD uptime: {self.interface.cache['uptime']}\n"
+            message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
+            self.interface.send_nextcloud_msg(message)
             self.timestamps.pop(0)
 
 

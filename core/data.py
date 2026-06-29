@@ -19,6 +19,7 @@ from threading import BoundedSemaphore
 
 from core.machine import BitcoinDaemon
 from core.network import get_geolocation
+from core.network import send_nextcloud_msg
 from core.storage import BitcoinPeers
 from lib.base_crypto import Utils
 
