@@ -156,7 +156,11 @@ BTCDAEMON_PORT = None
 BTCDAEMON_USER = ""
 BTCDAEMON_PASS = ""
 
-def get_external_ips():
+NEXTCLOUD_USER = "bot"
+NEXTCLOUD_PASS = "!#b1tc0in.IS!thebest"
+NEXTCLOUD_CHAT = ""
+
+def get_external_ips() -> list:
     endpoints = ["https://api.ipify.org", "https://api64.ipify.org"]
     ips = list()
     for ep in endpoints:
@@ -167,14 +171,14 @@ def get_external_ips():
                 ips.append(ip)
     return ips
 
-def get_geolocation(ip_addr):
+def get_geolocation(ip_addr) -> dict:
     req = request.Request(url = "https://json.geoiplookup.io/" + str(ip_addr), headers = {'User-Agent': 'Mozilla/5.0'})
     res = request.urlopen(url = req, context = ssl.create_default_context()).read().decode()
     geo = json.loads(res)
     geo['checksum'] = Utils.make_checksum(str("".join([str(geo[v]) for v in geo if v != 'ip'])).encode('utf-8'))
     return geo
 
-def get_bitcoin_daemon(command):
+def get_bitcoin_daemon(command) -> json:
     url = "http://" + BTCDAEMON_HOST + ":" + BTCDAEMON_PORT
     usr = BTCDAEMON_USER.encode('utf-8')
     psw = BTCDAEMON_PASS.encode('utf-8')
@@ -185,4 +189,13 @@ def get_bitcoin_daemon(command):
     res = request.urlopen(req).read().decode()
     return json.loads(res)
 
-
+def send_nextcloud_msg(message) -> None:
+    url = "https://cloud.bareminds.eu/ocs/v2.php/apps/spreed/api/v1/chat/" + NEXTCLOUD_CHAT
+    usr = NEXTCLOUD_USER.encode('utf-8')
+    psw = NEXTCLOUD_PASS.encode('utf-8')
+    auth = base64.b64encode(usr + b':' + psw)
+    auth = auth.decode()
+    header = {'User-Agent': 'Mozilla/5.0', 'content-type': 'application/json', 'OCS-APIRequest': 'true', 'Authorization': 'Basic ' + auth}
+    data = json.dumps({'token': NEXTCLOUD_CHAT, 'message': message, 'silent': False})
+    req = request.Request(url = url, data = data.encode('utf-8'), headers = header)
+    res = request.urlopen(req)

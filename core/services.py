@@ -14,6 +14,7 @@
 #############################################################################
 
 import gc
+import datetime as dt
 from threading import Event
 from time import time
 
@@ -23,7 +24,7 @@ class Engine:
         self.logger = logger
         self.interface = interface
 
-        self.services = list()
+        self.services = list() 
 
         self.worker = Event()
         self.worker_rest = 30
@@ -63,9 +64,9 @@ class Engine:
     def sanitizer(self, service, error_code):
         self.logger.info("server: service error", service.name, error_code)
         if service.errors < 5:
-            service.pause = self.set_pause(120)
+            service.pause = self.set_pause(320)
         else:
-            service.pause = self.set_pause(300)
+            service.pause = self.set_pause(640)
         service.errors += 1
         self.logger.info("service sanitizing attempt", service.errors)
 
@@ -168,3 +169,37 @@ class BitcoinPeersGeolocation:
             {geo.get("ip"): geo for geo in self.interface.load_geolocation(ip_list)}
         )
         self.interface.update_cache("getpeergeo", geo_data)
+
+
+class NextcloudNotifications:
+    def __init__(self, interface):
+        self.name = "NextcloudNotifications"
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+        self.schedules = [(18, 30)] # list of [tuple(hour, min)]
+        self.timestamps = []
+    
+    def build_timestamps(self):
+        if not bool(self.timestamps):
+            for s in self.schedules:
+                ts = dt.datetime(dt.datetime.now().year, dt.datetime.now().month, dt.datetime.now().day, s[0], s[1]).timestamp()
+                if ts <= dt.datetime.now().timestamp():
+                    ts += (60 * 60 * 24)
+                self.timestamps.append(ts)
+        if not bool(self.pause):
+            if len(self.timestamps) < (len(self.schedules) * 2):
+                new_ts = [ts + (60 * 60 * 24) for ts in self.timestamps]
+                self.timestamps.extend(new_ts)
+        self.timestamps.sort()
+
+    def run(self):
+        self.build_timestamps()
+        if dt.datetime.now().timestamp() >= self.timestamps[0]:
+            ## exect the call to nextcloud
+            self.timestamps.pop(0)
+
+
+                  
