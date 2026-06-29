@@ -31,7 +31,9 @@ class Interface:
     """Data retriewed from bitcoind can be accessed to 1 peer per time"""
 
     def __init__(self, storage):
-        self.control = BoundedSemaphore(value=1)
+        self.control_bitcoind = BoundedSemaphore(value = 1)
+        self.control_database = BoundedSemaphore(value = 3)
+
         self.daemon = BitcoinDaemon()
         self.database = BitcoinPeers(storage.storage_dir)
 
@@ -57,7 +59,9 @@ class Interface:
         self.cache.clear()
 
     def load_geolocation(self, ip_list: list) -> list:
-        geo_from_db = self.database.select_geolocation(ip_list)
+        if self.control_database.acquire(timeout = 3):
+            geo_from_db = self.database.select_geolocation(ip_list)
+            self.control_database.release()
         [
             ip_list.remove(geo.get("ip"))
             for geo in geo_from_db
@@ -68,9 +72,9 @@ class Interface:
         return geo_from_db + geo_from_web
 
     def daemon_call(self, method, *args):
-        if self.control.acquire(timeout=3):
+        if self.control_bitcoind.acquire(timeout = 3):
             response = self.daemon.rpc(method, [a for a in args])
-            self.control.release()
+            self.control_bitcoind.release()
         else:
             response = {
                 "error": "bitcoin daemon is busy and cannot process your request"
