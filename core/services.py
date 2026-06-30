@@ -72,7 +72,7 @@ class Engine:
 
     def run_service(self, service):
         if service.active and (service.pause < self.get_time()):
-            if not (self.worker_nums_round % 100):
+            if not (self.worker_nums_round % 100) and (self.worker_nums_round > 999):
                 garbage = gc.collect()
                 self.logger.info("services garbage collected", f"{garbage} objects")
                 self.logger.info("service still running", service.name)
@@ -201,6 +201,8 @@ class NextcloudNotifications:
             message = "Some info regarding bitcoin code node\n"
             message += f"BitcoinD uptime: {self.interface.cache['uptime']}\n"
             message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
+            message += f"Known Peers: {self.interface.database.select_num_nodes()[0]}\n"
+            message += f"Known Countries: {self.interface.database.select_num_countries()[0]}"
             self.interface.send_nextcloud_msg(message)
             self.timestamps.pop(0)
 
