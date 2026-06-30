@@ -156,8 +156,8 @@ BTCDAEMON_PORT = None
 BTCDAEMON_USER = ""
 BTCDAEMON_PASS = ""
 
-NEXTCLOUD_USER = "bot"
-NEXTCLOUD_PASS = "!#b1tc0in.IS!thebest"
+NEXTCLOUD_USER = ""
+NEXTCLOUD_PASS = ""
 NEXTCLOUD_CHAT = ""
 
 def get_external_ips() -> list:
