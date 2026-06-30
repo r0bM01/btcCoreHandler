@@ -49,7 +49,7 @@ class BaseLogger:
         print(log, flush = True)
 
     def add(self, type, message, arg_list):
-        log = str(f"{type.upper()} - {time.ctime(int(time.time()))} - {message} ") 
+        log = str(f"{time.ctime(int(time.time()))} - {type.upper()} - {message} ") 
         self.write_on_disk(log, arg_list)
         if self.verbose:
             self.verbose_print(log, arg_list)
