@@ -106,17 +106,17 @@ class BitcoinPeers(lib.base_storage.BaseDB):
     def select_num_countries(self):
         sql = '''SELECT COUNT(DISTINCT country_name) FROM geolocation;'''
         res = self.raw_select(sql)
-        return res
+        return res[0][0]
     
     def select_num_cities(self):
         sql = '''SELECT COUNT(DISTINCT city) FROM geolocation;'''
         res = self.raw_select(sql)
-        return res
+        return res[0][0]
     
     def select_num_nodes(self):
         sql = '''SELECT COUNT(ip) FROM geolocation;'''
         res = self.raw_select(sql)
-        return res
+        return res[0][0]
     
     def select_top_countries_by_nodes(self, top: int = 0):
         sql = '''SELECT country_name, COUNT(ip) FROM geolocation GROUP BY country_name ORDER BY COUNT(ip) DESC;'''

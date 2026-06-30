@@ -15,20 +15,24 @@
 
 import time, threading, sys, signal
 
+from os import getpid
+
 import core.logger
+import core.env
 import core.network
 import core.storage 
 import core.protocol 
 import core.data 
 import core.machine 
-import core.services 
+import core.services
+
 
 
 class ThreadMan:
     pass
 
 class Controller:
-    def __init__(self, config):
+    def __init__(self):
         signal.signal(signal.SIGINT, self.signal_shutdown)
         signal.signal(signal.SIGTERM, self.signal_shutdown)
 
@@ -41,16 +45,11 @@ class Controller:
         self.interface = core.data.Interface(self.storage)
 
 
-        core.network.BTCDAEMON_HOST = config['bitcoin']['host']
-        core.network.BTCDAEMON_PORT = config['bitcoin']['port']
-        core.network.BTCDAEMON_USER = config['bitcoin']['user']
-        core.network.BTCDAEMON_PASS = config['bitcoin']['pass']
-
-        self.certificate = config['network']['certificate']
+        self.certificate = core.env.network['certificate']
 
         
         self.NODE = core.machine.Node()
-        self.network = core.network.NetworkServer(config['network']['host'], config['network']['port'])
+        self.network = core.network.NetworkServer(core.env.HANDLER_HOST, core.env.HANDLER_PORT)
         
         
         self.SERVICES = core.services.Engine(self.logger, self.interface)
@@ -76,6 +75,7 @@ class Controller:
         self.logger.info("server starting")
 
     def init_network(self):
+        self.logger.info("btcCoreHandler process id", getpid())
         self.logger.info("init network")
         self.local_ip_addr = self.NODE.get_local_IP()
         self.external_ip_addr = core.network.get_external_ips()
@@ -119,7 +119,7 @@ class Controller:
     def peers_receiver(self):
         while self.is_serving:
             peer = self.network.get_new_peer()
-            if isinstance(peer, core.network.Peer):
+            if any([isinstance(peer, core.network.Peer), isinstance(peer, core.network.LocalCli)]):
                 self.logger.info("server client connecting", peer.peer_addr)
                 if peer.is_local_cli:
                     self.logger.info("server client connected", "LOCAL")
@@ -166,6 +166,7 @@ class Controller:
 
     def wait_for_shutdown(self):
         self.logger.info("btcCoreHandler server fully started")
+        core.network.send_nextcloud_msg("btcCoreHandler server is fully started")
         while not self.shutdown_notification.is_set():
             if not self.interface.daemon.is_running: 
                 self.logger.info("bitcoin daemon is not running!")
@@ -182,7 +183,7 @@ class Controller:
 
     def graceful_shutdown(self):
         self.logger.info("shutting down gracefully")
-        
+        core.network.send_nextcloud_msg("btcCoreHandler is shutting down")
         """"
         for peer_ in self.active_peers:
             peer_['peer'].disconnect()
@@ -200,8 +201,7 @@ class Controller:
         
         self.logger.info(f"{self.server_thread.name}", self.server_thread.is_alive())
         self.logger.info(f"{self.services_thread.name}", self.services_thread.is_alive())
-
+        self.logger.info("shutdown completed")
         self.logger.queue.join()
         self.logger.is_working = False
-        #self.service_thread.join()
         sys.exit(0)

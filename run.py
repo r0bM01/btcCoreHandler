@@ -1,15 +1,11 @@
 
-
-import tomllib
-from core import server
+import core.env
 
 
 def main():
-
-    with open("config.toml", "rb") as f:
-        config = tomllib.load(f)
+    from core import server
     
-    handler = server.Controller(config)
+    handler = server.Controller()
     handler.logger.base_logger.verbose = False
 
     if handler.interface.daemon.is_running:
@@ -18,10 +14,14 @@ def main():
         handler.init_services()    
         handler.run_all()
         handler.wait_for_shutdown()
-        
+        print("btcCoreHandler shutdown successfull")
     else:
         print("ERROR! BITCOIN DAEMON NOT RUNNING!")
 
 
 if __name__ == "__main__":
-    main()
+    if core.env.check_config():
+        main()
+    else:
+        assert "CONFIG FILE NOT READABLE!!"
+    

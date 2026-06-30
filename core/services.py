@@ -179,7 +179,7 @@ class NextcloudNotifications:
         self.last_run = 0
         self.errors = 0
         self.interface = interface
-        self.schedules = [(18, 30)] # list of [tuple(hour, min)]
+        self.schedules = [(13, 30), (18, 30), (23, 30)] # list of [tuple(hour, min)]
         self.timestamps = []
     
     def build_timestamps(self):
@@ -189,10 +189,9 @@ class NextcloudNotifications:
                 if ts <= dt.datetime.now().timestamp():
                     ts += (60 * 60 * 24)
                 self.timestamps.append(ts)
-        if not bool(self.pause):
-            if len(self.timestamps) < (len(self.schedules) * 2):
-                new_ts = [ts + (60 * 60 * 24) for ts in self.timestamps]
-                self.timestamps.extend(new_ts)
+        if len(self.timestamps) < (len(self.schedules) * 2):
+            new_ts = [ts + (60 * 60 * 24) for ts in self.timestamps]
+            self.timestamps.extend(new_ts)
         self.timestamps.sort()
 
     def run(self):
@@ -201,9 +200,9 @@ class NextcloudNotifications:
             message = "Some info regarding bitcoin code node\n"
             message += f"BitcoinD uptime: {self.interface.cache['uptime']}\n"
             message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
-            message += f"Known Peers: {self.interface.database.select_num_nodes()[0]}\n"
-            message += f"Known Countries: {self.interface.database.select_num_countries()[0]}"
-            self.interface.send_nextcloud_msg(message)
+            message += f"Known Peers: {self.interface.database.select_num_nodes()}\n"
+            message += f"Known Countries: {self.interface.database.select_num_countries()}"
+            self.interface.send_to_nextcloud(message)
             self.timestamps.pop(0)
 
 

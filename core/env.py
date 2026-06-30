@@ -4,6 +4,9 @@
 import tomllib
 import pathlib
 
+def check_config():
+    return DEFAULT_CONFIG_FILE.exists()
+
 def dump_config():
     lines = []
     lines.append("# btcCoreHandler Config File Automatically Generated #\n\n")
@@ -50,6 +53,7 @@ config = load_config()
 storage = config.get('storage', dict())
 network = config.get('network', dict())
 bitcoin = config.get('bitcoin', dict())
+nextcloud = config.get('nextcloud', dict())
 ### CONFIG LOADED
 
 
@@ -64,3 +68,6 @@ BTCDAEMON_PORT = bitcoin.get('post', DEFAULT_BTCDAEMON_PORT)
 BTCDAEMON_USER = bitcoin.get('user', None)
 BTCDAEMON_PASS = bitcoin.get('pass', None)
 
+NEXTCLOUD_USER = nextcloud.get('user', False)
+NEXTCLOUD_PASS = nextcloud.get('pass', False)
+NEXTCLOUD_CHAT = nextcloud.get('chat', False)

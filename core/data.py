@@ -60,7 +60,7 @@ class Interface:
         self.cache.clear()
     
     def send_to_nextcloud(self, message):
-        self.send_nextcloud_msg(message)
+        send_nextcloud_msg(message)
 
     def load_geolocation(self, ip_list: list) -> list:
         if self.control_database.acquire(timeout = 3):
