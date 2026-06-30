@@ -201,7 +201,7 @@ class NextcloudNotifications:
             message = "Some info regarding bitcoin code node\n"
             message += f"BitcoinD uptime: {self.interface.cache['uptime']}\n"
             message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
-            self.interface.send_nextcloud_msg(message)
+            self.interface.send_to_nextcloud(message)
             self.timestamps.pop(0)
 
 

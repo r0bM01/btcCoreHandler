@@ -3,7 +3,7 @@
 # CONFIGURATION FOR BTCHANDLER
 
 [storage]
-default_folder = "" # it must be a full path. Leave empty for default (user home -> 'btchandler')
+data_folder = "" # it must be a full path. Leave empty for default (user home -> 'btchandler')
 
 
 
