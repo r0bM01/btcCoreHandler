@@ -43,7 +43,7 @@ class Controller:
         self.storage = core.storage.Storage()
         self.logger = core.logger.Logger(self.storage.logs_dir)
         self.interface = core.data.Interface(self.storage)
-
+        self.local_pipe = core.storage.LocalPipe()
 
         self.certificate = core.env.network['certificate']
 
@@ -59,7 +59,8 @@ class Controller:
         self.logger_thread = threading.Thread(target = self.logger.worker, name = "logger-thread", daemon = True)
         self.server_thread = threading.Thread(target = self.peers_receiver, name = "server-thread", daemon = True)
         self.services_thread = threading.Thread(target = self.SERVICES.work, name = "services-thread", daemon = True)
-
+        self.pipe_thread = threading.Thread(target = self.pipe_receiver, name = "pipe-thread",daemon = True)
+        
 
         self.is_serving = False
         self.internet_on = False
@@ -101,8 +102,10 @@ class Controller:
         self.logger.info(f"bitcoin daemon running", self.interface.daemon.is_running)
         if self.interface.daemon.is_running:
             self.logger.info("starting threads")
+            self.pipe_thread.start()
             self.server_thread.start()
             self.services_thread.start()
+            self.logger.info(f"{self.pipe_thread.name}", "active", self.pipe_thread.is_alive())
             self.logger.info(f"{self.server_thread.name}", "active", self.server_thread.is_alive())
             self.logger.info(f"{self.services_thread.name}", "active", self.services_thread.is_alive())
             self.SERVICES.worker.set() # starts working here
@@ -115,7 +118,12 @@ class Controller:
         else:
             self.is_serving = False
         return self.is_serving
-
+    
+    def pipe_receiver(self):
+        while not self.shutdown_notification.is_set():
+            pipe_msg = self.local_pipe.recv()
+            self.protocol.pipe_handler(pipe_msg, self.shutdown_notification)
+        
     def peers_receiver(self):
         while self.is_serving:
             peer = self.network.get_new_peer()
@@ -183,7 +191,6 @@ class Controller:
 
     def graceful_shutdown(self):
         self.logger.info("shutting down gracefully")
-        core.network.send_nextcloud_msg("btcCoreHandler is shutting down")
         """"
         for peer_ in self.active_peers:
             peer_['peer'].disconnect()
@@ -204,4 +211,5 @@ class Controller:
         self.logger.info("shutdown completed")
         self.logger.queue.join()
         self.logger.is_working = False
+        core.network.send_nextcloud_msg("btcCoreHandler has shutdown")
         sys.exit(0)

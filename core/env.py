@@ -59,6 +59,11 @@ nextcloud = config.get('nextcloud', dict())
 
 ### IMPORTS
 DATA_FOLDER = storage.get('data_folder', DEFAULT_DATA_FOLDER)
+STORAGE_FOLDER = DATA_FOLDER.joinpath("storage")
+LOGS_FOLDER = DATA_FOLDER.joinpath("logs")
+
+PIPE_MSG = STORAGE_FOLDER.joinpath("comm")
+PIPE_RES = STORAGE_FOLDER.joinpath("resp")
 
 HANDLER_HOST = network.get('host', DEFAULT_HANDLER_HOST)
 HANDLER_PORT = network.get('port', DEFAULT_HANDLER_PORT)

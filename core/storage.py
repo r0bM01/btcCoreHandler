@@ -15,27 +15,26 @@
 
 import pathlib, json
 import lib.base_storage
-
-
-DEFAULT_ROOT_FOLDER = pathlib.Path.home().joinpath("btcCoreHandlerData")
+from os import mkfifo
+from core import env
 
 
 class Storage:
     def __init__(self, custom_dir = False):
-        self.base_dir = self.init_base_dir(custom_dir or pathlib.Path.home())
-        self.storage_dir = self.init_dir("storage")
-        self.logs_dir = self.init_dir("logs")
-        self.export_dir = self.init_dir("export")
+        self.base_dir = self.init_base_dir(env.DATA_FOLDER)
+        self.storage_dir = self.init_dir(env.STORAGE_FOLDER)
+        self.logs_dir = self.init_dir(env.LOGS_FOLDER)
+        #self.export_dir = self.init_dir("export")
 
-    def init_base_dir(self, default_dir):
-        dir = pathlib.Path(default_dir).joinpath("HANDLER")
-        dir.mkdir(exist_ok = True)
-        return dir
+    def init_base_dir(self, base_dir_path):
+        #dir = pathlib.Path(default_dir).joinpath("HANDLER")
+        base_dir_path.mkdir(exist_ok = True)
+        return base_dir_path
     
-    def init_dir(self, dir_name):
-        dir = self.base_dir.joinpath(dir_name)
-        dir.mkdir(exist_ok = True)
-        return dir
+    def init_dir(self, dir_path):
+        #dir = self.base_dir.joinpath(dir_name)
+        dir_path.mkdir(exist_ok = True)
+        return dir_path
 
 
 class BitcoinPeers(lib.base_storage.BaseDB):
@@ -130,3 +129,16 @@ class HandlerDB(lib.base_storage.BaseDB):
         self.db = self.db_path.joinpath(self.db_file)
 
         self.tables = ["certificates"]
+
+
+class LocalPipe:
+    def __init__(self):
+        self.pipe = env.PIPE_MSG
+        if not self.pipe.exists():
+            mkfifo(self.pipe)
+    
+    def recv(self):
+        with open(self.pipe, "r") as P:
+            data = P.read()
+        return data
+    

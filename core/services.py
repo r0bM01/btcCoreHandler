@@ -15,6 +15,7 @@
 
 import gc
 import datetime as dt
+import core.benchutils
 from threading import Event
 from time import time
 
@@ -72,10 +73,12 @@ class Engine:
 
     def run_service(self, service):
         if service.active and (service.pause < self.get_time()):
-            if not (self.worker_nums_round % 100) and (self.worker_nums_round > 999):
-                garbage = gc.collect()
-                self.logger.info("services garbage collected", f"{garbage} objects")
-                self.logger.info("service still running", service.name)
+            if not (self.worker_nums_round % 250):
+                self.logger.info("service running", service.name)
+                self.logger.info("service issues found", service.errors)
+                if self.worker_nums_round > 1:
+                    garbage = gc.collect()
+                    self.logger.info("services garbage collected", f"{garbage} objects")
             try:
                 start_time = self.get_time()
                 service.run()  # executes the callback function
@@ -198,7 +201,7 @@ class NextcloudNotifications:
         self.build_timestamps()
         if dt.datetime.now().timestamp() >= self.timestamps[0]:
             message = "Some info regarding bitcoin code node\n"
-            message += f"BitcoinD uptime: {self.interface.cache['uptime']}\n"
+            message += f"BitcoinD uptime: {core.benchutils.strtime_delay(self.interface.cache['uptime'])}\n"
             message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
             message += f"Known Peers: {self.interface.database.select_num_nodes()}\n"
             message += f"Known Countries: {self.interface.database.select_num_countries()}"

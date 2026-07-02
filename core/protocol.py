@@ -83,3 +83,11 @@ class RequestHandler:
         if request['method'] == 'handlerstop':
             self.logger.info("client local shutdown started")
             shutdown.set()
+
+    def pipe_handler(self, pipe_msg, shutdown):
+        request = json.loads(pipe_msg)
+        if self.validate_request(request):
+            self.logger.info("protocol", "PIPE", request['method']) ## only for testing purposes
+            if request['method'] == 'handlerstop':
+                self.logger.info("handler shutdown authorized")
+                shutdown.set()

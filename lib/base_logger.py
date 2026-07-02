@@ -26,7 +26,7 @@ class BaseLogger:
                 
 
     def new_log_file(self):
-        filename = f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.gmtime())}.log"
+        filename = f"log_{time.strftime('%a_%d_%b_%Y__%H:%M', time.localtime())}.log"
         filepath = self.base_dir.joinpath(filename)
         filepath.touch()
         return filepath

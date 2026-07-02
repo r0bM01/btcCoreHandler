@@ -179,7 +179,7 @@ def get_geolocation(ip_addr) -> dict:
     geo['checksum'] = Utils.make_checksum(str("".join([str(geo[v]) for v in geo if v != 'ip'])).encode('utf-8'))
     return geo
 
-def get_bitcoin_daemon(command) -> json:
+def get_bitcoin_daemon(command) -> dict:
     url = "http://" + str(env.BTCDAEMON_HOST) + ":" + str(env.BTCDAEMON_PORT)
     usr = env.BTCDAEMON_USER.encode('utf-8')
     psw = env.BTCDAEMON_PASS.encode('utf-8')

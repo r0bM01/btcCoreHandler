@@ -47,9 +47,9 @@ class Interface:
             "system": platform.system(),
             "release": platform.release(),
         }
-
-
         self.cache_timestamp = None
+
+        self.services_data = dict()
 
     def update_cache(self, key, data):
         # self.cache[key].clear()
