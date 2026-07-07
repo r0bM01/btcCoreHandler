@@ -35,7 +35,15 @@ def strdate_from_timestamp(timestamp) -> str:
 def strtime_delay(sec: int) -> str:
     # only seconds accepted
     delay = dt.timedelta(seconds = sec)
-    return f"{delay.days} days and {delays.seconds} seconds" if bool(delay.days) else f"{delay.seconds} seconds"
+    h = delay.seconds // 3600
+    m = (delay.seconds % 3600) // 60 
+    s = (delay.seconds % 3600) % 60
+    msg = str()
+    if bool(delay.days): msg += f"{delay.days} days, "
+    if bool(h): msg += f"{h}hours, "
+    if bool(m): msg += f"{m}mins and "
+    msg += f"{s}seconds"
+    return msg
 
 def strtime_delay_diff(start_time) -> str:
     return strtime_delay(timestamp() - int(start_time))

@@ -19,7 +19,7 @@ from threading import BoundedSemaphore
 
 from core.machine import BitcoinDaemon
 from core.network import get_geolocation
-from core.network import send_nextcloud_msg
+from core.webcalls import send_nextcloud_msg
 from core.storage import BitcoinPeers
 from lib.base_crypto import Utils
 
@@ -60,7 +60,7 @@ class Interface:
         self.cache.clear()
     
     def send_to_nextcloud(self, message):
-        send_nextcloud_msg(message)
+        return send_nextcloud_msg(message)
 
     def load_geolocation(self, ip_list: list) -> list:
         if self.control_database.acquire(timeout = 3):

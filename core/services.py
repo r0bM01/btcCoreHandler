@@ -182,7 +182,7 @@ class NextcloudNotifications:
         self.last_run = 0
         self.errors = 0
         self.interface = interface
-        self.schedules = [(13, 30), (18, 30), (23, 30)] # list of [tuple(hour, min)]
+        self.schedules = [(8, 30), (13, 30), (18, 30), (23, 30)] # list of [tuple(hour, min)]
         self.timestamps = []
     
     def build_timestamps(self):
@@ -195,18 +195,33 @@ class NextcloudNotifications:
         if len(self.timestamps) < (len(self.schedules) * 2):
             new_ts = [ts + (60 * 60 * 24) for ts in self.timestamps]
             self.timestamps.extend(new_ts)
+            self.timestamps = list(dict.fromkeys(self.timestamps))
         self.timestamps.sort()
 
     def run(self):
         self.build_timestamps()
         if dt.datetime.now().timestamp() >= self.timestamps[0]:
-            message = "Some info regarding bitcoin code node\n"
-            message += f"BitcoinD uptime: {core.benchutils.strtime_delay(self.interface.cache['uptime'])}\n"
-            message += f"Connected Peers: {len(self.interface.cache['getpeerinfo'])}\n"
-            message += f"Known Peers: {self.interface.database.select_num_nodes()}\n"
-            message += f"Known Countries: {self.interface.database.select_num_countries()}"
-            self.interface.send_to_nextcloud(message)
+            message = str()
+            message += f"- Bitcoin uptime: *{core.benchutils.strtime_delay(self.interface.cache['uptime'])}*\n"
+            message += f"- Connected Peers: *{len(self.interface.cache['getpeerinfo'])}*\n"
+            message += f"- DB Peers: *{self.interface.database.select_num_nodes()}*\n"
+            message += f"- DB Countries: *{self.interface.database.select_num_countries()}*"
+            errors = self.interface.send_to_nextcloud(message)
+            self.errors += 1 if not bool(errors) else 0
             self.timestamps.pop(0)
 
 
+class BaseService:
+    def __init__(self, interface, schedules: list = []):
+        self.name = type(self).__name__
+        self.active = False
+        self.pause = 0
+        self.last_run = 0
+        self.errors = 0
+        self.interface = interface
+        self.schedules = schedules
+    
+    def run(self):
+        ''' Override This '''
+        pass
                   
