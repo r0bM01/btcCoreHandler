@@ -17,6 +17,7 @@ import pathlib, json
 import lib.base_storage
 from os import mkfifo
 from core import env
+from core import benchutils
 
 
 class Storage:
@@ -24,6 +25,8 @@ class Storage:
         self.base_dir = self.init_base_dir(env.DATA_FOLDER)
         self.storage_dir = self.init_dir(env.STORAGE_FOLDER)
         self.logs_dir = self.init_dir(env.LOGS_FOLDER)
+        self.temp_dir = self.init_dir(self.storage_dir.joinpath("temp"))
+        self.pid_file = self.init_file(self.temp_dir.joinpath("PID.dat"))
         #self.export_dir = self.init_dir("export")
 
     def init_base_dir(self, base_dir_path):
@@ -35,7 +38,19 @@ class Storage:
         #dir = self.base_dir.joinpath(dir_name)
         dir_path.mkdir(exist_ok = True)
         return dir_path
-
+    
+    def init_file(self, file_path, file_name = False):
+        #if bool(file_name):
+        #    file_path.joinpath(file_name)
+        file_path.touch(exist_ok = True)
+        return file_path
+    
+    def write_file(self, file_path, data):
+        with open(file_path, "w") as F:
+            F.write(data)
+    
+    def remove_file(self, file_path):
+        file_path.unlink(missing_ok = True)
 
 class BitcoinPeers(lib.base_storage.BaseDB):
     def __init__(self, custom_dir = False):
@@ -127,9 +142,26 @@ class HandlerDB(lib.base_storage.BaseDB):
         self.db_path = custom_dir or DEFAULT_ROOT_FOLDER 
         self.db_file = "handler.db"
         self.db = self.db_path.joinpath(self.db_file)
+        self.make_db_file()
+        self.create_users_table()
+        #self.table = {'users': ""}
+    
+    def create_users_table(self):
+        sql = f'''CREATE TABLE IF NOT EXISTS users (
+                    id CHAR PRIMARY KEY NOT NULL,
+                    user NOT NULL, hashpassw NOT NULL);'''
+        self.make_db_table(sql)
 
-        self.tables = ["certificates"]
-
+    def insert_user(self, user, passw):
+        id = benchutils.short_id(str(user.lower() + passw).encode('utf-8'))
+        hp = benchutils.full_hash(passw.encode('utf-8'))
+        sql = f'''INSERT OR IGNORE INTO users VALUES(?, ?, ?);'''
+        self.raw_insert(sql, (id, user, hp))
+    
+    def select_user(self, id):
+        sql = '''SELECT * FROM users WHERE id IN (?);'''
+        res = self.raw_select(sql, [id])
+        return {'id': res[0][0], 'user': res[0][1], 'hashpassw': res[0][2]}
 
 class LocalPipe:
     def __init__(self):
@@ -137,8 +169,15 @@ class LocalPipe:
         if not self.pipe.exists():
             mkfifo(self.pipe)
     
+    def close_pipe(self):
+        self.pipe.unlink(missing_ok = True)
+
     def recv(self):
         with open(self.pipe, "r") as P:
             data = P.read()
         return data
+    
+    def send(self, data):
+        with open(self.pipe, "w") as P:
+            P.write(data)
     

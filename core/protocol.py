@@ -25,18 +25,22 @@ class RequestHandler:
         self.logger = logger
         self.interface = interface
 
+    def load_request(self, request):
+        try:
+            request = json.loads(request)
+        except Exception as e:
+            pass
 
     def validate_request(self, request):
         return core.commands.verify_command(request)
 
-
-    def handle_request(self, request):
+    def handle_request(self, request) -> dict:
         if request['method'] == 'nocache' and self.validate_request(request['args'][0]):
-            reply = self.interface.daemon_call(request['args'][0], request['args'][1:])
+            reply = {request['method']: self.interface.daemon_call(request['args'][0], request['args'][1:])}
         elif request['method'] == 'handlerstop':
             reply = {'error': 'btcHandler can be stopped by local command only'}
         else:
-            reply = self.interface.get_data(request['method'], request['args'])
+            reply = {request['method']: self.interface.get_data(request['method'], request['args'])}
         return reply
 
     # threading method handled by Controller class
@@ -46,8 +50,14 @@ class RequestHandler:
             request = peer.recv_msg() # waits n seconds as per socket timeout default
             if bool(request):
                 start_time = time.time()
-                request = json.loads(request)
-                if self.validate_request(request):
+                try:
+                    request = json.loads(request)
+                    is_valid = self.validate_request(request)
+                except Exception as e:
+                    self.logger.info("protocol request", peer.peer_addr, "invalid")
+                    is_valid = False
+
+                if is_valid:
                     if request.get('method') != 'keepalive':
                         reply = json.dumps(self.handle_request(request))
                         peer.send_msg(reply)
@@ -84,13 +94,27 @@ class RequestHandler:
             self.logger.info("client local shutdown started")
             shutdown.set()
 
-    def pipe_handler(self, pipe_msg, shutdown):
-        try:
-            request = json.loads(pipe_msg)
-            if self.validate_request(request):
-                self.logger.info("protocol", "PIPE", request['method']) ## only for testing purposes
-                if request['method'] == 'handlerstop':
-                    self.logger.info("handler shutdown authorized")
-                    shutdown.set()
-        except Exception as e:
-            self.logger.info("protocol", "PIPE", "ERROR!", e)
+    def pipe_handler(self, local_pipe, shutdown):
+        while not shutdown.is_set():
+            pipe_msg = local_pipe.recv()
+            try:
+                request = json.loads(pipe_msg)
+                if self.validate_request(request):
+                    self.logger.info("protocol valid request", "PIPE", request['method']) ## only for testing purposes
+                    if request['method'] != 'handlerstop':
+                        reply = json.dumps(self.handle_request(request))
+                        local_pipe.send(reply)
+                    else:
+                        json.dumps({'confirm': 'handlerstop'})
+                        local_pipe.send(reply)
+                        shutdown.set()
+                else:
+                    self.logger.info("protocol denied invalid request", "PIPE", str(request))
+                    local_pipe.send(json.dumps({'error': 'invalid request'}))
+            except Exception as e:
+                self.logger.info("protocol", "PIPE", "ERROR!", e)
+                is_valid = False
+
+                
+
+            

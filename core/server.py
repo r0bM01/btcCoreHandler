@@ -39,33 +39,32 @@ class Controller:
         self.shutdown_notification = threading.Event()
         self.shutdown_notification.clear()
         
-
         self.storage = core.storage.Storage()
         self.logger = core.logger.Logger(self.storage.logs_dir)
         self.interface = core.data.Interface(self.storage)
         self.local_pipe = core.storage.LocalPipe()
 
         self.certificate = core.env.network['certificate']
-
         
         self.NODE = core.machine.Node()
-        self.network = core.network.NetworkServer(core.env.HANDLER_HOST, core.env.HANDLER_PORT)
-        
+        self.network = core.network.NetworkServer(core.env.HANDLER_HOST, core.env.HANDLER_PORT)    
         
         self.SERVICES = core.services.Engine(self.logger, self.interface)
         self.protocol = core.protocol.RequestHandler(self.logger, self.interface)
 
-
         self.logger_thread = threading.Thread(target = self.logger.worker, name = "logger-thread", daemon = True)
         self.server_thread = threading.Thread(target = self.peers_receiver, name = "server-thread", daemon = True)
         self.services_thread = threading.Thread(target = self.SERVICES.work, name = "services-thread", daemon = True)
-        self.pipe_thread = threading.Thread(target = self.pipe_receiver, name = "pipe-thread",daemon = True)
+        self.pipe_thread = threading.Thread(target = self.protocol.pipe_handler, args = [self.local_pipe, self.shutdown_notification], name = "pipe-thread", daemon = True)
         
-
         self.is_serving = False
         self.internet_on = False
         self.local_ip_addr = None
         self.external_ip_addr = None
+        self.process_pid = str(getpid())
+
+        self.storage.init_file(self.storage.pid_file)
+        self.storage.write_file(self.storage.pid_file, self.process_pid)
 
         self.max_peers = 5
         self.active_peers = [] # list of dicts {'peer': peer, 'worker': worker}
@@ -73,10 +72,10 @@ class Controller:
         ##.logger init
         self.logger.is_working = True
         self.logger_thread.start()
-        self.logger.info("server starting")
+        self.logger.info("btcCoreHandler starting")
+        self.logger.info("btcCoreHandler process id", self.process_pid)
 
     def init_network(self):
-        self.logger.info("btcCoreHandler process id", getpid())
         self.logger.info("init network")
         self.local_ip_addr = self.NODE.get_local_IP()
         self.external_ip_addr = core.network.get_external_ips()
@@ -95,6 +94,7 @@ class Controller:
         self.SERVICES.add_new_service(core.services.BitcoinDaemonChecker)
         self.SERVICES.add_new_service(core.services.BitcoinCacheUpdater)
         self.SERVICES.add_new_service(core.services.BitcoinPeersGeolocation)
+        self.SERVICES.add_new_service(core.services.BtcCoreHandlerStatus)
         self.SERVICES.add_new_service(core.services.NextcloudNotifications)
         self.SERVICES.activate_all()
         
@@ -119,11 +119,6 @@ class Controller:
             self.is_serving = False
         return self.is_serving
     
-    def pipe_receiver(self):
-        while not self.shutdown_notification.is_set():
-            pipe_msg = self.local_pipe.recv()
-            self.protocol.pipe_handler(pipe_msg, self.shutdown_notification)
-        
     def peers_receiver(self):
         while self.is_serving:
             peer = self.network.get_new_peer()
@@ -179,7 +174,7 @@ class Controller:
             if not self.interface.daemon.is_running: 
                 self.logger.info("bitcoin daemon is not running!")
                 self.shutdown_notification.set()
-            self.shutdown_notification.wait(15) # <-- main thread waits here
+            self.shutdown_notification.wait(320) # <-- main thread waits here
         else:
             self.graceful_shutdown()
         
@@ -188,7 +183,6 @@ class Controller:
         self.logger.info("shutdown from signal", signum)
         self.shutdown_notification.set()
     
-
     def graceful_shutdown(self):
         self.logger.info("shutting down gracefully")
         """"
@@ -205,6 +199,9 @@ class Controller:
         self.SERVICES.deactivate_all()
         self.SERVICES.worker.set()
         self.services_thread.join(3)
+
+        self.storage.remove_file(self.storage.pid_file)
+        self.local_pipe.close_pipe()
         
         self.logger.info(f"{self.server_thread.name}", self.server_thread.is_alive())
         self.logger.info(f"{self.services_thread.name}", self.services_thread.is_alive())

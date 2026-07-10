@@ -16,8 +16,10 @@
 import gc
 import datetime as dt
 import core.benchutils
+
 from threading import Event
 from time import time
+from core.env import DEFAULT_EPOCH
 
 
 class Engine:
@@ -75,10 +77,7 @@ class Engine:
         if service.active and (service.pause < self.get_time()):
             if not (self.worker_nums_round % 250):
                 self.logger.info("service running", service.name)
-                self.logger.info("service issues found", service.errors)
-                if self.worker_nums_round > 1:
-                    garbage = gc.collect()
-                    self.logger.info("services garbage collected", f"{garbage} objects")
+                self.logger.info("service issues found", service.errors)                    
             try:
                 start_time = self.get_time()
                 service.run()  # executes the callback function
@@ -99,6 +98,9 @@ class Engine:
         while self.is_working():
             start_time = self.get_time()
             [self.run_service(service) for service in self.services]
+            if not (self.worker_nums_round % 250) and self.worker_nums_round > 1:
+                garbage = gc.collect()
+                self.logger.info("services garbage collected", f"{garbage} objects")
             self.worker_last_round = self.get_time()
             self.worker_nums_round += 1
             self.worker.wait(self.worker_rest - (self.worker_last_round - start_time))
@@ -225,3 +227,15 @@ class BaseService:
         ''' Override This '''
         pass
                   
+
+class BtcCoreHandlerStatus(BaseService):
+    def run(self):
+        if self.interface.services_data.get('OnlineEpochs', None) is None:
+            self.interface.services_data['OnlineEpochs'] = 0
+        epochs = (core.benchutils.timestamp() - self.interface.cache['systeminfo']['started']) // DEFAULT_EPOCH
+        if epochs > self.interface.services_data['OnlineEpochs']:
+            self.interface.services_data['OnlineEpochs'] += 1
+            message = f"btcCoreHandler has reached a new epoch!! --> *{self.interface.services_data['OnlineEpochs']}*"
+            errors = self.interface.send_to_nextcloud(message)
+            self.errors += 1 if not bool(errors) else 0
+            self.pause = core.benchutils.timestamp(3600 * 6)

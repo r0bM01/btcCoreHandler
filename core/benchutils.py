@@ -20,6 +20,12 @@ import datetime as dt
 def checksum(data: bytes) -> str:
     return hashlib.blake2b(data, digest_size = 32).hexdigest()
 
+def short_id(data: bytes) -> str:
+    return hashlib.blake2b(data, digest_size = 4).hexdigest()
+
+def full_hash(data: bytes) -> str:
+    return hashlib.blake2b(data).hexdigest()
+
 def from_json(data) -> dict:
     return json.loads(data)
 

@@ -27,7 +27,7 @@ COMMANDS = {
     'getpeerinfo', 
     'getnettotals',
     'getaddednodeinfo',
-    'getpeergeo'
+    'getpeergeo',
     'addnode', 
 }
 
