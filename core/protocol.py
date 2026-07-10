@@ -105,7 +105,7 @@ class RequestHandler:
                         reply = json.dumps(self.handle_request(request))
                         local_pipe.send(reply)
                     else:
-                        json.dumps({'confirm': 'handlerstop'})
+                        reply = json.dumps({'confirm': 'handlerstop'})
                         local_pipe.send(reply)
                         shutdown.set()
                 else:
