@@ -26,7 +26,7 @@ class Storage:
         self.storage_dir = self.init_dir(env.STORAGE_FOLDER)
         self.logs_dir = self.init_dir(env.LOGS_FOLDER)
         self.temp_dir = self.init_dir(self.storage_dir.joinpath("temp"))
-        self.pid_file = self.init_file(self.temp_dir.joinpath("PID.dat"))
+        self.pid_file = self.init_file(self.temp_dir.joinpath("handler.pid"))
         #self.export_dir = self.init_dir("export")
 
     def init_base_dir(self, base_dir_path):
@@ -46,6 +46,8 @@ class Storage:
         return file_path
     
     def write_file(self, file_path, data):
+        if not self.file_path.exists:
+            self.init_file(file_path)
         with open(file_path, "w") as F:
             F.write(data)
     

@@ -63,7 +63,7 @@ class Controller:
         self.external_ip_addr = None
         self.process_pid = str(getpid())
 
-        self.storage.init_file(self.storage.pid_file)
+        #self.storage.init_file(self.storage.pid_file)
         self.storage.write_file(self.storage.pid_file, self.process_pid)
 
         self.max_peers = 5
@@ -74,6 +74,9 @@ class Controller:
         self.logger_thread.start()
         self.logger.info("btcCoreHandler starting")
         self.logger.info("btcCoreHandler process id", self.process_pid)
+
+    def init_system(self):
+        pass
 
     def init_network(self):
         self.logger.info("init network")
