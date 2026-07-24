@@ -36,6 +36,7 @@ class Node:
 
 class BitcoinDaemon:
     def __init__(self):
+        self.bitcoind_pid = subprocess.run(["pidof", "bitcoind"], capture_output = True).stdout.decode()
         self.daemon = "bitcoind"
         self.client = "bitcoin-cli"
         self.is_running = self.daemon_running()

@@ -60,3 +60,9 @@ def send_nextcloud_msg(message) -> bool:
     req = request.Request(url = url, data = data.encode('utf-8'), headers = header)
     res = request.urlopen(req)
     return True if res.status == 201 or res.status == 200 else False
+
+def check_internet() -> bool:
+    req = request.Request(url = env.DEFAULT_INTERNET_CHECKPOINT, headers = {'User-Agent': 'Mozilla/5.0'})
+    res = request.urlopen(url = req, context = ssl.create_default_context())
+    return True if res.status == 201 or res.status == 200 else False
+    

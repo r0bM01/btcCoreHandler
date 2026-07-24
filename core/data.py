@@ -15,7 +15,7 @@
 
 import platform
 import time
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore, Event
 
 from core.machine import BitcoinDaemon
 from core.network import get_geolocation
@@ -34,7 +34,8 @@ class Interface:
     def __init__(self, storage):
         self.control_bitcoind = BoundedSemaphore(value = 1)
         self.control_database = BoundedSemaphore(value = 3)
-
+        self.bitcoind_event = Event()
+        self.internet_event = Event()
         self.daemon = BitcoinDaemon()
         self.database = BitcoinPeers(storage.storage_dir)
 

@@ -7,16 +7,12 @@ def main():
     
     handler = server.Controller()
     handler.logger.base_logger.verbose = False
-
+    handler.init_system()
     if handler.interface.daemon.is_running:
-
         handler.init_network()
         handler.init_services()    
         handler.run_all()
         handler.wait_for_shutdown()
-        print("btcCoreHandler shutdown successfull")
-    else:
-        print("ERROR! BITCOIN DAEMON NOT RUNNING!")
 
 
 if __name__ == "__main__":

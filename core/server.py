@@ -61,10 +61,8 @@ class Controller:
         self.internet_on = False
         self.local_ip_addr = None
         self.external_ip_addr = None
-        self.process_pid = str(getpid())
-
-        #self.storage.init_file(self.storage.pid_file)
-        self.storage.write_file(self.storage.pid_file, self.process_pid)
+        self.process_pid = None
+        self.bitcoind_pid = None
 
         self.max_peers = 5
         self.active_peers = [] # list of dicts {'peer': peer, 'worker': worker}
@@ -72,11 +70,18 @@ class Controller:
         ##.logger init
         self.logger.is_working = True
         self.logger_thread.start()
-        self.logger.info("btcCoreHandler starting")
-        self.logger.info("btcCoreHandler process id", self.process_pid)
+        
 
     def init_system(self):
-        pass
+        self.logger.info("btcCoreHandler starting")
+        self.process_pid = str(getpid())
+        self.storage.write_file(self.storage.pid_file, self.process_pid)
+        self.logger.info("btcCoreHandler process id", self.process_pid)
+        self.bitcoind_pid = self.interface.daemon.bitcoind_pid
+        self.logger.info("bitcoin daemon process id", self.bitcoind_pid)
+        if not self.interface.daemon.is_running:
+            self.logger.info("error: bitcoin daemon is NOT running!")
+            self.graceful_shutdown()
 
     def init_network(self):
         self.logger.info("init network")
@@ -102,7 +107,7 @@ class Controller:
         self.SERVICES.activate_all()
         
     def run_all(self):
-        self.logger.info(f"bitcoin daemon running", self.interface.daemon.is_running)
+        #self.logger.info(f"bitcoin daemon running", self.interface.daemon.is_running)
         if self.interface.daemon.is_running:
             self.logger.info("starting threads")
             self.pipe_thread.start()
@@ -174,10 +179,14 @@ class Controller:
         self.logger.info("btcCoreHandler server fully started")
         core.network.send_nextcloud_msg("btcCoreHandler server is fully started")
         while not self.shutdown_notification.is_set():
-            if not self.interface.daemon.is_running: 
-                self.logger.info("bitcoin daemon is not running!")
+            if self.interface.bitcoind_event.is_set(): 
+                self.logger.info("error bitcoin daemon has stopped running!")
                 self.shutdown_notification.set()
-            self.shutdown_notification.wait(320) # <-- main thread waits here
+            if self.interface.internet_event.is_set():
+                self.logger.info("error internet is not reachable!")
+                self.SERVICES.deactivate_service(self.SERVICES.services[BitcoinPeersGeolocation])
+                self.SERVICES.deactivate_service(self.SERVICES.services[NextcloudNotifications])
+            self.shutdown_notification.wait(15) # <-- main thread waits here
         else:
             self.graceful_shutdown()
         

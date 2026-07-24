@@ -239,3 +239,8 @@ class BtcCoreHandlerStatus(BaseService):
             errors = self.interface.send_to_nextcloud(message)
             self.errors += 1 if not bool(errors) else 0
             self.pause = core.benchutils.timestamp(3600 * 6)
+
+
+class InternetChecker(BaseService):
+    def run(self):
+        pass
