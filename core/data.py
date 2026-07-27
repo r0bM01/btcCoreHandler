@@ -34,8 +34,8 @@ class Interface:
     def __init__(self, storage):
         self.control_bitcoind = BoundedSemaphore(value = 1)
         self.control_database = BoundedSemaphore(value = 3)
-        self.bitcoind_event = Event()
-        self.internet_event = Event()
+        self.bitcoind_shutdown = Event()
+        self.internet_shutdown = Event()
         self.daemon = BitcoinDaemon()
         self.database = BitcoinPeers(storage.storage_dir)
 
@@ -51,6 +51,8 @@ class Interface:
         self.cache_timestamp = None
 
         self.services_data = dict()
+
+        
 
     def update_cache(self, key, data):
         # self.cache[key].clear()

@@ -179,10 +179,10 @@ class Controller:
         self.logger.info("btcCoreHandler server fully started")
         core.network.send_nextcloud_msg("btcCoreHandler server is fully started")
         while not self.shutdown_notification.is_set():
-            if self.interface.bitcoind_event.is_set(): 
+            if self.interface.bitcoind_shutdown.is_set(): 
                 self.logger.info("error bitcoin daemon has stopped running!")
                 self.shutdown_notification.set()
-            if self.interface.internet_event.is_set():
+            if self.interface.internet_shutdown.is_set():
                 self.logger.info("error internet is not reachable!")
                 self.SERVICES.deactivate_service(self.SERVICES.services[BitcoinPeersGeolocation])
                 self.SERVICES.deactivate_service(self.SERVICES.services[NextcloudNotifications])
