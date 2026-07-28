@@ -13,7 +13,7 @@
 # limitations under the License.                                            #
 #############################################################################
 
-import time, threading, sys, signal
+import time, threading, sys, signal, platform
 
 from os import getpid
 
@@ -74,6 +74,12 @@ class Controller:
 
     def init_system(self):
         self.logger.info("btcCoreHandler starting")
+        self.interface.cache["systeminfo"] = dict()
+        self.interface.cache["systeminfo"]['started'] = int(time.time())
+        self.interface.cache["systeminfo"]['node'] = platform.node()
+        self.interface.cache["systeminfo"]['machine'] = platform.machine()
+        self.interface.cache["systeminfo"]['system'] = platform.system()
+        self.interface.cache["systeminfo"]['release'] = platform.release()
         self.process_pid = str(getpid())
         self.storage.write_file(self.storage.pid_file, self.process_pid)
         self.logger.info("btcCoreHandler process id", self.process_pid)

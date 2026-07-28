@@ -40,19 +40,15 @@ class Interface:
         self.database = BitcoinPeers(storage.storage_dir)
 
         self.cache = dict()
-
-        self.cache['systeminfo'] = {
-            "started": int(time.time()),
-            "node": platform.node(),
-            "machine": platform.machine(),
-            "system": platform.system(),
-            "release": platform.release(),
-        }
         self.cache_timestamp = None
 
         self.services_data = dict()
 
-        
+        self.bitcoind_pid   = None
+        self.handler_pid    = None
+        self.internal_ip    = None
+        self.external_ip    = None
+
 
     def update_cache(self, key, data):
         # self.cache[key].clear()
