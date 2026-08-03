@@ -20,6 +20,7 @@ import core.benchutils
 from threading import Event
 from time import time
 from core.env import DEFAULT_EPOCH
+from core.env import DEFAULT_SERVICE_REST
 
 
 class Engine:
@@ -84,7 +85,7 @@ class Engine:
                 service.pause = 0
                 service.last_run = self.get_time()
                 service.run_time = service.last_run - start_time
-                if service.run_time > 30:
+                if service.run_time > self.worker_rest:
                     self.logger.info("services long run", service.name, service.run_time)
                     service.errors += 1
             except Exception as error_code:

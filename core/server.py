@@ -81,10 +81,13 @@ class Controller:
         self.interface.cache["systeminfo"]['system'] = platform.system()
         self.interface.cache["systeminfo"]['release'] = platform.release()
         self.process_pid = str(getpid())
-        self.storage.write_file(self.storage.pid_file, self.process_pid)
-        self.logger.info("btcCoreHandler process id", self.process_pid)
         self.bitcoind_pid = self.interface.daemon.bitcoind_pid
+        self.storage.write_file(self.storage.pid_file, self.process_pid)
+        self.logger.info("btcCoreHandler sarted on", self.interface.cache["systeminfo"]['node'])
+        self.logger.info("btcCoreHandler process id", self.process_pid)
         self.logger.info("bitcoin daemon process id", self.bitcoind_pid)
+        self.logger.info("database geolocation check - nodes", self.interface.database.select_num_nodes())
+        self.logger.info("database geolocation check - countries", self.interface.database.select_num_cities())
         if not self.interface.daemon.is_running:
             self.logger.info("error: bitcoin daemon is NOT running!")
             self.graceful_shutdown()
